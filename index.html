@@ -30,13 +30,13 @@
         <div class="bg-slate-800 p-1.5 rounded-lg border border-slate-700 flex items-center gap-2">
           <label class="text-[11px] font-semibold text-slate-300">Perfil Ativo:</label>
           <select id="seletor-perfil" onchange="validarTrocaPerfil()" class="bg-slate-900 text-sky-400 text-xs font-bold p-1 rounded outline-none border border-slate-600">
-            <option value="gestor">🔐 Gestor Master Boreal</option>
-            <option value="cliente">🏢 Cliente Empregador</option>
-            <option value="credenciado">🩺 Clínica / Médico Credenciado</option>
+            <option value="gestor">🔐 GESTOR BOREAL (Acesso Total)</option>
+            <option value="cliente">🏢 CLIENTE EMPREGADOR</option>
+            <option value="credenciado">🩺 CLÍNICA CREDENCIADA</option>
           </select>
         </div>
 
-        <button onclick="alterarSenhaMaster()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1 border border-slate-700">
+        <button onclick="alterarSenhaMaster()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg transition border border-slate-700">
           🔑 Senha Master
         </button>
 
@@ -81,7 +81,7 @@
       <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
         <div class="border-b pb-3 mb-4">
           <h2 class="text-lg font-bold text-slate-800">Emissão de Atestado de Saúde Ocupacional (ASO Modelo Oficial Boreal)</h2>
-          <p class="text-xs text-slate-500">Selecione os perigos do inventário IRO ou informe os dados manualmente</p>
+          <p class="text-xs text-slate-500">Selecione os perigos do inventário IRO por lista suspensa ou informe manualmente</p>
         </div>
 
         <form id="form-aso-completo" class="space-y-4">

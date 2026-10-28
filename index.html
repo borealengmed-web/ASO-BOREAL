@@ -815,4 +815,632 @@
                 { agente: "EXIGÊNCIA DE ALTO NÍVEL DE CONCENTRAÇÃO OU ATENÇÃO", risco: "SOBRECARGA DE TRABALHO MENTAL", exame: "CLÍNICO", periodicidade: "BIENAL" }
             ],
             "PSICOSSOCIAIS": [
-                { agente: "CARGA E RITMO DE TRABALHO (PRESSÃO TEMPORAL)", risco: "BURNOUT, ANSIEDADE, FADIGA CRÔNICA", exame: "AVAL
+                { agente: "CARGA E RITMO DE TRABALHO (PRESSÃO TEMPORAL)", risco: "BURNOUT, ANSIEDADE, FADIGA CRÔNICA", exame: "AVALIAÇÃO PSICOSSOCIAL / PSICOLÓGICA", periodicidade: "ANUAL" }
+            ],
+            "ACIDENTES": [
+                { agente: "SERVIÇOS COM SERRA E MÁQUINAS DE CORTE", risco: "CORTE, DILACERAÇÃO E PANCADAS", exame: "CLÍNICO, AUDIOMETRIA, ECG, HEMOGRAMA", periodicidade: "ANUAL" },
+                { agente: "TRABALHO EM ALTURA (NR-35)", risco: "QUEDA DE NÍVEIS DIFERENTES E MORTE", exame: "ACUIDADE VISUAL, ECG, GLICEMIA, HEMOGRAMA, AVALIAÇÃO PSICOSSOCIAL", periodicidade: "ANUAL" },
+                { agente: "MANUTENÇÃO EM SISTEMAS ELÉTRICOS (NR-10)", risco: "CHOQUE ELÉTRICO E QUEIMADURAS", exame: "ACUIDADE VISUAL, ECG, AUDIOMETRIA, ISHIHARA, AVALIAÇÃO PSICOSSOCIAL", periodicidade: "ANUAL" }
+            ],
+            "FISICOS": [
+                { agente: "RUÍDO CONTÍNUO OU INTERMITENTE DE MÁQUINAS", risco: "PERDA AUDITIVA INDUZIDA POR RUÍDO (PAIRO)", exame: "AUDIOMETRIA TONAL OCUPACIONAL", periodicidade: "SEMESTRAL / ANUAL" }
+            ],
+            "QUIMICOS": [
+                { agente: "GASES OU VAPORES DE AGENTES QUÍMICOS / SOLVENTES", risco: "INTOXICAÇÃO SISTÊMICA / DERMATITES", exame: "MONITORAMENTO BIOLÓGICO (SANGUE/URINA) + CLÍNICO", periodicidade: "ANUAL" }
+            ],
+            "BIOLOGICOS": [
+                { agente: "CONTATO COM PACIENTES OU MATERIAL INFECTOCONTAGIANTE", risco: "TRANSMISSÃO DE PATÓGENOS (HIV, HEPATITE, TUBERCULOSE)", exame: "SOROLOGIAS (HEPATITE B/C), PPD/IGRA, HEMOGRAMA", periodicidade: "SEMESTRAL / ANUAL" }
+            ],
+            "PERICULOSOS": [
+                { agente: "EXPOSIÇÃO A ROUBOS E VIOLÊNCIA FÍSICA (SEGURANÇA)", risco: "AGRESSÃO FÍSICA E TRAUMA PSÍQUICO", exame: "AVALIAÇÃO PSICOSSOCIAL", periodicidade: "ANUAL" }
+            ]
+        };
+
+        // ESTADO GLOBAL DO SISTEMA
+        let currentRole = "GESTOR";
+        let selectedAsoId = null;
+        let orderItemsList = [];
+        
+        let clinicasCadastradas = [
+            { id: 1, nome: "CLÍNICA CENTRAL PAULÍNIA", cnpj: "12.345.678/0001-90", whats: "(19) 99156-7153" },
+            { id: 2, nome: "CENTRO MÉDICO MACAPÁ", cnpj: "98.765.432/0001-11", whats: "(96) 98888-7777" }
+        ];
+
+        let asoQueueData = [
+            { id: 101, nome: "JOÃO DA SILVA", cpf: "123.456.789-00", cliente: "PREFEITURA MUNICIPAL", cargo: "MECÂNICO DE MANUTENÇÃO", tipo: "ASO ADMISSONAL", status: "AGUARDANDO", anamnese: null, aso: null },
+            { id: 102, nome: "MARIA OLIVEIRA", cpf: "987.654.321-11", cliente: "PREFEITURA MUNICIPAL", cargo: "AUXILIAR ADMINISTRATIVO", tipo: "ASO PERIÓDICO", status: "AGUARDANDO", anamnese: null, aso: null }
+        ];
+
+        let asoHistoryData = [];
+
+        let pcmsoMatrizData = [
+            { id: 1, lotacao: "OFICINA CENTRAL", processo: "MANUTENÇÃO", cargo: "MECÂNICO DE MANUTENÇÃO", qtd: 3, agente: "SERVIÇOS COM SERRA E MÁQUINAS DE CORTE", exame: "CLÍNICO, AUDIOMETRIA, ECG, HEMOGRAMA", periodicidade: "ANUAL", cliente: "PREFEITURA MUNICIPAL" },
+            { id: 2, lotacao: "ADMINISTRATIVO", processo: "GESTÃO", cargo: "AUXILIAR ADMINISTRATIVO", qtd: 5, agente: "EXIGÊNCIA DE POSTURAS INCÔMODAS POR LONGOS PERÍODOS", exame: "EXAME CLÍNICO OCUPACIONAL", periodicidade: "BIENAL", cliente: "PREFEITURA MUNICIPAL" }
+        ];
+
+        let atestadosHomologacaoData = [
+            { id: 1, cliente: "PREFEITURA MUNICIPAL", trab: "CARLOS FERREIRA - 111.222.333-44", data: "28/10/2026", dias: 3, cid: "M54.5", medico: "DR. ALBERTO GOMES", status: "HOMOLOGADO" }
+        ];
+
+        let monitorRequestsData = [
+            { fecha: "28/10/2026", cliente: "PREFEITURA MUNICIPAL", trab: "JOÃO DA SILVA - 123.456.789-00", obj: "ASO ADMISSONAL", qtd: 1, valor: "85,00", clinica: "CLÍNICA CENTRAL PAULÍNIA", status: "REALIZADO" }
+        ];
+
+        // INICIALIZAÇÃO
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) { lucide.createIcons(); }
+            atualizarDropdownsClinicas();
+            validarTrocaPerfil();
+            renderFilaAso();
+            renderPcmsoMatriz();
+            renderClinicasTabela();
+            renderHomologacaoTabela();
+            renderMonitorTable();
+            renderProducaoTable();
+        });
+
+        // TROCA DE ABAS
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById('tab-' + tabId);
+            if (target) { target.classList.remove('hidden'); }
+        }
+
+        // TROCA DE PERFIL COM SIGILO DE VALORES
+        function validarTrocaPerfil() {
+            currentRole = document.getElementById('user-role-select').value;
+
+            // Oculta/Exibe preços para Cliente e Clínica
+            if (currentRole === 'CLIENTE' || currentRole === 'CLINICA') {
+                document.body.classList.add('hide-prices');
+            } else {
+                document.body.classList.remove('hide-prices');
+            }
+
+            // Exibe formulário do PCMSO apenas para Gestor
+            const pcmsoForm = document.getElementById('pcmso-form-container');
+            if (pcmsoForm) {
+                pcmsoForm.style.display = (currentRole === 'GESTOR') ? 'block' : 'none';
+            }
+
+            // Restrição de edição nos Cadastros
+            document.querySelectorAll('.btn-only-gestor').forEach(btn => {
+                btn.style.display = (currentRole === 'GESTOR') ? 'block' : 'none';
+            });
+
+            renderPcmsoMatriz();
+        }
+
+        function alterarSenhaMaster() {
+            const pwd = prompt("Digite a nova Senha Master de Acesso:");
+            if (pwd) { alert("Senha Master redefinida com sucesso!"); }
+        }
+
+        // CLINICAS E DROPDOWNS
+        function atualizarDropdownsClinicas() {
+            const targets = [document.getElementById('ped_clinica_target'), document.getElementById('vinc_clin_select')];
+            targets.forEach(select => {
+                if (!select) return;
+                select.innerHTML = '';
+                clinicasCadastradas.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.nome;
+                    opt.textContent = c.nome;
+                    select.appendChild(opt);
+                });
+            });
+        }
+
+        function salvarNovaClinica() {
+            if (currentRole !== 'GESTOR') { alert("Apenas o GESTOR pode cadastrar clínicas!"); return; }
+            const nome = document.getElementById('cad_clin_nome').value.trim();
+            const cnpj = document.getElementById('cad_clin_cnpj').value.trim();
+            const whats = document.getElementById('cad_clin_whats').value.trim();
+
+            if (!nome) { alert("Informe o nome da clínica."); return; }
+
+            clinicasCadastradas.push({ id: Date.now(), nome, cnpj, whats });
+            atualizarDropdownsClinicas();
+            renderClinicasTabela();
+
+            document.getElementById('cad_clin_nome').value = '';
+            document.getElementById('cad_clin_cnpj').value = '';
+            document.getElementById('cad_clin_whats').value = '';
+            alert("Clínica cadastrada com sucesso!");
+        }
+
+        function renderClinicasTabela() {
+            const tbody = document.getElementById('clinicas-cadastradas-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            clinicasCadastradas.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b";
+                tr.innerHTML = `
+                    <td class="p-2 font-bold">${c.nome}</td>
+                    <td class="p-2">${c.cnpj}</td>
+                    <td class="p-2">${c.whats}</td>
+                    <td class="p-2 text-center">
+                        ${currentRole === 'GESTOR' ? `<button onclick="removerClinica(${c.id})" class="text-red-600 font-bold">Excluir</button>` : `<span class="text-slate-400 italic">Somente leitura</span>`}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function removerClinica(id) {
+            clinicasCadastradas = clinicasCadastradas.filter(c => c.id !== id);
+            atualizarDropdownsClinicas();
+            renderClinicasTabela();
+        }
+
+        function vincularClienteClinica() {
+            alert("Vínculo exclusivo entre Cliente e Clínica criado com sucesso!");
+        }
+
+        // SOLICITADOR DE PEDIDOS
+        function addOrderItem() {
+            const trab = document.getElementById('ped_trab_cpf').value.trim();
+            const obj = document.getElementById('ped_objeto').value;
+            const qtd = document.getElementById('ped_qtd').value;
+            const valor = document.getElementById('ped_valor').value;
+
+            if (!trab) { alert("Informe o Funcionário e CPF."); return; }
+
+            orderItemsList.push({ trab, obj, qtd, valor });
+            renderOrderTable();
+            document.getElementById('ped_trab_cpf').value = '';
+        }
+
+        function renderOrderTable() {
+            const tbody = document.getElementById('pedidos-current-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (orderItemsList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-slate-400 italic">Nenhum item adicionado ao pedido.</td></tr>`;
+                return;
+            }
+
+            orderItemsList.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b";
+                tr.innerHTML = `
+                    <td class="p-2 font-bold">${item.trab}</td>
+                    <td class="p-2">${item.obj}</td>
+                    <td class="p-2 text-center font-bold">${item.qtd}</td>
+                    <td class="p-2 text-center col-valor-sigilo font-bold text-emerald-700">R$ ${item.valor}</td>
+                    <td class="p-2 text-center"><button onclick="removeOrderItem(${index})" class="text-red-600 font-bold">✕</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function removeOrderItem(index) {
+            orderItemsList.splice(index, 1);
+            renderOrderTable();
+        }
+
+        function dispatchOrder() {
+            if (orderItemsList.length === 0) { alert("Adicione itens ao pedido!"); return; }
+            const clinica = document.getElementById('ped_clinica_target').value;
+            
+            orderItemsList.forEach(item => {
+                monitorRequestsData.push({
+                    fecha: "28/10/2026",
+                    cliente: "PREFEITURA MUNICIPAL",
+                    trab: item.trab,
+                    obj: item.obj,
+                    qtd: item.qtd,
+                    valor: item.valor,
+                    clinica: clinica,
+                    status: "PENDENTE"
+                });
+            });
+
+            alert("Pedido disparado com sucesso!");
+            orderItemsList = [];
+            renderOrderTable();
+            renderMonitorTable();
+            renderProducaoTable();
+        }
+
+        function renderMonitorTable() {
+            const tbody = document.getElementById('monitor-requests-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            monitorRequestsData.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b";
+                tr.innerHTML = `
+                    <td class="p-2">${r.fecha}</td>
+                    <td class="p-2 font-bold">${r.cliente}</td>
+                    <td class="p-2">${r.trab}</td>
+                    <td class="p-2">${r.obj}</td>
+                    <td class="p-2 text-center font-bold">${r.qtd}</td>
+                    <td class="p-2 text-center col-valor-sigilo font-bold text-emerald-700">R$ ${r.valor}</td>
+                    <td class="p-2 font-bold">${r.clinica}</td>
+                    <td class="p-2 text-center"><span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">${r.status}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderProducaoTable() {
+            const tbody = document.getElementById('relatorio-producao-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            monitorRequestsData.filter(r => r.status === 'REALIZADO').forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b";
+                tr.innerHTML = `
+                    <td class="p-2.5">${r.fecha}</td>
+                    <td class="p-2.5 font-bold">${r.clinica}</td>
+                    <td class="p-2.5">${r.cliente}</td>
+                    <td class="p-2.5">${r.obj} - ${r.trab}</td>
+                    <td class="p-2.5 text-center font-bold">${r.qtd}</td>
+                    <td class="p-2.5 text-center col-valor-sigilo">R$ ${r.valor}</td>
+                    <td class="p-2.5 text-center col-valor-sigilo font-bold text-emerald-600">R$ ${r.valor}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // FILA DE ASO & CARGA EM MASSA
+        function processarCargaMassaExcel(evt) {
+            const file = evt.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(firstSheet);
+
+                rows.forEach(r => {
+                    asoQueueData.push({
+                        id: Date.now() + Math.random(),
+                        nome: r.NOME || r.FUNCIONARIO || "FUNCIONÁRIO EXCEL",
+                        cpf: r.CPF || "000.000.000-00",
+                        cliente: r.CLIENTE || "PREFEITURA MUNICIPAL",
+                        cargo: r.CARGO || "OPERACIONAL",
+                        tipo: r.EXAME || "ASO PERIÓDICO",
+                        status: "AGUARDANDO",
+                        anamnese: null,
+                        aso: null
+                    });
+                });
+
+                renderFilaAso();
+                alert("Carga em massa realizada com sucesso!");
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function abrirModalNovoAso() { document.getElementById('modal-novo-aso-avulso').classList.remove('hidden'); }
+        function fecharModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function salvarAsoAvulso() {
+            const nome = document.getElementById('avulso_nome').value.trim();
+            const cpf = document.getElementById('avulso_cpf').value.trim();
+            const cliente = document.getElementById('avulso_cliente').value;
+            const tipo = document.getElementById('avulso_tipo').value;
+
+            if (!nome || !cpf) { alert("Preencha Nome e CPF."); return; }
+
+            asoQueueData.push({
+                id: Date.now(),
+                nome,
+                cpf,
+                cliente,
+                cargo: "NÃO ESPECIFICADO",
+                tipo,
+                status: "AGUARDANDO",
+                anamnese: null,
+                aso: null
+            });
+
+            renderFilaAso();
+            fecharModal('modal-novo-aso-avulso');
+            document.getElementById('avulso_nome').value = '';
+            document.getElementById('avulso_cpf').value = '';
+        }
+
+        function renderFilaAso() {
+            const tbody = document.getElementById('aso-queue-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            asoQueueData.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="p-2.5 font-bold">${item.nome}<br><span class="text-slate-500 font-normal">${item.cpf}</span></td>
+                    <td class="p-2.5">${item.cliente}</td>
+                    <td class="p-2.5 font-bold">${item.cargo}</td>
+                    <td class="p-2.5 font-bold text-blue-900">${item.tipo}</td>
+                    <td class="p-2.5 text-center">
+                        <button onclick="abrirAnamneseModal(${item.id})" class="bg-indigo-700 hover:bg-indigo-800 text-white px-2.5 py-1 rounded font-bold text-[11px] flex items-center justify-center gap-1 mx-auto shadow">
+                            📋 ${item.anamnese ? 'Ficha Salva (Editar)' : 'Preencher Anamnese'}
+                        </button>
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <button onclick="abrirAsoModal(${item.id})" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1 rounded font-extrabold text-[11px] flex items-center justify-center gap-1 mx-auto shadow">
+                            🩺 Emitir ASO
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ANAMNESE DIGITAL & EMISSÃO DE ASO
+        function abrirAnamneseModal(id) {
+            selectedAsoId = id;
+            const item = asoQueueData.find(x => x.id === id);
+            if (!item) return;
+
+            document.getElementById('anam_nome_lbl').textContent = item.nome;
+            document.getElementById('anam_cpf_lbl').textContent = item.cpf;
+            document.getElementById('anam_cargo_lbl').textContent = item.cargo;
+
+            document.getElementById('modal-anamnese').classList.remove('hidden');
+        }
+
+        function salvarAnamnese() {
+            const item = asoQueueData.find(x => x.id === selectedAsoId);
+            if (item) {
+                item.anamnese = {
+                    acidOutro: document.getElementById('anam_acid_outro').value,
+                    acidSeq: document.getElementById('anam_acid_seq').value,
+                    obs: document.getElementById('anam_obs').value
+                };
+                alert("Ficha de Anamnese salva com sucesso e anexada ao funcionário!");
+                fecharModal('modal-anamnese');
+                renderFilaAso();
+            }
+        }
+
+        function abrirAsoModal(id) {
+            selectedAsoId = id;
+            const item = asoQueueData.find(x => x.id === id);
+            if (!item) return;
+
+            document.getElementById('aso_nome_lbl').textContent = item.nome;
+            document.getElementById('aso_cpf_lbl').textContent = item.cpf;
+            document.getElementById('aso_cli_lbl').textContent = item.cliente;
+            document.getElementById('aso_tipo_lbl').textContent = item.tipo;
+
+            document.getElementById('modal-aso').classList.remove('hidden');
+        }
+
+        function concluirEmissaoAso() {
+            const item = asoQueueData.find(x => x.id === selectedAsoId);
+            if (!item) return;
+
+            const res = document.getElementById('aso_resultado_select').value;
+            const medico = document.getElementById('aso_medico_nome').value;
+
+            // Move da Fila para o Banco Historico
+            asoHistoryData.push({
+                fecha: "28/10/2026",
+                nome: item.nome,
+                cpf: item.cpf,
+                cliente: item.cliente,
+                resultado: res,
+                medico: medico
+            });
+
+            asoQueueData = asoQueueData.filter(x => x.id !== selectedAsoId);
+
+            renderFilaAso();
+            renderHistoryTabela();
+            fecharModal('modal-aso');
+            alert("ASO emitido com sucesso e arquivado no Banco de ASOs!");
+        }
+
+        function renderHistoryTabela() {
+            const tbody = document.getElementById('aso-history-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            asoHistoryData.forEach(h => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b";
+                tr.innerHTML = `
+                    <td class="p-2.5">${h.fecha}</td>
+                    <td class="p-2.5 font-bold">${h.nome}<br><span class="text-slate-500 font-normal">${h.cpf}</span></td>
+                    <td class="p-2.5">${h.cliente}</td>
+                    <td class="p-2.5 font-black text-emerald-700">${h.resultado}</td>
+                    <td class="p-2.5 font-bold">${h.medico}</td>
+                    <td class="p-2.5 text-center"><span class="bg-indigo-100 text-indigo-900 px-2 py-0.5 rounded font-bold">📋 Ficha Digital Anexa</span></td>
+                    <td class="p-2.5 text-center"><button onclick="window.print()" class="bg-slate-900 text-white px-2 py-1 rounded font-bold">📄 PDF ASO</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // PCMSO MATRIZ
+        function filtrarRiscosCat(catId, agenteId) {
+            const cat = document.getElementById(catId).value;
+            const agenteSelect = document.getElementById(agenteId);
+            agenteSelect.innerHTML = '<option value="">-- Selecione o Agente/Risco --</option>';
+
+            if (cat && INVENTARIO_RISCOS_COMPLETO[cat]) {
+                INVENTARIO_RISCOS_COMPLETO[cat].forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.agente;
+                    opt.textContent = `${r.agente} (Risco: ${r.risco})`;
+                    opt.dataset.exame = r.exame;
+                    opt.dataset.periodicidade = r.periodicidade;
+                    agenteSelect.appendChild(opt);
+                });
+            }
+        }
+
+        function autoPreencherExamePcmso() {
+            const select = document.getElementById('pcmso_add_agente');
+            const opt = select.options[select.selectedIndex];
+            if (opt && opt.dataset.exame) {
+                document.getElementById('pcmso_add_exame').value = opt.dataset.exame;
+                document.getElementById('pcmso_add_periodicidade').value = opt.dataset.periodicidade;
+            }
+        }
+
+        function adicionarLinhaPCMSO() {
+            if (currentRole !== 'GESTOR') { alert("Somente o GESTOR inclui linhas no PCMSO!"); return; }
+            const lotacao = document.getElementById('pcmso_add_lotacao').value.trim();
+            const processo = document.getElementById('pcmso_add_processo').value.trim();
+            const cargo = document.getElementById('pcmso_add_cargo').value.trim();
+            const qtd = document.getElementById('pcmso_add_qtd').value;
+            const agente = document.getElementById('pcmso_add_agente').value;
+            const exame = document.getElementById('pcmso_add_exame').value.trim();
+            const periodicidade = document.getElementById('pcmso_add_periodicidade').value;
+
+            if (!lotacao || !cargo || !exame) { alert("Preencha Lotação, Cargo e Exame."); return; }
+
+            pcmsoMatrizData.push({ id: Date.now(), lotacao, processo, cargo, qtd, agente, exame, periodicidade, cliente: "PREFEITURA MUNICIPAL" });
+            renderPcmsoMatriz();
+
+            document.getElementById('pcmso_add_lotacao').value = '';
+            document.getElementById('pcmso_add_cargo').value = '';
+            document.getElementById('pcmso_add_exame').value = '';
+        }
+
+        function renderPcmsoMatriz() {
+            const tbody = document.getElementById('pcmso-matriz-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            pcmsoMatrizData.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-slate-50";
+
+                if (currentRole === 'MEDICO') {
+                    tr.innerHTML = `
+                        <td class="p-2 font-bold">${item.lotacao}</td>
+                        <td class="p-2">${item.processo}</td>
+                        <td class="p-2 font-bold">${item.cargo}</td>
+                        <td class="p-2 text-center font-bold">${item.qtd}</td>
+                        <td class="p-2">${item.agente || 'AUSÊNCIA DE RISCO'}</td>
+                        <td class="p-2"><input type="text" id="edit_ex_${item.id}" value="${item.exame}" class="w-full border p-1 rounded font-bold bg-amber-50"></td>
+                        <td class="p-2 text-center">
+                            <select id="edit_per_${item.id}" class="border p-1 rounded font-bold bg-amber-50">
+                                <option value="Anual" ${item.periodicidade === 'Anual' ? 'selected' : ''}>Anual</option>
+                                <option value="Bienal (24 meses)" ${item.periodicidade.includes('Bienal') ? 'selected' : ''}>Bienal</option>
+                                <option value="Semestral" ${item.periodicidade === 'Semestral' ? 'selected' : ''}>Semestral</option>
+                            </select>
+                        </td>
+                        <td class="p-2 text-center">
+                            <button onclick="salvarMedicoPcmso(${item.id})" class="bg-emerald-600 text-white font-bold px-2 py-1 rounded text-[10px]">💾 Salvar</button>
+                        </td>
+                    `;
+                } else {
+                    tr.innerHTML = `
+                        <td class="p-2 font-bold">${item.lotacao}</td>
+                        <td class="p-2">${item.processo}</td>
+                        <td class="p-2 font-bold">${item.cargo}</td>
+                        <td class="p-2 text-center font-bold">${item.qtd}</td>
+                        <td class="p-2">${item.agente || 'AUSÊNCIA DE RISCO'}</td>
+                        <td class="p-2 font-bold text-blue-900">${item.exame}</td>
+                        <td class="p-2 text-center font-bold">${item.periodicidade}</td>
+                        <td class="p-2 text-center">
+                            ${currentRole === 'GESTOR' ? `<button onclick="removerPcmso(${item.id})" class="text-red-600 font-bold">Excluir</button>` : `<span class="text-slate-400 italic">Somente leitura</span>`}
+                        </td>
+                    `;
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        function salvarMedicoPcmso(id) {
+            const item = pcmsoMatrizData.find(x => x.id === id);
+            if (item) {
+                item.exame = document.getElementById(`edit_ex_${id}`).value;
+                item.periodicidade = document.getElementById(`edit_per_${id}`).value;
+                alert("Exame e Periodicidade atualizados pelo Médico com sucesso!");
+                renderPcmsoMatriz();
+            }
+        }
+
+        function removerPcmso(id) {
+            pcmsoMatrizData = pcmsoMatrizData.filter(x => x.id !== id);
+            renderPcmsoMatriz();
+        }
+
+        // HOMOLOGAÇÃO DE ATESTADOS
+        function abrirModalHomologacao() { document.getElementById('modal-homologacao-form').classList.remove('hidden'); }
+
+        function salvarHomologacaoAtestado() {
+            const trab = document.getElementById('hom_trab').value.trim();
+            const dias = document.getElementById('hom_dias').value;
+            const cid = document.getElementById('hom_cid').value.trim();
+            const medico = document.getElementById('hom_medico').value.trim();
+
+            if (!trab || !cid) { alert("Preencha o Funcionário e o CID-10."); return; }
+
+            atestadosHomologacaoData.push({
+                id: Date.now(),
+                cliente: "PREFEITURA MUNICIPAL",
+                trab,
+                data: "28/10/2026",
+                dias,
+                cid,
+                medico,
+                status: "HOMOLOGADO"
+            });
+
+            renderHomologacaoTabela();
+            fecharModal('modal-homologacao-form');
+            alert("Atestado registrado e homologado!");
+        }
+
+        function renderHomologacaoTabela() {
+            const tbody = document.getElementById('atestados-homologacao-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            atestadosHomologacaoData.forEach(a => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b";
+                tr.innerHTML = `
+                    <td class="p-2 font-bold">${a.cliente}</td>
+                    <td class="p-2">${a.trab}</td>
+                    <td class="p-2">${a.data}</td>
+                    <td class="p-2 text-center font-bold">${a.dias} dias</td>
+                    <td class="p-2 text-center font-bold text-purple-900">${a.cid}</td>
+                    <td class="p-2">${a.medico}</td>
+                    <td class="p-2 text-center"><span class="bg-purple-100 text-purple-900 px-2 py-0.5 rounded font-bold">${a.status}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // eSOCIAL & CHAT
+        function gerarLoteESocial() {
+            const container = document.getElementById('esocial-preview-container');
+            container.textContent = JSON.stringify({
+                evtMonit: {
+                    ideEvento: { tpAmb: 1, procEmi: 1, verProc: "1.0.0" },
+                    ideEmpregador: { tpInsc: 1, nrInsc: "00000000000191" },
+                    vinculo: { cpfTrab: "12345678900", nisTrab: "12345678900" },
+                    aso: { dtAso: "2026-10-28", resAso: 1, med: { nmMed: "DR. ROBERTO ALVES", nrCRM: "184920" } }
+                }
+            }, null, 2);
+        }
+
+        function enviarMensagemChat() {
+            const input = document.getElementById('chat-msg-input');
+            const txt = input.value.trim();
+            if (!txt) return;
+
+            const box = document.getElementById('chat-messages-box');
+            const div = document.createElement('div');
+            div.className = "bg-teal-50 p-2 rounded border max-w-md shadow-sm ml-auto text-right";
+            div.innerHTML = `<strong class="text-teal-900 block">${currentRole}:</strong> ${txt}`;
+            box.appendChild(div);
+            input.value = '';
+            box.scrollTop = box.scrollHeight;
+        }
+    </script>
+</body>
+</html>

@@ -10,7 +10,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- SheetJS CDN para importação Excel em massa -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    <!-- html2pdf.js CDN para geração de PDFs -->
+    <!-- html2pdf.js CDN para geração física de PDFs dos ASOs e Anamnese -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
@@ -65,7 +65,7 @@
             </div>
         </div>
 
-        <!-- SUB-MENU DE NAVEGAÇÃO -->
+        <!-- SUB-MENU DE NAVEGAÇÃO DA APLICAÇÃO -->
         <nav class="bg-slate-950/80 border-t border-blue-900/60 px-4 py-1.5 overflow-x-auto">
             <div class="max-w-7xl mx-auto flex items-center space-x-2 text-xs font-bold whitespace-nowrap">
                 <button type="button" onclick="switchTab('pedidos')" class="nav-tab-btn text-white bg-blue-800 px-3 py-1 rounded flex items-center gap-1">
@@ -210,14 +210,14 @@
             </div>
         </section>
 
-        <!-- ABA 2: FILA DE ATENDIMENTO ASO -->
+        <!-- ABA 2: FILA DE ATENDIMENTO ASO & CARGA EM MASSA -->
         <section id="tab-atendimento" class="tab-content hidden space-y-4">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-wrap justify-between items-center gap-3">
                 <div>
                     <h2 class="font-extrabold text-slate-900 text-sm md:text-base uppercase flex items-center gap-2">
                         <i data-lucide="user-check" class="w-5 h-5 text-blue-700"></i> Fila de Atendimento Ocupacional & Emissão de ASO
                     </h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Carga em massa de funcionários via XLSX ou inserção avulsa. Clique nos arquivos digitais para preenchimento.</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Carga em massa de funcionários via XLSX ou inserção avulsa. Clique nos arquivos digitais para preenchimento e assinatura.</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <label class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-1.5 rounded cursor-pointer flex items-center shadow">
@@ -239,8 +239,8 @@
                                 <th class="p-2.5">Cliente / Unidade</th>
                                 <th class="p-2.5">Cargo / Lotação</th>
                                 <th class="p-2.5">Tipo de Exame ASO</th>
-                                <th class="p-2.5 text-center">Ficha de Anamnese Digital</th>
-                                <th class="p-2.5 text-center">Emissão de ASO & Parecer</th>
+                                <th class="p-2.5 text-center">Ficha de Anamnese Digital Anexa</th>
+                                <th class="p-2.5 text-center">Emissão de ASO & Parecer Médico</th>
                             </tr>
                         </thead>
                         <tbody id="aso-queue-tbody" class="divide-y divide-slate-200">
@@ -251,13 +251,13 @@
             </div>
         </section>
 
-        <!-- ABA 3: BANCO DE ASOs CONCLUÍDOS -->
+        <!-- ABA 3: BANCO DE ASOs CONCLUÍDOS & AUDITORIA PERMANENTE -->
         <section id="tab-historico" class="tab-content hidden space-y-4">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
                 <h2 class="font-extrabold text-slate-900 text-sm md:text-base uppercase flex items-center gap-2">
                     <i data-lucide="archive" class="w-5 h-5 text-indigo-700"></i> Banco de ASOs Concluídos & Fichas Digitais Anexadas
                 </h2>
-                <p class="text-xs text-slate-500 mt-1">Acervo permanente de ASOs emitidos e Fichas de Anamnese devidamente assinadas.</p>
+                <p class="text-xs text-slate-500 mt-1">Acervo permanente de auditoria dos ASOs emitidos e Fichas de Anamnese devidamente assinadas.</p>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -270,12 +270,12 @@
                                 <th class="p-2.5">Cliente</th>
                                 <th class="p-2.5">Resultado</th>
                                 <th class="p-2.5">Médico Examinador</th>
-                                <th class="p-2.5 text-center">Ficha Anamnese</th>
+                                <th class="p-2.5 text-center">Anamnese Digital</th>
                                 <th class="p-2.5 text-center">Arquivo Digital (PDF ASO)</th>
                             </tr>
                         </thead>
                         <tbody id="aso-history-tbody" class="divide-y divide-slate-200">
-                            <!-- Inserido dinamicamente via JS -->
+                            <!-- Preenchido via JS -->
                         </tbody>
                     </table>
                 </div>
@@ -298,15 +298,15 @@
             <pre id="esocial-preview-container" class="bg-slate-900 text-emerald-400 font-mono p-4 rounded-xl text-xs overflow-x-auto max-h-96">// Clique no botão acima para compilar o lote oficial do eSocial...</pre>
         </section>
 
-        <!-- ABA 5: MÓDULO HOMOLOGAÇÃO DE ATESTADOS OCUPACIONAIS -->
+        <!-- ABA 5: MÓDULO HOMOLOGAÇÃO DE ATESTADOS OCUPACIONAIS COMPLETO -->
         <section id="tab-homologacao" class="tab-content hidden space-y-4">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
                 <div class="flex justify-between items-center border-b pb-3">
                     <div>
                         <h2 class="font-extrabold text-slate-900 text-sm md:text-base uppercase flex items-center gap-2">
-                            <i data-lucide="file-check" class="w-5 h-5 text-purple-700"></i> Homologação de Atestados Médicos Externos
+                            <i data-lucide="file-check" class="w-5 h-5 text-purple-700"></i> Homologação de Atestados Médicos Externos & Perícias
                         </h2>
-                        <p class="text-xs text-slate-500">Avaliação do Médico do Trabalho sobre atestados de médicos assistentes externos.</p>
+                        <p class="text-xs text-slate-500">Avaliação do Médico do Trabalho sobre atestados de médicos assistentes externos para gestão do absenteísmo.</p>
                     </div>
                     <button type="button" onclick="abrirModalHomologacao()" class="bg-purple-800 hover:bg-purple-900 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center shadow">
                         ➕ Novo Atestado para Homologação
@@ -319,11 +319,13 @@
                             <tr class="bg-slate-800 text-white font-bold uppercase">
                                 <th class="p-2">Empresa Cliente</th>
                                 <th class="p-2">Trabalhador & CPF</th>
+                                <th class="p-2">Lotação / Setor</th>
                                 <th class="p-2">Data Atestado</th>
                                 <th class="p-2 text-center">Dias Afast.</th>
                                 <th class="p-2 text-center">CID-10</th>
                                 <th class="p-2">Médico Emissor</th>
-                                <th class="p-2 text-center">Status Parecer</th>
+                                <th class="p-2 text-center">Status Homologação</th>
+                                <th class="p-2">Observações / Parecer Ocupacional</th>
                             </tr>
                         </thead>
                         <tbody id="atestados-homologacao-tbody" class="divide-y divide-slate-200">
@@ -516,7 +518,7 @@
         <!-- ABA 10: CADASTROS DE CLIENTES, PCMSO, CLÍNICAS & GESTOR BOREAL -->
         <section id="tab-cadastros" class="tab-content hidden space-y-6">
             
-            <!-- DADOS DO GESTOR BOREAL (VISÍVEL A TODOS, EDITÁVEL APENAS PELO GESTOR) -->
+            <!-- DADOS DO GESTOR BOREAL -->
             <div class="bg-slate-900 text-white p-4 rounded-xl space-y-2 shadow">
                 <h3 class="font-extrabold text-amber-400 text-xs uppercase flex items-center gap-1.5">
                     <i data-lucide="shield-check" class="w-4 h-4"></i> Dados Principais do Gestor Master Boreal Engmed
@@ -558,7 +560,7 @@
             <!-- TABELA DE CLÍNICAS CREDENCIADAS & CADASTRO -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
                 <h2 class="font-extrabold text-slate-900 text-sm uppercase flex items-center gap-1.5 border-b pb-2">
-                    <i data-lucide="hospital" class="w-4 h-4 text-emerald-700"></i> Cadastro & Cadastro de Clínicas Credenciadas
+                    <i data-lucide="hospital" class="w-4 h-4 text-emerald-700"></i> Cadastro & Gestão de Clínicas Credenciadas
                 </h2>
 
                 <div id="box-form-clinica" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs bg-slate-50 p-3 rounded border">
@@ -615,79 +617,162 @@
 
     </main>
 
-    <!-- MODAL 1: FICHA DIGITAL DE ANAMNESE OCUPACIONAL -->
+    <!-- MODAL 1: FICHA DIGITAL DE ANAMNESE OCUPACIONAL EXPANSA (FIEL AO ANAMNESE.DOCX) -->
     <div id="modal-anamnese" class="fixed inset-0 modal-bg z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl border p-5 space-y-4 max-h-[90vh] overflow-y-auto text-xs">
+        <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl border p-5 space-y-4 max-h-[90vh] overflow-y-auto text-xs">
             <div class="flex justify-between items-center border-b pb-2">
                 <h3 class="font-extrabold text-sm text-slate-900 uppercase flex items-center gap-2">
-                    📋 FICHA DE ANAMNESE OCUPACIONAL — BOREAL ENGMED
+                    📋 FICHA DE ANAMNESE OCUPACIONAL COMPLETA — BOREAL ENGMED
                 </h3>
                 <button type="button" onclick="fecharModal('modal-anamnese')" class="text-slate-500 font-bold text-base hover:text-slate-800">✕</button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 bg-slate-50 p-3 rounded font-bold">
-                <div><strong>Funcionário:</strong> <span id="anam_nome_lbl">-</span></div>
-                <div><strong>CPF:</strong> <span id="anam_cpf_lbl">-</span></div>
-                <div><strong>Cargo:</strong> <span id="anam_cargo_lbl">-</span></div>
+            <!-- DADOS CADASTRAIS DO FUNCIONÁRIO -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 bg-slate-100 p-3 rounded font-bold text-[11px]">
+                <div><strong>Funcionário:</strong> <span id="anam_nome_lbl" class="text-blue-900">-</span></div>
+                <div><strong>CPF:</strong> <span id="anam_cpf_lbl" class="text-blue-900">-</span></div>
+                <div><strong>Cargo:</strong> <span id="anam_cargo_lbl" class="text-blue-900">-</span></div>
+                <div><strong>Tipo Sanguíneo:</strong> <input type="text" id="anam_sangue" value="O+" class="w-12 border rounded px-1 text-center bg-white"></div>
+                <div><strong>Unidade / Setor:</strong> <span id="anam_setor_lbl">GERAL</span></div>
+                <div><strong>E-mail:</strong> <input type="text" id="anam_email" placeholder="EMAIL..." class="border rounded px-1 bg-white"></div>
+                <div class="md:col-span-2"><strong>Telefone:</strong> <input type="text" id="anam_tel" placeholder="(00) 00000-0000" class="border rounded px-1 bg-white"></div>
             </div>
 
-            <div class="space-y-3">
-                <h4 class="font-extrabold text-blue-900 uppercase border-b pb-1">1. Antecedentes Ocupacionais</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-bold">Já sofreu Acidente de Trabalho em outra empresa?</label>
-                        <select id="anam_acid_outro" class="w-full border rounded p-1 bg-white"><option value="NÃO">NÃO</option><option value="SIM">SIM</option></select>
-                    </div>
-                    <div>
-                        <label class="block font-bold">Houve sequelas ou limitações?</label>
-                        <input type="text" id="anam_acid_seq" placeholder="DESCREVA SE HOUVE SEQUELAS..." class="w-full border rounded p-1 bg-white">
+            <div class="space-y-4">
+                <!-- 1. ANTECEDENTES OCUPACIONAIS -->
+                <div class="border rounded-lg p-3 bg-slate-50 space-y-2">
+                    <h4 class="font-extrabold text-blue-900 uppercase border-b pb-1 flex items-center gap-1">
+                        1. ANTECEDENTES OCUPACIONAIS
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold mb-1">Já sofreu algum Acidente de Trabalho em outra empresa?</label>
+                            <div class="flex gap-4">
+                                <label><input type="radio" name="anam_acid_outro" value="NAO" checked> NÃO</label>
+                                <label><input type="radio" name="anam_acid_outro" value="SIM"> SIM</label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">Houve sequelas ou limitações funcionais?</label>
+                            <input type="text" id="anam_acid_seq" placeholder="DESCREVA AS SEQUELAS OU LIMITAÇÕES..." class="w-full border rounded p-1 bg-white">
+                        </div>
                     </div>
                 </div>
 
-                <h4 class="font-extrabold text-blue-900 uppercase border-b pb-1">2. Antecedentes Familiares & Pessoais</h4>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="chk_diab"> Diabetes</label>
-                    <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="chk_has"> Hipertensão</label>
-                    <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="chk_asma"> Asma / Respiratória</label>
-                    <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="chk_cardio"> Doença Cardíaca</label>
+                <!-- 2. ANTECEDENTES FAMILIARES -->
+                <div class="border rounded-lg p-3 bg-slate-50 space-y-2">
+                    <h4 class="font-extrabold text-blue-900 uppercase border-b pb-1">
+                        2. ANTECEDENTES FAMILIARES (PAIS, IRMÃOS, TIOS E AVÓS)
+                    </h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_tb"> Tuberculose</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_diab"> Diabetes</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_cancer"> Câncer</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_asma"> Asma</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_surdez"> Surdez</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_mental"> Doença Mental</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_cardio"> Doença do Coração</label>
+                    </div>
                 </div>
 
-                <h4 class="font-extrabold text-blue-900 uppercase border-b pb-1">3. Observações Médicas Complementares</h4>
-                <textarea id="anam_obs" rows="3" placeholder="OBSERVAÇÕES DO MÉDICO OU DECLARAÇÕES DO TRABALHADOR..." class="w-full border rounded p-2 bg-slate-50"></textarea>
+                <!-- 3. ANTECEDENTES PESSOAIS & PATOLOGIAS -->
+                <div class="border rounded-lg p-3 bg-slate-50 space-y-2">
+                    <h4 class="font-extrabold text-blue-900 uppercase border-b pb-1">
+                        3. ANTECEDENTES PESSOAIS & CONDIÇÕES DE SAÚDE
+                    </h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-[11px]">
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_has"> Cardíaca / Hipertensão</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_pcd"> Portador Nec. Especiais (PCD)</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_dor_peito"> Dor no Peito / Palpitações</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_fratura"> Fraturas c/ Sequelas</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_renal"> Doenças Renais</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_onco"> Histórico Oncológico</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_diab"> Diabetes Mellitus</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_resf"> Resfriados Repetitivos</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_figado"> Fígado (Hepatite/Cirrose)</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_conv"> Já teve Convulsão / Epil.</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_estomago"> Estômago (Úlcera/Gastrite)</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_med_control"> Usa Medicamento Controlado</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_alergia"> Alérgico a Medicamentos</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_fobia"> Fobias (Altura/Espaço Confinado)</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_ocular"> Doenças Oculares / Visão</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_coluna"> Dores na Coluna / Hérnia</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_audicao"> Restrições Auditivas</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="pess_natacao"> Habilidade de Natação</label>
+                    </div>
+                </div>
 
-                <div class="bg-amber-50 border border-amber-200 p-2.5 rounded text-[11px] text-amber-950 italic">
-                    "As declarações prestadas acima são expressão da verdade, não cabendo à Boreal Engmed responsabilidade por omissões."
+                <!-- 4. HABITOS & COMPLEMENTARES -->
+                <div class="border rounded-lg p-3 bg-slate-50 space-y-2">
+                    <h4 class="font-extrabold text-blue-900 uppercase border-b pb-1">
+                        4. HÁBITOS DE VIDA & CONDIÇÕES COMPLEMENTARES
+                    </h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="hab_estresse"> Considera-se Estressado</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="hab_esporte"> Pratica Esportes / Exercícios</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="hab_insonia"> Insônia / Distúrbios Sono</label>
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="hab_gestante"> Gestante / Lactante</label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="font-bold block mb-1">Observações Médicas Complementares & Detalhamentos:</label>
+                    <textarea id="anam_obs" rows="3" placeholder="DESCREVA MAIORES DETALHES DAS CONDIÇÕES ASSINALADAS..." class="w-full border rounded p-2 bg-slate-50 font-semibold"></textarea>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-300 p-2.5 rounded text-[11px] text-amber-950 italic">
+                    "As declarações acima são expressão da verdade, não cabendo à Boreal Engmed Nenhuma responsabilidade por fatos omitidos ou falsos."
                 </div>
             </div>
 
             <div class="flex justify-end gap-2 border-t pt-3">
                 <button type="button" onclick="fecharModal('modal-anamnese')" class="bg-slate-300 text-slate-800 font-bold px-4 py-1.5 rounded uppercase">Cancelar</button>
-                <button type="button" onclick="salvarAnamnese()" class="bg-blue-800 text-white font-bold px-4 py-1.5 rounded uppercase shadow">💾 Salvar Ficha de Anamnese</button>
+                <button type="button" onclick="salvarAnamnese()" class="bg-blue-800 text-white font-bold px-4 py-1.5 rounded uppercase shadow">
+                    💾 Salvar Ficha de Anamnese Digital
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL 2: EMISSÃO DE ASO & ASSINATURA DIGITAL -->
+    <!-- MODAL 2: EMISSÃO DE ASO COMPLETO MODELO NR-07 -->
     <div id="modal-aso" class="fixed inset-0 modal-bg z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl border p-5 space-y-4 max-h-[90vh] overflow-y-auto text-xs">
+        <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl border p-5 space-y-4 max-h-[90vh] overflow-y-auto text-xs">
             <div class="flex justify-between items-center border-b pb-2">
                 <h3 class="font-extrabold text-sm text-slate-900 uppercase flex items-center gap-2">
-                    🩺 ATESTADO DE SAÚDE OCUPACIONAL (ASO) — EMISSÃO
+                    🩺 ATESTADO DE SAÚDE OCUPACIONAL (ASO MODELO NR-07)
                 </h3>
                 <button type="button" onclick="fecharModal('modal-aso')" class="text-slate-500 font-bold text-base hover:text-slate-800">✕</button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 bg-slate-50 p-3 rounded font-bold">
-                <div><strong>Trabalhador:</strong> <span id="aso_nome_lbl">-</span></div>
-                <div><strong>CPF:</strong> <span id="aso_cpf_lbl">-</span></div>
-                <div><strong>Empresa Cliente:</strong> <span id="aso_cli_lbl">-</span></div>
-                <div><strong>Tipo ASO:</strong> <span id="aso_tipo_lbl">-</span></div>
+            <!-- CABEÇALHO DO ASO -->
+            <div class="border p-3 rounded bg-slate-50 grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div><strong>Empresa Cliente:</strong> <span id="aso_cli_lbl" class="font-extrabold text-blue-900">-</span></div>
+                <div><strong>Tipo de Exame:</strong> <span id="aso_tipo_lbl" class="font-extrabold text-blue-900">-</span></div>
+                <div><strong>Nome do Trabalhador:</strong> <span id="aso_nome_lbl" class="font-bold">-</span></div>
+                <div><strong>CPF:</strong> <span id="aso_cpf_lbl" class="font-bold">-</span></div>
             </div>
 
+            <!-- RISCOS MAPEADOS E EXAMES -->
             <div class="space-y-3">
+                <div class="border p-3 rounded bg-amber-50/50 border-amber-200">
+                    <span class="font-extrabold text-amber-950 uppercase block mb-1">Riscos Ocupacionais Identificados na Função (PGR/PCMSO):</span>
+                    <p class="text-[11px] text-amber-900 font-semibold" id="aso_riscos_lista">
+                        - FISICOS: RUÍDO CONTÍNUO / INTERMITENTE<br>
+                        - ERGONÔMICOS: POSTURA SENTADA POR LONGOS PERÍODOS
+                    </p>
+                </div>
+
+                <div class="border p-3 rounded bg-slate-50">
+                    <span class="font-extrabold text-slate-900 uppercase block mb-1">Exames Complementares Realizados:</span>
+                    <p class="text-[11px] text-slate-800 font-semibold">
+                        - EXAME CLÍNICO OCUPACIONAL (28/10/2026)<br>
+                        - AUDIOMETRIA TONAL OCUPACIONAL (28/10/2026)
+                    </p>
+                </div>
+
                 <div>
-                    <label class="block font-bold text-slate-800 mb-1">Parecer Médico Ocupacional *</label>
-                    <select id="aso_resultado_select" class="w-full border p-2 rounded font-extrabold text-sm text-slate-900 bg-amber-50 border-amber-300">
+                    <label class="block font-bold text-slate-900 mb-1">Parecer Médico Ocupacional *</label>
+                    <select id="aso_resultado_select" class="w-full border p-2.5 rounded font-black text-sm text-slate-900 bg-amber-100 border-amber-400">
                         <option value="APTO">✅ APTO PARA A FUNÇÃO</option>
                         <option value="APTO COM RESTRIÇÃO">⚠️ APTO COM RESTRIÇÃO</option>
                         <option value="INAPTO">❌ INAPTO PARA A FUNÇÃO</option>
@@ -695,23 +780,25 @@
                 </div>
 
                 <div>
-                    <label class="block font-bold text-slate-800 mb-1">Restrições / Observações do Médico:</label>
-                    <textarea id="aso_obs_input" rows="2" placeholder="DIGITE AS RESTRIÇÕES SE HOUVER..." class="w-full border rounded p-1.5 bg-white"></textarea>
+                    <label class="block font-bold text-slate-800 mb-1">Restrições / Observações do Médico Examinador:</label>
+                    <textarea id="aso_obs_input" rows="2" placeholder="DESCREVA AS RESTRIÇÕES SE HOUVER..." class="w-full border rounded p-1.5 bg-white font-semibold"></textarea>
                 </div>
 
+                <!-- ASSINATURA DIGITAL DO MÉDICO -->
                 <div class="border p-3 rounded bg-slate-50 space-y-2">
-                    <span class="font-bold text-slate-900 uppercase block">Médico Examinador / Assinatura Digital:</span>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <span class="font-extrabold text-slate-900 uppercase block">Médico Examinador Responsável:</span>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <input type="text" id="aso_medico_nome" value="DR. ROBERTO ALVES" placeholder="NOME DO MÉDICO" class="border p-1.5 rounded bg-white font-bold">
                         <input type="text" id="aso_medico_crm" value="CRM SP 184920" placeholder="CRM / UF" class="border p-1.5 rounded bg-white font-bold">
+                        <input type="text" id="aso_medico_rqe" value="RQE 4592" placeholder="RQE ESPECIALIDADE" class="border p-1.5 rounded bg-white font-bold">
                     </div>
                 </div>
             </div>
 
             <div class="flex justify-end gap-2 border-t pt-3">
                 <button type="button" onclick="fecharModal('modal-aso')" class="bg-slate-300 text-slate-800 font-bold px-4 py-1.5 rounded uppercase">Cancelar</button>
-                <button type="button" onclick="concluirEmissaoAso()" class="bg-emerald-700 text-white font-extrabold px-4 py-1.5 rounded uppercase shadow">
-                    💾 Concluir ASO & Enviar para o Banco
+                <button type="button" onclick="concluirEmissaoAso()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold px-4 py-1.5 rounded uppercase shadow">
+                    💾 Concluir Emissão & Anexar no Acervo
                 </button>
             </div>
         </div>
@@ -757,17 +844,21 @@
         </div>
     </div>
 
-    <!-- MODAL 4: HOMOLOGAÇÃO DE ATESTADO EXTERNO -->
+    <!-- MODAL 4: HOMOLOGAÇÃO DE ATESTADO EXTERNO COMPLETO -->
     <div id="modal-homologacao-form" class="fixed inset-0 modal-bg z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl border p-5 space-y-3 text-xs">
             <div class="flex justify-between items-center border-b pb-2">
-                <h3 class="font-extrabold text-sm text-slate-900 uppercase">📄 Cadastrar Atestado para Homologação</h3>
+                <h3 class="font-extrabold text-sm text-slate-900 uppercase">📄 Cadastrar Atestado para Homologação Ocupacional</h3>
                 <button type="button" onclick="fecharModal('modal-homologacao-form')" class="text-slate-500 font-bold">✕</button>
             </div>
             <div class="space-y-2">
                 <div>
                     <label class="font-bold block mb-0.5">Nome do Trabalhador & CPF *</label>
                     <input type="text" id="hom_trab" placeholder="EX: CARLOS SILVA - 111.222.333-44" class="w-full border p-1.5 rounded font-bold">
+                </div>
+                <div>
+                    <label class="font-bold block mb-0.5">Lotação / Setor *</label>
+                    <input type="text" id="hom_setor" value="MANUTENÇÃO / OPERACIONAL" class="w-full border p-1.5 rounded font-bold">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
@@ -780,8 +871,12 @@
                     </div>
                 </div>
                 <div>
-                    <label class="font-bold block mb-0.5">Médico Emissor do Atestado *</label>
+                    <label class="font-bold block mb-0.5">Médico Emissor do Atestado Externo *</label>
                     <input type="text" id="hom_medico" placeholder="DR. CARLOS LIMA - CRM 12345" class="w-full border p-1.5 rounded">
+                </div>
+                <div>
+                    <label class="font-bold block mb-0.5">Parecer / Observação do Médico Ocupacional *</label>
+                    <textarea id="hom_parecer" rows="2" placeholder="DESCREVA O PARECER SOBRE A HOMOLOGAÇÃO..." class="w-full border p-1.5 rounded bg-slate-50"></textarea>
                 </div>
             </div>
             <div class="flex justify-end gap-2 border-t pt-3">
@@ -859,7 +954,7 @@
         ];
 
         let atestadosHomologacaoData = [
-            { id: 1, cliente: "PREFEITURA MUNICIPAL", trab: "CARLOS FERREIRA - 111.222.333-44", data: "28/10/2026", dias: 3, cid: "M54.5", medico: "DR. ALBERTO GOMES", status: "HOMOLOGADO" }
+            { id: 1, cliente: "PREFEITURA MUNICIPAL", trab: "CARLOS FERREIRA - 111.222.333-44", setor: "MANUTENÇÃO", data: "28/10/2026", dias: 3, cid: "M54.5", medico: "DR. ALBERTO GOMES", status: "HOMOLOGADO", parecer: "ATESTADO COMPATÍVEL COM O QUADRO CLÍNICO" }
         ];
 
         let monitorRequestsData = [
@@ -1191,11 +1286,10 @@
             const item = asoQueueData.find(x => x.id === selectedAsoId);
             if (item) {
                 item.anamnese = {
-                    acidOutro: document.getElementById('anam_acid_outro').value,
                     acidSeq: document.getElementById('anam_acid_seq').value,
                     obs: document.getElementById('anam_obs').value
                 };
-                alert("Ficha de Anamnese salva com sucesso e anexada ao funcionário!");
+                alert("Ficha de Anamnese Ocupacional salva com sucesso e anexada!");
                 fecharModal('modal-anamnese');
                 renderFilaAso();
             }
@@ -1373,9 +1467,11 @@
 
         function salvarHomologacaoAtestado() {
             const trab = document.getElementById('hom_trab').value.trim();
+            const setor = document.getElementById('hom_setor').value.trim();
             const dias = document.getElementById('hom_dias').value;
             const cid = document.getElementById('hom_cid').value.trim();
             const medico = document.getElementById('hom_medico').value.trim();
+            const parecer = document.getElementById('hom_parecer').value.trim();
 
             if (!trab || !cid) { alert("Preencha o Funcionário e o CID-10."); return; }
 
@@ -1383,11 +1479,13 @@
                 id: Date.now(),
                 cliente: "PREFEITURA MUNICIPAL",
                 trab,
+                setor,
                 data: "28/10/2026",
                 dias,
                 cid,
                 medico,
-                status: "HOMOLOGADO"
+                status: "HOMOLOGADO",
+                parecer
             });
 
             renderHomologacaoTabela();
@@ -1405,11 +1503,13 @@
                 tr.innerHTML = `
                     <td class="p-2 font-bold">${a.cliente}</td>
                     <td class="p-2">${a.trab}</td>
+                    <td class="p-2 font-bold">${a.setor || 'GERAL'}</td>
                     <td class="p-2">${a.data}</td>
                     <td class="p-2 text-center font-bold">${a.dias} dias</td>
                     <td class="p-2 text-center font-bold text-purple-900">${a.cid}</td>
                     <td class="p-2">${a.medico}</td>
                     <td class="p-2 text-center"><span class="bg-purple-100 text-purple-900 px-2 py-0.5 rounded font-bold">${a.status}</span></td>
+                    <td class="p-2 font-semibold text-slate-700">${a.parecer || '-'}</td>
                 `;
                 tbody.appendChild(tr);
             });

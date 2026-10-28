@@ -20,7 +20,6 @@
         body.hide-prices .col-valor-sigilo, body.hide-prices .box-valor-sigilo { display: none !important; }
         .modal-bg { background-color: rgba(15, 23, 42, 0.85); }
         .aso-boreal-paper { background: #ffffff; color: #000000; font-family: Arial, sans-serif; border: 2px solid #000; padding: 12px; font-size: 11px; }
-        .aso-table, .aso-table td, .aso-table th { border: 1px solid #000; border-collapse: collapse; padding: 3px 5px; }
     </style>
 </head>
 <body class="text-slate-800 pb-20">
@@ -65,7 +64,7 @@
             </div>
         </div>
 
-        <!-- SUB-MENU DE NAVEGAÇÃO -->
+        <!-- SUB-MENU DE NAVEGAÇÃO DESCONGELADO -->
         <nav class="bg-slate-950/80 border-t border-blue-900/60 px-4 py-1.5 overflow-x-auto">
             <div class="max-w-7xl mx-auto flex items-center space-x-2 text-xs font-bold whitespace-nowrap">
                 <button type="button" onclick="switchTab('pedidos')" class="nav-tab-btn text-white bg-blue-800 px-3 py-1 rounded flex items-center gap-1">
@@ -175,7 +174,7 @@
                             <!-- Preenchido via JS -->
                         </select>
                         <button type="button" onclick="dispatchOrder()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-4 py-2 rounded flex items-center shadow">
-                            📲 Disparar Pedido Completo (Envia para Fila)
+                            📲 Disparar Pedido Completo (Envia p/ Fila de ASO)
                         </button>
                     </div>
                 </div>
@@ -214,7 +213,7 @@
                     <h2 class="font-extrabold text-slate-900 text-sm md:text-base uppercase flex items-center gap-2">
                         <i data-lucide="user-check" class="w-5 h-5 text-blue-700"></i> Fila de Atendimento Ocupacional & Emissão de ASO
                     </h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Carga em massa via XLSX ou inserção avulsa. Pedidos anteriores entram automaticamente aqui.</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Carga em massa via Excel ou ASO Avulso. Clique no botão de ASO para editar todos os campos do modelo Boreal[cite: 8].</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <label class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-1.5 rounded cursor-pointer flex items-center shadow">
@@ -236,8 +235,8 @@
                                 <th class="p-2.5">Cliente / Razão Social</th>
                                 <th class="p-2.5">Cargo / Função / Lotação</th>
                                 <th class="p-2.5">Tipo de Exame ASO</th>
-                                <th class="p-2.5 text-center">Ficha Anamnese Digital Anexa</th>
-                                <th class="p-2.5 text-center">Atendimento & Assinatura ASO Boreal</th>
+                                <th class="p-2.5 text-center">Ficha Anamnese Digital</th>
+                                <th class="p-2.5 text-center">Abrir & Editar ASO Boreal</th>
                             </tr>
                         </thead>
                         <tbody id="aso-queue-tbody" class="divide-y divide-slate-200">
@@ -248,13 +247,13 @@
             </div>
         </section>
 
-        <!-- ABA 3: BANCO DE ASOs CONCLUÍDOS & ANAMNESE INDIVIDUAL -->
+        <!-- ABA 3: BANCO DE ASOs CONCLUÍDOS & AUDITORIA PERMANENTE -->
         <section id="tab-historico" class="tab-content hidden space-y-4">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
                 <h2 class="font-extrabold text-slate-900 text-sm md:text-base uppercase flex items-center gap-2">
                     <i data-lucide="archive" class="w-5 h-5 text-indigo-700"></i> Banco de ASOs Concluídos & Fichas Digitais
                 </h2>
-                <p class="text-xs text-slate-500 mt-1">Acervo permanente de ASOs emitidos. O Gestor e o Cliente baixam o PDF individual do ASO ou da Anamnese[cite: 3, 5, 7].</p>
+                <p class="text-xs text-slate-500 mt-1">Acervo permanente. O Gestor e o Cliente baixam o PDF do ASO individual Boreal ou a Ficha de Anamnese do trabalhador[cite: 3, 8].</p>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -267,8 +266,8 @@
                                 <th class="p-2.5">Cliente / Razão Social</th>
                                 <th class="p-2.5">Parecer Final</th>
                                 <th class="p-2.5">Médico Examinador</th>
-                                <th class="p-2.5 text-center">Baixar Anamnese Digital (PDF)</th>
-                                <th class="p-2.5 text-center">Baixar ASO Boreal Oficial (PDF)</th>
+                                <th class="p-2.5 text-center">Ficha Anamnese</th>
+                                <th class="p-2.5 text-center">Baixar ASO Boreal Individual (PDF)</th>
                             </tr>
                         </thead>
                         <tbody id="aso-history-tbody" class="divide-y divide-slate-200">
@@ -286,7 +285,7 @@
                     <h2 class="font-extrabold text-slate-900 text-sm md:text-base uppercase flex items-center gap-2">
                         <i data-lucide="send" class="w-5 h-5 text-emerald-700"></i> Módulo eSocial — Evento S-2220 (Monitoramento da Saúde)
                     </h2>
-                    <p class="text-xs text-slate-500">Compilação e exportação do lote XML dos ASOs para o eSocial.</p>
+                    <p class="text-xs text-slate-500">Exportação oficial do lote XML dos ASOs para o eSocial.</p>
                 </div>
                 <button type="button" onclick="gerarLoteESocial()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-4 py-2 rounded flex items-center shadow">
                     <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Exportar Lote XML S-2220
@@ -303,7 +302,7 @@
                         <h2 class="font-extrabold text-slate-900 text-sm md:text-base uppercase flex items-center gap-2">
                             <i data-lucide="file-check" class="w-5 h-5 text-purple-700"></i> Homologação de Atestados Médicos Externos
                         </h2>
-                        <p class="text-xs text-slate-500">Parecer do Médico Ocupacional sobre atestados emitidos por médicos externos com anexo do documento.</p>
+                        <p class="text-xs text-slate-500">Envio do atestado escaneado pelo cliente e parecer do Médico Ocupacional.</p>
                     </div>
                     <button type="button" onclick="abrirModalHomologacao()" class="bg-purple-800 hover:bg-purple-900 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center shadow">
                         ➕ HOMOLOGAR ATESTADO
@@ -321,7 +320,7 @@
                                 <th class="p-2 text-center">Dias Afast.</th>
                                 <th class="p-2 text-center">CID-10</th>
                                 <th class="p-2">Médico Emissor</th>
-                                <th class="p-2 text-center">Atestado Anexo</th>
+                                <th class="p-2 text-center">Arquivo Anexo</th>
                                 <th class="p-2 text-center">Status Homologação</th>
                             </tr>
                         </thead>
@@ -480,7 +479,7 @@
             </div>
         </section>
 
-        <!-- ABA 9: CHAT DIRETO PRIVADO MULTIPERFIS -->
+        <!-- ABA 9: CHAT DIRETO PRIVADO MULTI-PERFIS -->
         <section id="tab-chat" class="tab-content hidden space-y-4">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
                 <h2 class="font-extrabold text-slate-900 text-sm uppercase flex items-center gap-2 border-b pb-2">
@@ -488,20 +487,32 @@
                 </h2>
 
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <div class="bg-slate-50 border rounded-lg p-2 space-y-1 text-xs">
-                        <span class="font-bold text-slate-700 uppercase block mb-1">Selecione o Destinatário:</span>
-                        <select id="chat_target_select" class="w-full border p-2 rounded font-bold bg-white text-teal-900">
-                            <option value="GESTOR BOREAL">🏢 GESTOR BOREAL MATRIZ</option>
-                            <option value="CLÍNICA CENTRAL PAULÍNIA">🏥 CLÍNICA CENTRAL PAULÍNIA</option>
-                            <option value="PREFEITURA MUNICIPAL">🏢 CLIENTE PREFEITURA MUNICIPAL</option>
-                            <option value="MÉDICO PCMSO">🩺 MÉDICO RESPONSÁVEL PCMSO</option>
-                        </select>
+                    <div class="bg-slate-50 border rounded-lg p-2 space-y-2 text-xs">
+                        <span class="font-bold text-slate-700 uppercase block mb-1">Endereçamento da Mensagem:</span>
+                        <div>
+                            <label class="block font-bold mb-0.5">Emissor (Remetente):</label>
+                            <select id="chat_remetente_select" class="w-full border p-1 rounded font-bold bg-white">
+                                <option value="GESTOR BOREAL">GESTOR BOREAL</option>
+                                <option value="PREFEITURA MUNICIPAL">CLIENTE PREFEITURA</option>
+                                <option value="CLÍNICA PAULÍNIA">CLÍNICA PAULÍNIA</option>
+                                <option value="MÉDICO EXAMINADOR">MÉDICO EXAMINADOR</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-0.5">Destinatário:</label>
+                            <select id="chat_destinatario_select" class="w-full border p-1 rounded font-bold bg-white">
+                                <option value="CLÍNICA PAULÍNIA">CLÍNICA CENTRAL PAULÍNIA</option>
+                                <option value="PREFEITURA MUNICIPAL">CLIENTE PREFEITURA MUNICIPAL</option>
+                                <option value="GESTOR BOREAL">GESTOR BOREAL</option>
+                                <option value="MÉDICO EXAMINADOR">MÉDICO EXAMINADOR</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="md:col-span-3 border rounded-lg flex flex-col h-80 bg-slate-50 overflow-hidden">
                         <div id="chat-messages-box" class="flex-1 p-3 overflow-y-auto space-y-2 text-xs">
                             <div class="bg-white p-2 rounded border max-w-md shadow-sm">
-                                <strong class="text-teal-800 block">BOREAL GESTOR:</strong> Canal de mensagem privada ativo para comunicação direta.
+                                <strong class="text-teal-800 block">GESTOR BOREAL ➔ CLÍNICA PAULÍNIA:</strong> Solicitação de exames enviada.
                             </div>
                         </div>
                         <div class="p-2 bg-white border-t flex gap-2">
@@ -515,7 +526,7 @@
             </div>
         </section>
 
-        <!-- ABA 10: CADASTROS DE CLIENTES & CLÍNICAS (COM MÉDICO DO PCMSO) -->
+        <!-- ABA 10: CADASTROS DE CLIENTES, MÉDICO RESPONSÁVEL DO PCMSO & CLÍNICAS -->
         <section id="tab-cadastros" class="tab-content hidden space-y-6">
             
             <!-- DADOS DO GESTOR BOREAL -->
@@ -533,7 +544,7 @@
             <!-- CADASTRO DE CLIENTES & MÉDICO RESPONSÁVEL DO PCMSO (EXCLUSIVO GESTOR) -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
                 <h2 class="font-extrabold text-slate-900 text-sm uppercase border-b pb-2 flex items-center gap-2">
-                    <i data-lucide="building" class="w-4 h-4 text-blue-700"></i> Cadastro de Clientes & Médico Responsável do PCMSO[cite: 7]
+                    <i data-lucide="building" class="w-4 h-4 text-blue-700"></i> Cadastro de Clientes & Médico Responsável pelo PCMSO
                 </h2>
                 
                 <div id="box-form-cliente" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs bg-slate-50 p-3 rounded border">
@@ -558,25 +569,25 @@
                         <input type="text" id="cad_cli_email" placeholder="CONTATO@CLIENTE.COM.BR" class="w-full border rounded p-1.5 bg-white font-bold">
                     </div>
 
-                    <!-- MÉDICO COORDENADOR DO PCMSO VINCULADO AO CLIENTE -->
+                    <!-- MÉDICO RESPONSÁVEL PELO PCMSO DO CLIENTE -->
                     <div class="md:col-span-4 bg-amber-50 border border-amber-300 p-3 rounded-lg grid grid-cols-1 md:grid-cols-3 gap-2">
                         <div>
-                            <label class="font-bold text-amber-950 block mb-0.5">Nome do Médico Responsável do PCMSO *</label>[cite: 7]
-                            <input type="text" id="cad_cli_med_pcmso" value="DRA. LUIZA BRABETZ SANDONATO" class="w-full border border-amber-400 rounded p-1.5 bg-white font-bold">[cite: 7]
+                            <label class="font-bold text-amber-950 block mb-0.5">Nome do Médico Responsável do PCMSO *</label>
+                            <input type="text" id="cad_cli_med_pcmso" value="DRA. LUIZA BRABETZ SANDONATO" class="w-full border rounded p-1.5 bg-white font-bold text-blue-900">
                         </div>
                         <div>
                             <label class="font-bold text-amber-950 block mb-0.5">CRM / UF *</label>
-                            <input type="text" id="cad_cli_med_crm" value="CRM SP 145328" class="w-full border border-amber-400 rounded p-1.5 bg-white font-bold">
+                            <input type="text" id="cad_cli_med_crm" value="CRM SP 145328" class="w-full border rounded p-1.5 bg-white font-bold">
                         </div>
                         <div>
                             <label class="font-bold text-amber-950 block mb-0.5">RQE (Especialidade)</label>
-                            <input type="text" id="cad_cli_med_rqe" value="RQE 76959" class="w-full border border-amber-400 rounded p-1.5 bg-white font-bold">
+                            <input type="text" id="cad_cli_med_rqe" value="RQE 76959" class="w-full border rounded p-1.5 bg-white font-bold">
                         </div>
                     </div>
 
                     <div class="md:col-span-4 flex justify-end">
                         <button type="button" onclick="salvarNovoCliente()" class="btn-only-gestor bg-blue-800 hover:bg-blue-900 text-white font-extrabold px-5 py-2 rounded text-xs uppercase shadow">
-                            💾 Salvar Cliente & Médico PCMSO
+                            💾 Salvar Cadastro do Cliente & PCMSO
                         </button>
                     </div>
                 </div>
@@ -589,7 +600,7 @@
                                 <th class="p-2">CNPJ</th>
                                 <th class="p-2">Telefone</th>
                                 <th class="p-2">E-mail</th>
-                                <th class="p-2">Médico Responsável PCMSO</th>[cite: 7]
+                                <th class="p-2">Médico Responsável PCMSO</th>
                             </tr>
                         </thead>
                         <tbody id="clientes-cadastrados-tbody" class="divide-y divide-slate-200">
@@ -599,7 +610,7 @@
                 </div>
             </div>
 
-            <!-- CADASTRO DE CLÍNICAS CREDENCIADAS (EXCLUSIVO GESTOR) -->
+            <!-- CADASTRO DE CLÍNICAS CREDENCIADAS -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
                 <h2 class="font-extrabold text-slate-900 text-sm uppercase border-b pb-2 flex items-center gap-2">
                     <i data-lucide="hospital" class="w-4 h-4 text-emerald-700"></i> Cadastro de Clínicas Credenciadas
@@ -649,7 +660,7 @@
 
     </main>
 
-    <!-- MODAL 1: FICHA DIGITAL DE ANAMNESE OCUPACIONAL COMPLETA FIEL À ANAMNESE.DOCX -->
+    <!-- MODAL 1: FICHA DIGITAL DE ANAMNESE OCUPACIONAL (ANAMNESE.DOCX) -->
     <div id="modal-anamnese" class="fixed inset-0 modal-bg z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl border p-5 space-y-4 max-h-[90vh] overflow-y-auto text-xs">
             <div class="flex justify-between items-center border-b pb-2">
@@ -660,23 +671,23 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-2 bg-slate-100 p-3 rounded font-bold text-[11px]">
-                <div><strong>Empregado:</strong> <span id="anam_nome_lbl" class="text-blue-900">-</span></div>
-                <div><strong>CPF:</strong> <span id="anam_cpf_lbl" class="text-blue-900">-</span></div>
-                <div><strong>Cargo:</strong> <span id="anam_cargo_lbl" class="text-blue-900">-</span></div>
-                <div><strong>Tipo Sanguíneo:</strong> <input type="text" id="anam_sangue" value="O+" class="w-12 border rounded text-center bg-white"></div>
+                <div><strong>Empregado:</strong> <span id="anam_nome_lbl" class="text-blue-900">-</span></div>[cite: 3]
+                <div><strong>CPF:</strong> <span id="anam_cpf_lbl" class="text-blue-900">-</span></div>[cite: 3]
+                <div><strong>Cargo:</strong> <span id="anam_cargo_lbl" class="text-blue-900">-</span></div>[cite: 3]
+                <div><strong>Tipo Sanguíneo:</strong> <input type="text" id="anam_sangue" value="O+" class="w-12 border rounded text-center bg-white"></div>[cite: 3]
             </div>
 
-            <div class="space-y-4">
+            <div class="space-y-3">
                 <div class="border rounded-lg p-3 bg-slate-50 space-y-2">
                     <h4 class="font-extrabold text-blue-900 uppercase border-b pb-1">1. ANTECEDENTES OCUPACIONAIS</h4>[cite: 3]
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                         <div>
                             <label class="block font-bold">Já sofreu Acidente de Trabalho em outra empresa?</label>[cite: 3]
-                            <input type="text" id="anam_acid_outro" placeholder="SIM OU NÃO / DESCREVA..." class="w-full border rounded p-1 bg-white">
+                            <input type="text" id="anam_acid_outro" placeholder="SIM / NÃO" class="w-full border rounded p-1 bg-white">[cite: 3]
                         </div>
                         <div>
-                            <label class="block font-bold">Houve sequelas ou limitações para atribuições?</label>[cite: 3]
-                            <input type="text" id="anam_acid_seq" placeholder="DESCREVA AS SEQUELAS..." class="w-full border rounded p-1 bg-white">
+                            <label class="block font-bold">Houve sequelas ou limitações funcionais?</label>[cite: 3]
+                            <input type="text" id="anam_acid_seq" placeholder="DESCREVA SE HOUVE SEQUELAS OU LIMITAÇÕES..." class="w-full border rounded p-1 bg-white">[cite: 3]
                         </div>
                     </div>
                 </div>
@@ -687,196 +698,553 @@
                         <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_tb"> Tuberculose</label>[cite: 3]
                         <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_diab"> Diabetes</label>[cite: 3]
                         <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_cancer"> Câncer</label>[cite: 3]
-                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_asma"> Asma</label>[cite: 3]
-                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_surdez"> Surdez</label>[cite: 3]
-                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_mental"> Doença Mental</label>[cite: 3]
-                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_cardio"> Doença do Coração</label>[cite: 3]
-                    </div>
-                </div>
-
-                <div class="border rounded-lg p-3 bg-slate-50 space-y-2">
-                    <h4 class="font-extrabold text-blue-900 uppercase border-b pb-1">3. COMPLEMENTARES & HÁBITOS DE VIDA</h4>[cite: 3]
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
-                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="hab_estresse"> Estresse</label>[cite: 3]
-                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="hab_esporte"> Pratica Esportes</label>[cite: 3]
-                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="hab_insonia"> Insônia</label>[cite: 3]
-                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="hab_gestante"> Gestante/Lactante</label>[cite: 3]
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_has"> Hipertensão / Cardíaca</label>[cite: 3]
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_asma"> Asma / Respiratória</label>[cite: 3]
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_renal"> Doença Renal</label>[cite: 3]
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_coluna"> Dores na Coluna</label>[cite: 3]
+                        <label class="flex items-center gap-1 font-bold"><input type="checkbox" id="fam_audicao"> Restrições Auditivas</label>[cite: 3]
                     </div>
                 </div>
 
                 <div>
-                    <label class="font-bold block mb-1">Observações Médicas Complementares:</label>
-                    <textarea id="anam_obs" rows="3" placeholder="OBSERVAÇÕES DO MÉDICO EXAMINADOR..." class="w-full border rounded p-2 bg-slate-50 font-semibold"></textarea>
+                    <label class="font-bold block mb-1">Observações Médicas Complementares:</label>[cite: 3]
+                    <textarea id="anam_obs" rows="2" placeholder="OBSERVAÇÕES DO MÉDICO..." class="w-full border rounded p-2 bg-slate-50 font-semibold"></textarea>
                 </div>
 
-                <div class="bg-amber-50 border border-amber-300 p-2.5 rounded text-[11px] text-amber-950 italic">
+                <div class="bg-amber-50 border border-amber-300 p-2 rounded text-[10px] italic">
                     "As declarações acima são expressão da verdade, não cabendo à Boreal Engmed Nenhuma responsabilidade por fatos omitidos ou falsos."[cite: 3]
                 </div>
             </div>
 
             <div class="flex justify-end gap-2 border-t pt-3">
                 <button type="button" onclick="fecharModal('modal-anamnese')" class="bg-slate-300 font-bold px-4 py-1.5 rounded uppercase">Cancelar</button>
-                <button type="button" onclick="salvarAnamnese()" class="bg-blue-800 text-white font-bold px-4 py-1.5 rounded uppercase shadow">💾 Salvar Ficha de Anamnese</button>
+                <button type="button" onclick="salvarAnamnese()" class="bg-blue-800 text-white font-bold px-4 py-1.5 rounded uppercase shadow">💾 Salvar Anamnese</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL 2: ATESTADO DE SAÚDE OCUPACIONAL (ASO MODELO BOREAL OFICIAL FIEL À NR-07 COM TODOS OS CAMPOS EDITÁVEIS) -->
+    <!-- MODAL 2: ATESTADO DE SAÚDE OCUPACIONAL (ASO MODELO BOREAL OFICIAL FIEL À NR-07 COM TODOS OS CAMPOS LIBERADOS) -->
     <div id="modal-aso" class="fixed inset-0 modal-bg z-50 hidden flex items-center justify-center p-2 overflow-y-auto">
         <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl border p-4 space-y-3 max-h-[95vh] overflow-y-auto text-xs">
             
             <div class="flex justify-between items-center border-b pb-2">
                 <h3 class="font-extrabold text-sm text-slate-900 uppercase">
-                    🩺 EDITAR & EMITIR ASO MODELO BOREAL OFICIAL (NR-07)[cite: 7]
+                    🩺 FORMULÁRIO OFICIAL DO ASO BOREAL ENGMED (EDIÇÃO COMPLETA)[cite: 8]
                 </h3>
                 <button type="button" onclick="fecharModal('modal-aso')" class="text-slate-500 font-bold text-lg">✕</button>
             </div>
 
-            <!-- LAYOUT IMPRESSO DO ASO FIEL AO ASO BOREAL MODELO_2.DOCX -->
+            <!-- LAYOUT IMPRESSO DO ASO EDITÁVEL FIEL AO ASO BOREAL MODELO_3.DOCX -->
             <div id="aso-boreal-documento-oficial" class="aso-boreal-paper space-y-3 text-[11px]">
                 
                 <!-- CABEÇALHO BOREAL -->
                 <div class="border-b-2 border-black pb-2 flex justify-between items-center">
                     <div>
-                        <strong class="text-sm block font-black">Boreal Engenharia e Medicina</strong>[cite: 7]
-                        <span class="text-[10px]">CRM Nº 1011385   Tel. 19 99156-7153</span>[cite: 7]
+                        <strong class="text-sm block font-black">Boreal Engenharia e Medicina</strong>[cite: 8]
+                        <span class="text-[10px]">CRM Nº 1011385   Tel. 19 99156-7153</span>[cite: 8]
                     </div>
                     <div class="text-right">
-                        <strong class="text-base font-black uppercase">ATESTADO DE SAÚDE OCUPACIONAL - ASO</strong>[cite: 7]
+                        <strong class="text-base font-black uppercase">ATESTADO DE SAÚDE OCUPACIONAL - ASO</strong>[cite: 8]
                     </div>
                 </div>
 
                 <!-- TIPO DE EXAME -->
                 <div class="border border-black p-2 bg-slate-50 flex flex-wrap gap-4 font-bold text-[10px] uppercase">
-                    <span>EXAME MÉDICO:</span>[cite: 7]
-                    <label class="flex items-center gap-1"><input type="radio" name="aso_tp_exame" value="Admissional" checked> Admissional</label>[cite: 7]
-                    <label class="flex items-center gap-1"><input type="radio" name="aso_tp_exame" value="Periódico"> Periódico</label>[cite: 7]
-                    <label class="flex items-center gap-1"><input type="radio" name="aso_tp_exame" value="Retorno ao Trabalho"> Retorno ao Trabalho</label>[cite: 7]
-                    <label class="flex items-center gap-1"><input type="radio" name="aso_tp_exame" value="Mudança de Risco"> Mudança de Risco</label>[cite: 7]
-                    <label class="flex items-center gap-1"><input type="radio" name="aso_tp_exame" value="Demissional"> Demissional</label>[cite: 7]
+                    <span>EXAME MÉDICO:</span>[cite: 8]
+                    <label class="flex items-center gap-1"><input type="radio" name="aso_tp_exame" value="Admissional" checked> Admissional</label>[cite: 8]
+                    <label class="flex items-center gap-1"><input type="radio" name="aso_tp_exame" value="Periódico"> Periódico</label>[cite: 8]
+                    <label class="flex items-center gap-1"><input type="radio" name="aso_tp_exame" value="Retorno ao Trabalho"> Retorno ao Trabalho</label>[cite: 8]
+                    <label class="flex items-center gap-1"><input type="radio" name="aso_tp_exame" value="Mudança de Risco"> Mudança de Risco</label>[cite: 8]
+                    <label class="flex items-center gap-1"><input type="radio" name="aso_tp_exame" value="Demissional"> Demissional</label>[cite: 8]
                 </div>
 
-                <!-- EDITAR TODOS OS 13+ CAMPOS DE IDENTIFICAÇÃO DO ASO -->
+                <!-- IDENTIFICAÇÃO (TODOS OS CAMPOS LIBERADOS PARA EDIÇÃO) -->
                 <div class="border border-black p-2 space-y-2">
-                    <strong class="block border-b border-black font-extrabold bg-slate-200 px-1 uppercase">IDENTIFICAÇÃO COMPLETA DO ASO (EDITÁVEL)</strong>[cite: 7]
+                    <strong class="block border-b border-black font-extrabold bg-slate-200 px-1 uppercase">IDENTIFICAÇÃO DO TRABALHADOR E CLIENTE</strong>[cite: 8]
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <div class="md:col-span-2">
-                            <label class="font-bold block">1. Razão Social do Empregador *</label>[cite: 7]
-                            <input type="text" id="aso_edit_razao" value="PREFEITURA MUNICIPAL" class="w-full border p-1 font-bold bg-white">
+                            <label class="font-bold block">Razão Social do Empregador *</label>[cite: 8]
+                            <input type="text" id="aso_edit_razao" value="PREFEITURA MUNICIPAL" class="w-full border p-1 font-bold bg-white">[cite: 8]
                         </div>
                         <div>
-                            <label class="font-bold block">2. CNPJ *</label>[cite: 7]
-                            <input type="text" id="aso_edit_cnpj" value="00.000.000/0001-91" class="w-full border p-1 font-bold bg-white">
+                            <label class="font-bold block">CNPJ *</label>[cite: 8]
+                            <input type="text" id="aso_edit_cnpj" value="00.000.000/0001-91" class="w-full border p-1 font-bold bg-white">[cite: 8]
                         </div>
-                        <div class="md:col-span-2">
-                            <label class="font-bold block">3. Nome do Empregado *</label>[cite: 7]
-                            <input type="text" id="aso_edit_nome" value="JOÃO DA SILVA" class="w-full border p-1 font-extrabold text-blue-900 bg-white">
-                        </div>
-                        <div>
-                            <label class="font-bold block">4. CPF *</label>[cite: 7]
-                            <input type="text" id="aso_edit_cpf" value="123.456.789-00" class="w-full border p-1 font-bold bg-white">
+                        <div class="md:col-span-3">
+                            <label class="font-bold block">Nome do Empregado *</label>[cite: 8]
+                            <input type="text" id="aso_edit_nome" value="JOÃO DA SILVA" class="w-full border p-1 font-black text-blue-900 bg-white">[cite: 8]
                         </div>
                         <div>
-                            <label class="font-bold block">5. Cargo *</label>[cite: 7]
-                            <input type="text" id="aso_edit_cargo" value="MECÂNICO" class="w-full border p-1 font-bold bg-white">
+                            <label class="font-bold block">Cargo *</label>[cite: 8]
+                            <input type="text" id="aso_edit_cargo" value="MECÂNICO" class="w-full border p-1 font-bold bg-white">[cite: 8]
                         </div>
                         <div>
-                            <label class="font-bold block">6. Função *</label>[cite: 7]
-                            <input type="text" id="aso_edit_funcao" value="MECÂNICO DE MANUTENÇÃO" class="w-full border p-1 font-bold bg-white">
+                            <label class="font-bold block">Função *</label>[cite: 8]
+                            <input type="text" id="aso_edit_funcao" value="MECÂNICO DE MANUTENÇÃO" class="w-full border p-1 font-bold bg-white">[cite: 8]
                         </div>
                         <div>
-                            <label class="font-bold block">7. Lotação *</label>[cite: 7]
-                            <input type="text" id="aso_edit_lotacao" value="OFICINA CENTRAL" class="w-full border p-1 font-bold bg-white">
+                            <label class="font-bold block">Lotação / Setor *</label>[cite: 8]
+                            <input type="text" id="aso_edit_lotacao" value="OFICINA CENTRAL" class="w-full border p-1 font-bold bg-white">[cite: 8]
                         </div>
                         <div>
-                            <label class="font-bold block">8. Matrícula *</label>[cite: 7]
-                            <input type="text" id="aso_edit_matricula" value="00129" class="w-full border p-1 font-bold bg-white">
+                            <label class="font-bold block">Matrícula *</label>[cite: 8]
+                            <input type="text" id="aso_edit_matricula" value="00129" class="w-full border p-1 font-bold bg-white">[cite: 8]
                         </div>
                         <div>
-                            <label class="font-bold block">9. Data de Nascimento *</label>[cite: 7]
-                            <input type="text" id="aso_edit_dtnasc" value="15/08/1985" class="w-full border p-1 font-bold bg-white">
+                            <label class="font-bold block">CPF *</label>[cite: 8]
+                            <input type="text" id="aso_edit_cpf" value="123.456.789-00" class="w-full border p-1 font-bold bg-white">[cite: 8]
+                        </div>
+                        <div>
+                            <label class="font-bold block">Data Nasc. *</label>[cite: 8]
+                            <input type="text" id="aso_edit_nasc" value="15/08/1985" class="w-full border p-1 font-bold bg-white">[cite: 8]
                         </div>
                     </div>
                 </div>
 
-                <!-- GRID DE EXAMES CLÍNICOS E COMPLEMENTARES REALIZADOS -->
+                <!-- OUTROS EXAMES CLÍNICOS E COMPLEMENTARES REALIZADOS -->
                 <div class="border border-black p-2 space-y-1">
-                    <strong class="block border-b border-black font-extrabold bg-slate-200 px-1 uppercase">Outros Exames Clínicos e Complementares Realizados (com Datas)</strong>[cite: 7]
+                    <strong class="block border-b border-black font-extrabold bg-slate-200 px-1 uppercase">Outros Exames Clínicos e Complementares Realizados (Datas)</strong>[cite: 8]
                     <div class="grid grid-cols-3 gap-1 text-[10px] uppercase">
-                        <div class="border p-1"><strong>Exame Clínico:</strong> <input type="text" value="28/10/2026" class="w-16 border text-center font-bold"></div>[cite: 7]
-                        <div class="border p-1"><strong>2,5 hexanodiona:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Rx de Tórax:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Glicemia:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Ácido mandélico:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Espirometria:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Hemograma completo:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Ácido hipúrico:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Rx coluna L-S:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Colesterol total/HDL/LDL:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Ácido Metil hipúrico:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Eletrocardiograma:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Triglicérides:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Ácido Transmucônico:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Eletroencefalograma:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Ácido úrico:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Carboxihemoglobina:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Exame psicológico:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Urina tipo I:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Colinesterase:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Exame oftalmológico:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>PPF:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Cromo:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Exame otológico:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>TGO, TGP, GamaGT:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Manganês:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>P. sangue oculto fezes:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Coprocultura:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Metanol:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>PSA:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Creatinina:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Reticulócitos:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
-                        <div class="border p-1"><strong>Audiometria Tonal:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 7]
+                        <div class="border p-1"><strong>Exame Clínico:</strong> <input type="text" value="28/10/2026" class="w-16 border text-center font-bold"></div>[cite: 8]
+                        <div class="border p-1"><strong>2,5 hexanodiona:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 8]
+                        <div class="border p-1"><strong>Rx de Tórax:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 8]
+                        <div class="border p-1"><strong>Glicemia:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 8]
+                        <div class="border p-1"><strong>Ácido mandélico:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 8]
+                        <div class="border p-1"><strong>Espirometria:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 8]
+                        <div class="border p-1"><strong>Hemograma completo:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 8]
+                        <div class="border p-1"><strong>Ácido hipúrico:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 8]
+                        <div class="border p-1"><strong>Rx coluna L-S:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 8]
+                        <div class="border p-1"><strong>Colesterol total:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 8]
+                        <div class="border p-1"><strong>Eletrocardiograma:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 8]
+                        <div class="border p-1"><strong>Audiometria Tonal:</strong> <input type="text" placeholder="Data" class="w-16 border text-center"></div>[cite: 8]
                     </div>
                 </div>
 
                 <!-- CONCLUSÃO DO EXAME -->
                 <div class="border border-black p-2 bg-amber-50 space-y-1">
                     <div class="flex gap-6 font-black text-sm my-1 uppercase">
-                        <span>CONCLUSÃO DO EXAME:</span>[cite: 7]
-                        <label class="flex items-center gap-1 text-emerald-800"><input type="radio" name="aso_conclusao" value="Apto" checked> Apto</label>[cite: 7]
-                        <label class="flex items-center gap-1 text-red-800"><input type="radio" name="aso_conclusao" value="Inapto"> Inapto</label>[cite: 7]
+                        <span>CONCLUSÃO DO EXAME:</span>[cite: 8]
+                        <label class="flex items-center gap-1 text-emerald-800"><input type="radio" name="aso_conclusao" value="Apto" checked> Apto</label>[cite: 8]
+                        <label class="flex items-center gap-1 text-red-800"><input type="radio" name="aso_conclusao" value="Inapto"> Inapto</label>[cite: 8]
                     </div>
                 </div>
 
                 <!-- RISCOS OCUPACIONAIS EM NÍVEL DE AÇÃO -->
                 <div class="border border-black p-2 space-y-1">
-                    <strong class="block border-b border-black font-extrabold uppercase">RISCOS OCUPACIONAIS EM NÍVEL DE AÇÃO</strong>[cite: 7]
+                    <strong class="block border-b border-black font-extrabold uppercase">RISCOS OCUPACIONAIS EM NÍVEL DE AÇÃO</strong>[cite: 8]
                     <div class="flex flex-wrap gap-4 font-bold text-[10px] my-1 uppercase">
-                        <label><input type="checkbox" id="chk_r_noh"> Não Há Fatores de Riscos</label>[cite: 7]
-                        <label><input type="checkbox" id="chk_r_fis" checked> Físico</label>[cite: 7]
-                        <label><input type="checkbox" id="chk_r_qui"> Químico</label>[cite: 7]
-                        <label><input type="checkbox" id="chk_r_bio"> Biológico</label>[cite: 7]
-                        <label><input type="checkbox" id="chk_r_erg" checked> Ergonômico</label>[cite: 7]
-                        <label><input type="checkbox" id="chk_r_aci"> Acidente</label>[cite: 7]
+                        <label><input type="checkbox" id="chk_r_noh"> Não Há Fatores de Riscos</label>[cite: 8]
+                        <label><input type="checkbox" id="chk_r_fis" checked> Físico</label>[cite: 8]
+                        <label><input type="checkbox" id="chk_r_qui"> Químico</label>[cite: 8]
+                        <label><input type="checkbox" id="chk_r_bio"> Biológico</label>[cite: 8]
+                        <label><input type="checkbox" id="chk_r_erg" checked> Ergonômico</label>[cite: 8]
+                        <label><input type="checkbox" id="chk_r_aci"> Acidente</label>[cite: 8]
                     </div>
                     <div>
-                        <label class="font-bold block">Especificar o agente ou circunstância do risco demarcado:</label>[cite: 7]
-                        <input type="text" id="aso_doc_agentes_especificos" value="RUÍDO CONTÍNUO OU INTERMITENTE DE MÁQUINAS; POSTURA SENTADA POR LONGOS PERÍODOS" class="w-full border p-1 bg-white font-semibold">
+                        <label class="font-bold block">Especificar o agente ou circunstância do risco demarcado:</label>[cite: 8]
+                        <input type="text" id="aso_doc_agentes_especificos" value="RUÍDO CONTÍNUO DE MÁQUINAS; POSTURA SENTADA POR LONGOS PERÍODOS" class="w-full border p-1 bg-white font-semibold">
                     </div>
                 </div>
 
                 <!-- TERMO DE CIÊNCIA & ASSINATURA DIGITAL DO MÉDICO -->
                 <div class="border border-black p-2 space-y-2">
-                    <p class="text-[10px] italic">"Estou ciente do resultado do presente exame médico e declaro que recebi uma cópia deste ASO."</p>[cite: 7]
+                    <p class="text-[10px] italic">"Estou ciente do resultado do presente exame médico e declaro que recebi uma cópia deste ASO."</p>[cite: 8]
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                         <div class="border-t border-black text-center pt-1">
-                            <strong class="block">Assinatura do(a) Examinado(a)</strong>[cite: 7]
-                            <span>Local: Paulínia-SP | Data: 28/10/2026</span>[cite: 7]
+                            <strong class="block">Assinatura do(a) Examinado(a)</strong>[cite: 8]
+                            <span>Local: Paulínia-SP | Data: 28/10/2026</span>[cite: 8]
                         </div>
                         <div class="border-t border-black text-center pt-1 space-y-1">
-                            <strong class="block">Médico(a) Examinador(a) & Assinatura Digital:</strong>[cite: 7]
+                            <strong class="block">Médico(a) Examinador(a) & Assinatura Digital:</strong>[cite: 8]
                             <div class="flex justify-center">
                                 <canvas id="canvas-assinatura-medico" width="220" height="50" class="border border-slate-400 bg-slate-50 cursor-crosshair"></canvas>
                             </div>
                             <button type="button" onclick="limparAssinatura()" class="text-[9px] text-red-600 underline">Limpar Assinatura</button>
-                            <input type="text" id="aso_med_nome" value
+                            <input type="text" id="aso_med_nome" value="DR. ROBERTO ALVES — CRM SP 184920" class="w-full border text-center font-bold text-[10px]">[cite: 8]
+                        </div>
+                    </div>
+                    <div class="text-center font-bold pt-1 border-t border-black">
+                        Nome do Médico Responsável do PCMSO: <span id="aso_lbl_medico_pcmso" class="text-blue-900 font-extrabold">DRA. LUIZA BRABETZ SANDONATO — CRM SP 145328</span>[cite: 8]
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="flex justify-end gap-2 border-t pt-3">
+                <button type="button" onclick="fecharModal('modal-aso')" class="bg-slate-300 font-bold px-4 py-1.5 rounded uppercase">Cancelar</button>
+                <button type="button" onclick="concluirEmissaoAsoBoreal()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold px-5 py-1.5 rounded uppercase shadow">
+                    💾 Concluir ASO & Gravar no Banco de Dados
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: NOVO ASO AVULSO -->
+    <div id="modal-novo-aso-avulso" class="fixed inset-0 modal-bg z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl border p-5 space-y-3 text-xs">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="font-extrabold text-sm text-slate-900 uppercase">➕ Cadastrar Novo ASO Avulso</h3>
+                <button type="button" onclick="fecharModal('modal-novo-aso-avulso')" class="text-slate-500 font-bold">✕</button>
+            </div>
+            <div class="space-y-2">
+                <div>
+                    <label class="font-bold block mb-0.5">Nome do Funcionário *</label>
+                    <input type="text" id="avulso_nome" class="w-full border p-1.5 rounded font-bold">
+                </div>
+                <div>
+                    <label class="font-bold block mb-0.5">CPF *</label>
+                    <input type="text" id="avulso_cpf" placeholder="000.000.000-00" class="w-full border p-1.5 rounded">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="font-bold block mb-0.5">Cliente *</label>
+                        <select id="avulso_cliente" class="w-full border p-1.5 rounded font-bold">
+                            <option value="PREFEITURA MUNICIPAL">PREFEITURA MUNICIPAL</option>
+                            <option value="INDUSTRIA METALURGICA">INDÚSTRIA METALÚRGICA</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="font-bold block mb-0.5">Tipo ASO *</label>
+                        <select id="avulso_tipo" class="w-full border p-1.5 rounded font-bold">
+                            <option value="ASO ADMISSONAL">ADMISSONAL</option>
+                            <option value="ASO PERIÓDICO">PERIÓDICO</option>
+                            <option value="ASO DEMISSONAL">DEMISSONAL</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 border-t pt-3">
+                <button type="button" onclick="salvarAsoAvulso()" class="bg-blue-800 text-white font-bold px-4 py-1.5 rounded uppercase">Incluir na Fila de Atendimento</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: HOMOLOGAÇÃO DE ATESTADO EXTERNO COM UPLOAD -->
+    <div id="modal-homologacao-form" class="fixed inset-0 modal-bg z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl border p-5 space-y-3 text-xs">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="font-extrabold text-sm text-slate-900 uppercase">📄 HOMOLOGAR ATESTADO MÉDICO EXTERNO</h3>
+                <button type="button" onclick="fecharModal('modal-homologacao-form')" class="text-slate-500 font-bold">✕</button>
+            </div>
+            <div class="space-y-2">
+                <div>
+                    <label class="font-bold block mb-0.5">Trabalhador & CPF *</label>
+                    <input type="text" id="hom_trab" placeholder="EX: CARLOS SILVA - 111.222.333-44" class="w-full border p-1.5 rounded font-bold">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="font-bold block mb-0.5">Dias Afastamento *</label>
+                        <input type="number" id="hom_dias" value="3" class="w-full border p-1.5 rounded text-center font-bold">
+                    </div>
+                    <div>
+                        <label class="font-bold block mb-0.5">CID-10 *</label>
+                        <input type="text" id="hom_cid" placeholder="EX: M54.5" class="w-full border p-1.5 rounded text-center font-bold">
+                    </div>
+                </div>
+                <div>
+                    <label class="font-bold block mb-0.5">Médico Emissor do Atestado *</label>
+                    <input type="text" id="hom_medico" placeholder="DR. CARLOS LIMA - CRM 12345" class="w-full border p-1.5 rounded">
+                </div>
+                <div>
+                    <label class="font-bold block mb-0.5">Anexar Atestado Escaneado / Eletrônico (PDF/Imagem) *</label>
+                    <input type="file" id="hom_arquivo_anexo" class="w-full border p-1 bg-slate-50 rounded">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 border-t pt-3">
+                <button type="button" onclick="salvarHomologacaoAtestado()" class="bg-purple-800 text-white font-bold px-4 py-1.5 rounded uppercase">HOMOLOGAR ATESTADO</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT & BANCO DE DADOS INTEGRAL -->
+    <script>
+        // BANCO DE DADOS INTEGRAL EXTRAÍDO DO INVENTÁRIO PGR
+        const INVENTARIO_RISCOS_COMPLETO = {
+            "ACIDENTES_AMPLIADOS": [
+                { agente: "CIRCULAÇÃO DE VEÍCULOS NA RUA DA ÁREA EXTERNA OU ESTACIONAMENTO DA UNIDADE", risco: "ACIDENTE DE TRÂNSITO E ATROPELAMENTO", exame: "CLÍNICO", periodicidade: "BIENAL" },
+                { agente: "ÁRVORES COM GALHOS SECOS SEM PODA NA ÁREA DE CIRCULAÇÃO EXTERNA", risco: "QUEDA DE GALHOS E FRUTOS", exame: "CLÍNICO", periodicidade: "BIENAL" },
+                { agente: "PISO IRREGULAR OU QUEBRADO EM ÁREAS DE CIRCULAÇÃO", risco: "QUEDA DO MESMO NÍVEL, TROPEÇO", exame: "CLÍNICO", periodicidade: "BIENAL" },
+                { agente: "UTILIZAÇÃO DE ESCADA DE ACESSO AOS PAVIMENTOS SUPERIORES", risco: "QUEDAS OU TROPEÇOS", exame: "CLÍNICO", periodicidade: "BIENAL" },
+                { agente: "UTILIZAÇÃO DE ELEVADOR DE PASSAGEIRO", risco: "ROMPIMENTO DE CABO / QUEDA DE ELEVADOR", exame: "CLÍNICO", periodicidade: "BIENAL" },
+                { agente: "SISTEMA ELÉTRICO DA REDE CENTRAL DETERIORADO", risco: "CURTO-CIRCUITO E INCÊNDIO", exame: "CLÍNICO", periodicidade: "BIENAL" }
+            ],
+            "BIOLOGICOS_AMPLIADOS": [
+                { agente: "PROLIFERAÇÃO DE INSETOS E PERNILONGOS NA ÁREA EXTERNA", risco: "DENGUE, CHIKUNGUNYA, ZIKA", exame: "CLÍNICO", periodicidade: "BIENAL" },
+                { agente: "INGESTÃO DE ÁGUA DO RESERVATÓRIO SEM LAUDO DE POTABILIDADE", risco: "INFECÇÃO DIGESTIVA / BACTERIANA", exame: "CLÍNICO", periodicidade: "BIENAL" },
+                { agente: "ÁGUA ESTACIONÁRIA DO SISTEMA DE CLIMATIZAÇÃO/AR CONDICIONADO", risco: "PROLIFERAÇÃO DE BACTÉRIA LEGIONELA", exame: "CLÍNICO", periodicidade: "BIENAL" }
+            ],
+            "ERGONOMICOS_BIOMECANICOS": [
+                { agente: "EXIGÊNCIA DE POSTURAS INCÔMODAS POR LONGOS PERÍODOS", risco: "DANOS OSTEOMUSCULARES E FADIGA", exame: "CLÍNICO", periodicidade: "BIENAL" },
+                { agente: "POSTURA SENTADA POR LONGOS PERÍODOS", risco: "DORES LOMBARES / LUMBAGO COM CIÁTICA", exame: "CLÍNICO", periodicidade: "BIENAL" },
+                { agente: "POSTURA DE PÉ POR LONGOS PERÍODOS", risco: "DANOS OSTEOMUSCULARES", exame: "CLÍNICO", periodicidade: "BIENAL" },
+                { agente: "LEVANTAMENTO E TRANSPORTE MANUAL DE CARGAS OU VOLUMES", risco: "VARIZES, COXARTROSE E HÉRNIAS DISCAIS", exame: "CLÍNICO (TRIAGEM LOMBAR) + RADIOGRAFIA DE COLUNA", periodicidade: "ANUAL" },
+                { agente: "FREQUENTE EXECUÇÃO DE MOVIMENTOS REPETITIVOS", risco: "LESÃO POR ESFORÇO REPETITIVO (LER/DORT)", exame: "CLÍNICO", periodicidade: "BIENAL" }
+            ],
+            "ERGONOMICOS_ORGANIZACIONAIS": [
+                { agente: "AMBIENTE DE TRABALHO COM ILUMINAÇÃO DEFICIENTE", risco: "DANOS OCULARES E NISTAGMO", exame: "CLÍNICO", periodicidade: "BIENAL" },
+                { agente: "AUSÊNCIA DE PAUSAS PARA DESCANSO DURANTE A JORNADA", risco: "SÍNDROME DE BURNOUT E ESTRESSE", exame: "CLÍNICO", periodicidade: "BIENAL" },
+                { agente: "NECESSIDADE DE MANTER RITMOS INTENSOS DE TRABALHO", risco: "FADIGA E SOBRECARGA FISIOLÓGICA", exame: "CLÍNICO", periodicidade: "BIENAL" },
+                { agente: "TRABALHO COM NECESSIDADE DE VARIAÇÃO DE TURNOS", risco: "DISTÚRBIOS DO CICLO VIGÍLIA-SONO", exame: "CLÍNICO", periodicidade: "BIENAL" }
+            ],
+            "ERGONOMICOS_COGNITIVOS": [
+                { agente: "EXIGÊNCIA DE ALTO NÍVEL DE CONCENTRAÇÃO OU ATENÇÃO", risco: "SOBRECARGA DE TRABALHO MENTAL / BURNOUT", exame: "CLÍNICO", periodicidade: "BIENAL" },
+                { agente: "PROBLEMAS NA DURAÇÃO E ORGANIZAÇÃO DA JORNADA", risco: "TRANSTORNOS ANSIOSOS E NEURASTENIA", exame: "CLÍNICO", periodicidade: "BIENAL" }
+            ],
+            "PSICOSSOCIAIS": [
+                { agente: "CARGA E RITMO DE TRABALHO (PRESSÃO TEMPORAL)", risco: "BURNOUT, ANSIEDADE E FADIGA CRÔNICA", exame: "AVALIAÇÃO PSICOLÓGICA / PSICOSSOCIAL", periodicidade: "ANUAL" },
+                { agente: "DEMANDA COGNITIVA E EMOCIONAL ELEVADA", risco: "EXAUSTÃO EMOCIONAL E IRRITABILIDADE", exame: "AVALIAÇÃO PSICOLÓGICA", periodicidade: "ANUAL" },
+                { agente: "ASSÉDIO MORAL OU AMBIENTE HOSTIL", risco: "STRESS PÓS-TRAUMÁTICO E DEPRESSÃO", exame: "AVALIAÇÃO PSICOLÓGICA", periodicidade: "ANUAL" }
+            ],
+            "ACIDENTES": [
+                { agente: "SERVIÇOS COM SERRA E MÁQUINAS DE CORTE", risco: "CORTE, PANCADA E DILACERAÇÃO NAS MÃOS", exame: "CLÍNICO, AUDIOMETRIA, ECG, HEMOGRAMA, AVALIAÇÃO PSICOSSOCIAL", periodicidade: "ANUAL" },
+                { agente: "TRABALHOS EM ESPAÇO CONFINADO (NR-33)", risco: "GASES TÓXICOS, INCÊNDIOS, ASFIXIA E MORTE", exame: "ACUIDADE VISUAL, AUDIOMETRIA, ECG, GLICEMIA, HEMOGRAMA, AVALIAÇÃO PSICOSSOCIAL", periodicidade: "ANUAL" },
+                { agente: "TRABALHO EM ALTURA (NR-35)", risco: "QUEDAS DE NÍVEIS DIFERENTES E MORTE", exame: "ACUIDADE VISUAL, ECG, GLICEMIA, HEMOGRAMA, AVALIAÇÃO PSICOSSOCIAL", periodicidade: "ANUAL" },
+                { agente: "MANUTENÇÃO EM SISTEMAS ELÉTRICOS (NR-10)", risco: "CHOQUE ELÉTRICO, QUEIMADURAS E MORTE", exame: "ACUIDADE VISUAL, ECG, AUDIOMETRIA, ISHIHARA, AVALIAÇÃO PSICOSSOCIAL", periodicidade: "ANUAL" },
+                { agente: "DIREÇÃO DE VEÍCULOS / MOTORISTA PROFISSIONAL", risco: "ACIDENTES DE TRÂNSITO E DILACERAÇÃO", exame: "HEMOGRAMA, ECG, AUDIOMETRIA, ISHIHARA, ACUIDADE VISUAL", periodicidade: "ANUAL" }
+            ],
+            "FISICOS": [
+                { agente: "RUÍDO CONTÍNUO OU INTERMITENTE DE MÁQUINAS E VEÍCULOS", risco: "SURDEZ TEMPORÁRIA OU PERMANENTE (PAIRO)", exame: "AUDIOMETRIA TONAL OCUPACIONAL", periodicidade: "SEMESTRAL / ANUAL" },
+                { agente: "VIBRAÇÕES LOCALIZADAS NAS MÃOS E BRAÇOS (VMB)", risco: "NEUROPATIA PERIFÉRICA E SÍNDROME DE RAYNAUD", exame: "ELETRONEUROMIOGRAFIA (ENMG) E AVALIAÇÃO OSTEOARTICULAR", periodicidade: "ANUAL" },
+                { agente: "RADIAÇÃO ULTRAVIOLETA (SOLDAGEM)", risco: "CERATOCONJUNTIVITE FOTOELÉTRICA E CATARATA", exame: "EXAME DERMATOLÓGICO + OFTALMOLÓGICO", periodicidade: "ANUAL" },
+                { agente: "SOBRECARGA FISIOLÓGICA POR CALOR", risco: "EXAUSTÃO TÉRMICA E SÍNCOPE POR CALOR", exame: "CLÍNICO", periodicidade: "ANUAL" }
+            ],
+            "QUIMICOS": [
+                { agente: "BENZENO E SEUS COMPOSTOS TÓXICOS", risco: "SUPRESSÃO DE MEDULA ÓSSEA E LEUCEMIA", exame: "ÁCIDO MUÔNICO OU S-FENILMERCAPTÚRICO NA URINA + HEMOGRAMA", periodicidade: "SEMESTRAL" },
+                { agente: "POEIRA CONTENDO SÍLICA LIVRE CRISTALINA", risco: "SILICOSE E FIBROSE PULMONAR IRREVERSÍVEL", exame: "RADIOGRAFIA DE TÓRAX (PADRÃO OIT) + ESPIROMETRIA", periodicidade: "ANUAL" },
+                { agente: "GASES OU VAPORES DE SOLVENTES ORGANICOS", risco: "INTOXICAÇÃO SISTÊMICA E DERMATITE", exame: "MONITORAMENTO BIOLÓGICO URINÁRIO / SANGUÍNEO", periodicidade: "ANUAL" }
+            ],
+            "BIOLOGICOS": [
+                { agente: "CONTATO COM PACIENTES OU MATERIAL INFECTOCONTAGIANTE (NR-32)", risco: "TRANSMISSÃO DE HIV, HEPATITES B/C E TUBERCULOSE", exame: "SOROLOGIAS (HEPATITE B/C), PPD/IGRA, HEMOGRAMA COMPLETO", periodicidade: "SEMESTRAL / ANUAL" },
+                { agente: "CONTATO COM ESGOTOS, FOSSAS E LIXO URBANO", risco: "LEPTOSPIROSE, TÉTANO E HEPATITE A", exame: "CLÍNICO + VACINAÇÃO E SOROLOGIAS", periodicidade: "ANUAL" }
+            ],
+            "PERICULOSOS": [
+                { agente: "OPERAÇÕES PERIGOSAS COM EXPLOSIVOS OU INFLAMÁVEIS", risco: "EXPLOSÃO, QUEIMADURAS E MORTE", exame: "AVALIAÇÃO PSICOSSOCIAL + EXAME CLÍNICO", periodicidade: "ANUAL" },
+                { agente: "ATIVIDADES DE SEGURANÇA PATRIMONIAL (ROUBOS/VIOLÊNCIA)", risco: "AGRESSÃO FÍSICA E TRAUMA PSÍQUICO", exame: "AVALIAÇÃO PSICOSSOCIAL", periodicidade: "ANUAL" },
+                { agente: "ATIVIDADES REALIZADAS COM A UTILIZAÇÃO DE MOTOCICLETA", risco: "ACIDENTE DE TRÂNSITO E DILACERAÇÃO", exame: "ACUIDADE VISUAL, ECG, AUDIOMETRIA, EEG, GLICEMIA, HEMOGRAMA, AVALIAÇÃO PSICOSSOCIAL", periodicidade: "ANUAL" }
+            ]
+        };
+
+        // ESTADO GLOBAL
+        let currentRole = "GESTOR";
+        let selectedAsoId = null;
+        let orderItemsList = [];
+        
+        let clientesCadastrados = [
+            { id: 1, nome: "PREFEITURA MUNICIPAL", cnpj: "00.000.000/0001-91", tel: "(19) 3888-1000", email: "contato@prefeitura.sp.gov.br", medPcmso: "DRA. LUIZA BRABETZ SANDONATO", crmPcmso: "CRM SP 145328" },
+            { id: 2, nome: "INDÚSTRIA METALÚRGICA", cnpj: "11.222.333/0001-44", tel: "(19) 3999-2000", email: "rh@metalurgica.com.br", medPcmso: "DR. MARCOS SILVA", crmPcmso: "CRM SP 98765" }
+        ];
+
+        let clinicasCadastradas = [
+            { id: 1, nome: "CLÍNICA CENTRAL PAULÍNIA", cnpj: "12.345.678/0001-90", whats: "(19) 99156-7153", email: "paulinia@borealengmed.com.br" },
+            { id: 2, nome: "CENTRO MÉDICO MACAPÁ", cnpj: "98.765.432/0001-11", whats: "(96) 98888-7777", email: "macapa@centromedico.com.br" }
+        ];
+
+        let asoQueueData = [
+            { id: 101, nome: "JOÃO DA SILVA", cpf: "123.456.789-00", cliente: "PREFEITURA MUNICIPAL", cargo: "MECÂNICO DE MANUTENÇÃO", tipo: "ASO ADMISSONAL", status: "AGUARDANDO", anamnese: null }
+        ];
+
+        let asoHistoryData = [];
+
+        let pcmsoMatrizData = [
+            { id: 1, lotacao: "OFICINA CENTRAL", processo: "MANUTENÇÃO", cargo: "MECÂNICO DE MANUTENÇÃO", qtd: 3, agente: "SERVIÇOS COM SERRA E MÁQUINAS DE CORTE", exame: "CLÍNICO, AUDIOMETRIA, ECG, HEMOGRAMA", periodicidade: "ANUAL", cliente: "PREFEITURA MUNICIPAL" }
+        ];
+
+        let atestadosHomologacaoData = [
+            { id: 1, cliente: "PREFEITURA MUNICIPAL", trab: "CARLOS FERREIRA - 111.222.333-44", setor: "MANUTENÇÃO", data: "28/10/2026", dias: 3, cid: "M54.5", medico: "DR. ALBERTO GOMES", status: "HOMOLOGADO", parecer: "ATESTADO COMPATÍVEL" }
+        ];
+
+        let monitorRequestsData = [
+            { fecha: "28/10/2026", cliente: "PREFEITURA MUNICIPAL", trab: "JOÃO DA SILVA - 123.456.789-00", obj: "ASO ADMISSONAL", qtd: 1, valor: "85,00", clinica: "CLÍNICA CENTRAL PAULÍNIA", status: "REALIZADO" }
+        ];
+
+        // INICIALIZAÇÃO SEGURA
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                if (window.lucide) { lucide.createIcons(); }
+            } catch (err) { console.log('Lucide loader info:', err); }
+
+            atualizarDropdownsClinicas();
+            validarTrocaPerfil();
+            renderFilaAso();
+            renderPcmsoMatriz();
+            renderClientesTabela();
+            renderClinicasTabela();
+            renderHomologacaoTabela();
+            renderMonitorTable();
+            renderProducaoTable();
+            initCanvasAssinatura();
+        });
+
+        // CANVAS ASSINATURA DIGITAL
+        let isDrawing = false;
+        function initCanvasAssinatura() {
+            const canvas = document.getElementById('canvas-assinatura-medico');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#0f172a';
+
+            canvas.addEventListener('mousedown', (e) => { isDrawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); });
+            canvas.addEventListener('mousemove', (e) => { if (isDrawing) { ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); } });
+            canvas.addEventListener('mouseup', () => isDrawing = false);
+        }
+
+        function limparAssinatura() {
+            const canvas = document.getElementById('canvas-assinatura-medico');
+            if (canvas) { canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height); }
+        }
+
+        // TROCA DE ABAS
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById('tab-' + tabId);
+            if (target) { target.classList.remove('hidden'); }
+        }
+
+        // TROCA DE PERFIL COM SIGILO DE VALORES
+        function validarTrocaPerfil() {
+            currentRole = document.getElementById('user-role-select').value;
+            if (currentRole === 'CLIENTE' || currentRole === 'CLINICA') {
+                document.body.classList.add('hide-prices');
+            } else {
+                document.body.classList.remove('hide-prices');
+            }
+
+            const pcmsoForm = document.getElementById('pcmso-form-container');
+            if (pcmsoForm) { pcmsoForm.style.display = (currentRole === 'GESTOR') ? 'block' : 'none'; }
+            
+            document.querySelectorAll('.btn-only-gestor').forEach(btn => {
+                btn.style.display = (currentRole === 'GESTOR') ? 'block' : 'none';
+            });
+
+            renderPcmsoMatriz();
+        }
+
+        function alterarSenhaMaster() {
+            const pwd = prompt("Digite a nova Senha Master:");
+            if (pwd) { alert("Senha Master redefinida com sucesso!"); }
+        }
+
+        // CADASTROS DE CLIENTES E MÉDICO RESPONSÁVEL PCMSO
+        function salvarNovoCliente() {
+            if (currentRole !== 'GESTOR') { alert("Somente o GESTOR altera o cadastro de Clientes!"); return; }
+            const nome = document.getElementById('cad_cli_nome').value.trim();
+            const cnpj = document.getElementById('cad_cli_cnpj').value.trim();
+            const tel = document.getElementById('cad_cli_tel').value.trim();
+            const email = document.getElementById('cad_cli_email').value.trim();
+            const end = document.getElementById('cad_cli_end').value.trim();
+            const medPcmso = document.getElementById('cad_cli_med_pcmso').value.trim();
+            const crmPcmso = document.getElementById('cad_cli_med_crm').value.trim();
+
+            if (!nome || !cnpj) { alert("Preencha Razão Social e CNPJ."); return; }
+
+            clientesCadastrados.push({ id: Date.now(), nome, cnpj, tel, email, end, medPcmso, crmPcmso });
+            renderClientesTabela();
+
+            document.getElementById('cad_cli_nome').value = '';
+            document.getElementById('cad_cli_cnpj').value = '';
+            alert("Cliente e Médico Responsável do PCMSO salvos com sucesso!");
+        }
+
+        function renderClientesTabela() {
+            const tbody = document.getElementById('clientes-cadastrados-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            clientesCadastrados.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b";
+                tr.innerHTML = `<td class="p-2 font-bold">${c.nome}</td><td class="p-2">${c.cnpj}</td><td class="p-2">${c.tel}</td><td class="p-2">${c.email}</td><td class="p-2 font-bold text-blue-900">${c.medPcmso || '-'} (${c.crmPcmso || ''})</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function salvarNovaClinica() {
+            if (currentRole !== 'GESTOR') { alert("Somente o GESTOR altera o cadastro de Clínicas!"); return; }
+            const nome = document.getElementById('cad_clin_nome').value.trim();
+            const cnpj = document.getElementById('cad_clin_cnpj').value.trim();
+            const whats = document.getElementById('cad_clin_whats').value.trim();
+            const email = document.getElementById('cad_clin_email').value.trim();
+
+            if (!nome) { alert("Informe o nome da clínica."); return; }
+
+            clinicasCadastradas.push({ id: Date.now(), nome, cnpj, whats, email });
+            atualizarDropdownsClinicas();
+            renderClinicasTabela();
+
+            document.getElementById('cad_clin_nome').value = '';
+            document.getElementById('cad_clin_cnpj').value = '';
+            alert("Clínica cadastrada com sucesso!");
+        }
+
+        function renderClinicasTabela() {
+            const tbody = document.getElementById('clinicas-cadastradas-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            clinicasCadastradas.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b";
+                tr.innerHTML = `<td class="p-2 font-bold">${c.nome}</td><td class="p-2">${c.cnpj}</td><td class="p-2">${c.whats}</td><td class="p-2">${c.email || '-'}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function atualizarDropdownsClinicas() {
+            const select = document.getElementById('ped_clinica_target');
+            if (!select) return;
+            select.innerHTML = '';
+            clinicasCadastradas.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.nome; opt.textContent = c.nome;
+                select.appendChild(opt);
+            });
+        }
+
+        // SOLICITADOR DE PEDIDOS -> MANDA PARA A FILA DE ASO
+        function addOrderItem() {
+            const trab = document.getElementById('ped_trab_cpf').value.trim();
+            const obj = document.getElementById('ped_objeto').value;
+            const qtd = document.getElementById('ped_qtd').value;
+            const valor = document.getElementById('ped_valor').value;
+            if (!trab) { alert("Informe o Trabalhador e CPF."); return; }
+
+            orderItemsList.push({ trab, obj, qtd, valor });
+            renderOrderTable();
+            document.getElementById('ped_trab_cpf').value = '';
+        }
+
+        function renderOrderTable() {
+            const tbody = document.getElementById('pedidos-current-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            if (orderItemsList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-slate-400 italic">Nenhum item adicionado ao pedido.</td></tr>`;
+                return;
+            }
+            orderItemsList.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b";
+                tr.innerHTML = `
+                    <td class="p-2 font-bold">${item.trab}</td>
+                    <td class="p-2">${item.obj}</td>
+                    <td class="p-2 text-center font-bold">${item.qtd}</td>
+                    <td class="p-2 text-center col-valor-sigilo font-bold text-emerald-700">R$ ${item.valor}</td>
+                    <td class="p-2 text-center"><button onclick="removeOrderItem(${index})" class="text-red-600 font-bold">✕</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function removeOrderItem(index) { orderItemsList.splice(index, 1); renderOrderTable(); }
+
+        function dispatchOrder() {
+            if (orderItemsList.length === 0) { alert("Adicione itens ao pedido!"); return; }
+            const clinica = document.getElementById('ped_clinica_target').value;
+            
+            orderItemsList.forEach(item => {
+                monitorRequestsData.push({
+                    fecha: "28/10/2026",
+                    cliente: "PREFEITURA MUNICIPAL",
+                    trab: item.trab,
+                    obj: item.obj,
+                    qtd: parseInt(item.qtd),
+                    valor:

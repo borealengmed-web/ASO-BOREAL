@@ -528,12 +528,14 @@ function renderHistoryTabela() {
 }
 
 function filtrarRiscosCat(catId, agenteId) {
-    const cat = document.getElementById(catId).value;
+    const catElem = document.getElementById(catId);
     const agenteSelect = document.getElementById(agenteId);
-    if (!agenteSelect) return;
+    if (!catElem || !agenteSelect) return;
+
+    const cat = catElem.value;
     agenteSelect.innerHTML = '<option value="">-- Selecione o Agente do Inventário PGR --</option>';
 
-    if (cat && INVENTARIO_RISCOS_COMPLETO[cat]) {
+    if (cat && INVENTARIO_RISCOS_COMPLETO[cat] && Array.isArray(INVENTARIO_RISCOS_COMPLETO[cat])) {
         INVENTARIO_RISCOS_COMPLETO[cat].forEach(r => {
             const opt = document.createElement('option');
             opt.value = r.agente;
@@ -685,10 +687,31 @@ function renderHomologacaoTabela() {
     });
 }
 
+function enviarMensagemChat() {
+    const input = document.getElementById('chat-msg-input');
+    const box = document.getElementById('chat-messages-box');
+    const remetente = document.getElementById('chat_remetente_select').value;
+    const destinatario = document.getElementById('chat_destinatario_select').value;
+    
+    if (input && input.value.trim() !== '') {
+        const div = document.createElement('div');
+        div.className = "bg-white p-2 rounded border max-w-md shadow-sm";
+        div.innerHTML = `<strong class="text-teal-800 block">${remetente} ➔ ${destinatario}:</strong> ${input.value.trim()}`;
+        box.appendChild(div);
+        input.value = '';
+        box.scrollTop = box.scrollHeight;
+    }
+}
+
 function gerarLoteESocial() {
     const container = document.getElementById('esocial-preview-container');
     if (container) {
         container.textContent = JSON.stringify({
             evtMonit: {
                 ideEvento: { tpAmb: 1, procEmi: 1, verProc: "1.0.0" },
-                ideEmpregador: { tpInsc: 1, nrInsc: "0
+                ideEmpregador: { tpInsc: 1, nrInsc: "00000000000000" },
+                trabalhador: asoHistoryData
+            }
+        }, null, 2);
+    }
+}

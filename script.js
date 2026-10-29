@@ -332,7 +332,7 @@ window.switchTab = function(tabId) {
     if (!select) return;
     currentRole = select.value;
 
-    const lblQtdVal = document.getElementById('lbl_ped_qtd_valor');
+ const lblQtdVal = document.getElementById('lbl_ped_qtd_valor');
     if (currentRole === 'CLIENTE' || currentRole === 'MEDICO' || currentRole === 'MEDICO_PCMSO') {
         document.body.classList.add('hide-prices');
         if (lblQtdVal) lblQtdVal.textContent = "Qtd / Valor Unit. (R$)";
@@ -342,8 +342,6 @@ window.switchTab = function(tabId) {
     } else {
         document.body.classList.remove('hide-prices');
         if (lblQtdVal) lblQtdVal.textContent = "Qtd / Valor Unit. (R$)";
-    } else {
-        document.body.classList.remove('hide-prices');
     }
 
     const pcmsoForm = document.getElementById('pcmso-form-container');
@@ -1356,6 +1354,58 @@ function apagarHomologacao(id) {
     }
 }
 
+function visualizarLaudoHomologacao(id) {
+    const item = atestadosHomologacaoData.find(x => x.id === id);
+    if (!item) return;
+
+    const paper = document.getElementById('aso-paper-visualizar');
+    if (paper) {
+        paper.innerHTML = `
+            <div class="border-b-2 border-black pb-2 flex justify-between items-center">
+                <div>
+                    <strong class="text-sm block font-black">Boreal Engenharia e Medicina</strong>
+                    <span class="text-[10px]">CRM Nº 1011385 | Tel. 19 99156-7153</span>
+                </div>
+                <div class="text-right">
+                    <strong class="text-base font-black uppercase">PARECER DE HOMOLOGAÇÃO DE ATESTADO MÉDICO</strong>
+                </div>
+            </div>
+
+            <div class="border border-black p-2 bg-slate-50 font-bold uppercase text-[10px]">
+                <span>EMPRESA CLIENTE:</span> ${item.cliente}
+            </div>
+
+            <div class="border border-black p-2 space-y-1 text-[10px]">
+                <strong class="block border-b border-black font-extrabold uppercase">DADOS DO EMPREGADO E ATESTADO EXTERNO</strong>
+                <div><strong>TRABALHADOR:</strong> ${item.trab}</div>
+                <div><strong>SETOR / LOTAÇÃO:</strong> ${item.setor}</div>
+                <div><strong>MÉDICO EMISSOR DO ATESTADO:</strong> ${item.medico}</div>
+                <div><strong>DIAS DE AFASTAMENTO:</strong> ${item.dias} DIA(S) | <strong>DIAGNÓSTICO (CID-10):</strong> ${item.cid}</div>
+                <div><strong>DATA DO ATESTADO:</strong> ${item.data}</div>
+            </div>
+
+            <div class="border border-black p-2 bg-purple-50 text-[10px]">
+                <strong class="font-black text-sm uppercase text-purple-950">PARECER DO MÉDICO HOMOLOGADOR: ATESTADO VALIDADO E HOMOLOGADO</strong>
+                <p class="mt-1 font-semibold">"Após análise do atestado médico apresentado, ratifico a necessidade do afastamento do trabalho pelo período solicitado conforme as diretrizes do PCMSO e Legislação Trabalhista."</p>
+            </div>
+
+            <div class="border border-black p-2 text-center space-y-2 text-[10px]">
+                <div class="grid grid-cols-2 gap-4 border-t border-black pt-4 mt-6">
+                    <div>
+                        <strong class="block border-t border-black pt-1">Assinatura / Ciente do Empregado</strong>
+                        <span>Data: ${item.data}</span>
+                    </div>
+                    <div>
+                        <strong class="block border-t border-black pt-1">DR. ROBERTO ALVES — CRM SP 184920</strong>
+                        <span>Médico Ocupacional Homologador (Assinado Digitalmente)</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    document.getElementById('modal-visualizar-aso-anexado').classList.remove('hidden');
+}
+
 function renderHomologacaoTabela() {
     const tbody = document.getElementById('atestados-homologacao-tbody');
     if (!tbody) return;
@@ -1372,9 +1422,12 @@ function renderHomologacaoTabela() {
             <td class="p-2 text-center font-bold text-purple-900">${a.cid}</td>
             <td class="p-2">${a.medico}</td>
             <td class="p-2 text-center font-bold text-emerald-700">
-                <a href="${a.arquivoUrl || '#'}" download="${a.arquivoNome || 'atestado.pdf'}" target="_blank" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 px-2 py-1 rounded inline-flex items-center gap-1 text-[10px]">
-                    📄 ${a.arquivoNome || 'AtestadoAnexo.pdf'}
+                <a href="${a.arquivoUrl || '#'}" download="${a.arquivoNome || 'atestado.pdf'}" target="_blank" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 px-2 py-1 rounded inline-flex items-center gap-1 text-[10px] mb-1">
+                    📄 Original Escaneado
                 </a>
+                <button onclick="visualizarLaudoHomologacao(${a.id})" class="bg-purple-800 hover:bg-purple-900 text-white px-2 py-1 rounded text-[10px] font-bold block mx-auto shadow">
+                    📜 Gerar Documento Assinado
+                </button>
             </td>
             <td class="p-2 text-center"><span class="bg-purple-100 text-purple-900 px-2 py-0.5 rounded font-bold">${a.status}</span></td>
             <td class="p-2 text-center">

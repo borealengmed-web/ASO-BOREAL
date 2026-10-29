@@ -302,21 +302,25 @@ function popularDropdownExamesPcmso() {
     });
 }
 
-// FUNÇÃO GLOBAL DE NAVEGAÇÃO DOS MÓDULOS (DESCONGELADA E ACESSÍVEL GLOBALMENTE)
+// FUNÇÃO GLOBAL DE NAVEGAÇÃO DOS MÓDULOS (100% DESCONGELADA E OPERACIONAL)
 window.switchTab = function(tabId) {
-    // 1. Oculta todos os módulos/abas
-    const allTabs = document.querySelectorAll('.tab-content');
-    allTabs.forEach(el => el.classList.add('hidden'));
+    if (!tabId) return;
 
-    // 2. Exibe o módulo selecionado
+    // 1. Exibe a aba clicada e oculta as demais diretamente no CSS
+    const allTabs = document.querySelectorAll('.tab-content');
+    allTabs.forEach(el => {
+        el.classList.add('hidden');
+        el.style.display = 'none';
+    });
+
     const target = document.getElementById('tab-' + tabId);
     if (target) {
         target.classList.remove('hidden');
+        target.style.display = 'block';
     }
 
-    // 3. Atualiza o destaque visual dos botões do menu
-    const navButtons = document.querySelectorAll('.nav-tab-btn');
-    navButtons.forEach(btn => {
+    // 2. Destaca visualmente a tecla ativa e mantém todas clicáveis
+    document.querySelectorAll('.nav-tab-btn').forEach(btn => {
         btn.classList.remove('bg-blue-800', 'text-white');
         btn.classList.add('text-slate-300');
     });
@@ -327,16 +331,16 @@ window.switchTab = function(tabId) {
         activeBtn.classList.add('bg-blue-800', 'text-white');
     }
 
-    // 4. Recria ícones para renderização limpa
     try {
         if (window.lucide) { lucide.createIcons(); }
     } catch(e) {}
-};function validarTrocaPerfil() {
-    const select = document.getElementById('user-role-select');
-    if (!select) return;
-    currentRole = select.value;
+};
 
- const lblQtdVal = document.getElementById('lbl_ped_qtd_valor');
+function validarTrocaPerfil() {
+    const select = document.getElementById('user-role-select');
+    if (select) currentRole = select.value;
+
+    const lblQtdVal = document.getElementById('lbl_ped_qtd_valor');
     if (currentRole === 'CLIENTE' || currentRole === 'MEDICO' || currentRole === 'MEDICO_PCMSO') {
         document.body.classList.add('hide-prices');
         if (lblQtdVal) lblQtdVal.textContent = "Qtd / Valor Unit. (R$)";
@@ -357,11 +361,20 @@ window.switchTab = function(tabId) {
         btn.style.display = (currentRole === 'GESTOR') ? 'block' : 'none';
     });
 
-   // DESCONGELA E LIBERA TODAS AS TECLAS/ABAS DOS MÓDULOS PARA QUALQUER PERFIL
+    // LIBERAÇÃO ABSOLUTA DE TODAS AS TECLAS DE MÓDULOS E ATIVAÇÃO DOS CLIQUES
     document.querySelectorAll('.nav-tab-btn').forEach(btn => {
         btn.style.display = 'flex';
         btn.removeAttribute('disabled');
-        btn.classList.remove('opacity-50', 'pointer-events-none', 'cursor-not-allowed');
+        btn.classList.remove('opacity-50', 'pointer-events-none', 'cursor-not-allowed', 'hidden');
+
+        // Garante que o clique funcione mesmo se não houver onclick inline no HTML
+        if (!btn.dataset.hasTabListener) {
+            btn.dataset.hasTabListener = 'true';
+            btn.addEventListener('click', () => {
+                const idTab = btn.id ? btn.id.replace('nav-btn-', '') : null;
+                if (idTab) window.switchTab(idTab);
+            });
+        }
     });
 
     renderPcmsoMatriz();
@@ -881,13 +894,10 @@ function abrirAsoModalBoreal(id) {
         document.getElementById('aso_edit_data').disabled = false;
     }
 
-    const cli = clientesCadastrados.find(c => c.nome === item.cliente) || clientesCadastrados[0];
+   const cli = clientesCadastrados.find(c => c.nome === item.cliente) || clientesCadastrados[0];
     if (cli && document.getElementById('aso_lbl_medico_pcmso')) {
         document.getElementById('aso_lbl_medico_pcmso').textContent = `${cli.medPcmso} — ${cli.crmPcmso}`;
     }
-
-    document.getElementById('modal-aso').classList.remove('hidden');
-}
 
     document.getElementById('modal-aso').classList.remove('hidden');
 }

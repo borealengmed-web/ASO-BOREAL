@@ -901,8 +901,15 @@ function concluirEmissaoAsoBoreal() {
 
     const parecerRadio = document.querySelector('input[name="aso_conclusao"]:checked');
     const parecer = parecerRadio ? parecerRadio.value : "Apto";
-    const medico = document.getElementById('aso_med_nome').value;
     
+    // Captura dados do médico, CRM e RQE dos campos correspondentes
+    const medico = (document.getElementById('aso_med_nome') && document.getElementById('aso_med_nome').value) || "DRA. LUIZA BRABETZ SANDONATO";
+    const medCrm = (document.getElementById('aso_med_crm') && document.getElementById('aso_med_crm').value) || "CRM SP 145328";
+    const medRqe = (document.getElementById('aso_med_rqe') && document.getElementById('aso_med_rqe').value) || "RQE 78945";
+    
+    // Captura data de nascimento (se existir campo no formulário ou dados)
+    const dataNasc = (document.getElementById('aso_edit_nasc') && document.getElementById('aso_edit_nasc').value) || (item.nasc || 'Não informada');
+
     // Captura a assinatura desenhada do médico no canvas
     const canvas = document.getElementById('canvas-assinatura-medico');
     const assinaturaImgData = canvas ? canvas.toDataURL() : null;
@@ -912,6 +919,7 @@ function concluirEmissaoAsoBoreal() {
         fecha: new Date().toLocaleDateString('pt-BR'),
         nome: document.getElementById('aso_edit_nome').value,
         cpf: document.getElementById('aso_edit_cpf').value,
+        nasc: dataNasc,
         cliente: document.getElementById('aso_edit_razao').value,
         cargo: document.getElementById('aso_edit_cargo').value,
         funcao: document.getElementById('aso_edit_funcao').value,
@@ -919,6 +927,8 @@ function concluirEmissaoAsoBoreal() {
         cnpj: document.getElementById('aso_edit_cnpj').value,
         resultado: parecer,
         medico: medico,
+        medCrm: medCrm,
+        medRqe: medRqe,
         agentes: document.getElementById('aso_doc_agentes_especificos').value,
         assinaturaMedico: assinaturaImgData,
         anamneseDados: item.anamnese ? { ...item.anamnese } : null
@@ -931,7 +941,6 @@ function concluirEmissaoAsoBoreal() {
     fecharModal('modal-aso');
     alert("ASO Boreal oficial emitido, assinado e gravado com valor jurídico no Banco de ASOs!");
 }
-
 function renderHistoryTabela() {
     const tbody = document.getElementById('aso-history-tbody');
     if (!tbody) return;
@@ -990,10 +999,11 @@ function visualizarAsoAnexado(id) {
                     <div><strong>Razão Social:</strong> ${item.cliente}</div>
                     <div><strong>CNPJ:</strong> ${item.cnpj || '00.000.000/0001-91'}</div>
                     <div class="col-span-2"><strong>Nome do Empregado:</strong> <span class="font-black text-blue-900">${item.nome}</span></div>
+                    <div><strong>CPF:</strong> ${item.cpf}</div>
+                    <div><strong>Data de Nascimento:</strong> <span class="font-bold">${item.nasc || 'Não informada'}</span></div>
                     <div><strong>Cargo:</strong> ${item.cargo}</div>
                     <div><strong>Função:</strong> ${item.funcao || item.cargo}</div>
                     <div><strong>Setor:</strong> ${item.lotacao || 'OPERACIONAL'}</div>
-                    <div><strong>CPF:</strong> ${item.cpf}</div>
                 </div>
             </div>
 
@@ -1016,7 +1026,8 @@ function visualizarAsoAnexado(id) {
                     <div>
                         ${item.assinaturaMedico ? `<img src="${item.assinaturaMedico}" class="h-10 mx-auto block mb-1">` : ''}
                         <strong class="block border-t border-black">${item.medico}</strong>
-                        <span>Médico(a) Examinador(a)</span>
+                        <span class="text-[10px] block font-bold">${item.medCrm || 'CRM/UF'} | ${item.medRqe || 'RQE'}</span>
+                        <span class="text-[9px] text-slate-600 block">Médico(a) Examinador(a) / Ocupacional</span>
                     </div>
                 </div>
             </div>
@@ -1028,8 +1039,60 @@ function visualizarAsoAnexado(id) {
 function visualizarAnamneseAnexada(id) {
     const item = asoHistoryData.find(x => x.id === id);
     if (!item) return;
-    alert(`Abrindo Ficha de Anamnese Assinada e gravada do empregado: ${item.nome} (${item.cpf})`);
-    window.print();
+
+    const paper = document.getElementById('aso-paper-visualizar');
+    const anam = item.anamneseDados || {};
+
+    if (paper) {
+        paper.innerHTML = `
+            <div class="border-b-2 border-black pb-2 flex justify-between items-center">
+                <div>
+                    <strong class="text-sm block font-black">Boreal Engenharia e Medicina</strong>
+                    <span class="text-[10px]">CRM Nº 1011385 | Tel. 19 99156-7153</span>
+                </div>
+                <div class="text-right">
+                    <strong class="text-base font-black uppercase">FICHA DE ANAMNESE OCUPACIONAL</strong>
+                </div>
+            </div>
+
+            <div class="border border-black p-2 bg-slate-50 text-[10px]">
+                <strong class="block border-b border-black font-extrabold uppercase mb-1">DADOS DO TRABALHADOR</strong>
+                <div class="grid grid-cols-2 gap-2">
+                    <div><strong>Nome:</strong> <span class="font-bold text-blue-900">${item.nome}</span></div>
+                    <div><strong>CPF:</strong> ${item.cpf}</div>
+                    <div><strong>Data de Nascimento:</strong> ${item.nasc || 'Não informada'}</div>
+                    <div><strong>Empresa:</strong> ${item.cliente}</div>
+                    <div><strong>Cargo / Função:</strong> ${item.cargo} / ${item.funcao || item.cargo}</div>
+                    <div><strong>Lotação / Setor:</strong> ${anam.setor || item.lotacao || 'OPERACIONAL'}</div>
+                </div>
+            </div>
+
+            <div class="border border-black p-2 space-y-2 text-[10px]">
+                <strong class="block border-b border-black font-extrabold uppercase">QUESTIONÁRIO CLÍNICO & OCUPACIONAL</strong>
+                <div><strong>Unidade / Local:</strong> ${anam.unidade || '-'}</div>
+                <div><strong>Acidente de Trabalho Anterior / Outros:</strong> ${anam.acidOutro || 'Não'} ${anam.acidOutroDesc ? ' - Detalhes: ' + anam.acidOutroDesc : ''}</div>
+                <div><strong>Limitação Física ou Restrição:</strong> ${anam.limitacao || 'Não'} ${anam.limitacaoDesc ? ' - Detalhes: ' + anam.limitacaoDesc : ''}</div>
+                <div><strong>Observações Clínicas Adicionais:</strong> ${anam.obs || 'Sem alterações registradas'}</div>
+                <div><strong>Data de Conclusão da Anamnese:</strong> ${anam.dataConclusao || item.fecha}</div>
+            </div>
+
+            <div class="border border-black p-2 text-center space-y-2 text-[10px]">
+                <div class="grid grid-cols-2 gap-4 border-t border-black pt-3 mt-4">
+                    <div>
+                        <strong class="block border-t border-black pt-1">Assinatura do Trabalhador</strong>
+                        <span>Data: ${item.fecha}</span>
+                    </div>
+                    <div>
+                        ${item.assinaturaMedico ? `<img src="${item.assinaturaMedico}" class="h-10 mx-auto block mb-1">` : ''}
+                        <strong class="block border-t border-black pt-1">${item.medico}</strong>
+                        <span class="text-[10px] block font-bold">${item.medCrm || 'CRM/UF'} | ${item.medRqe || 'RQE'}</span>
+                        <span class="text-[9px] text-slate-600 block">Médico(a) Examinador(a)</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    document.getElementById('modal-visualizar-aso-anexado').classList.remove('hidden');
 }
 
 function atualizarHeaderPcmsoMedico() {

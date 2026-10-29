@@ -298,13 +298,36 @@ function popularDropdownExamesPcmso() {
     });
 }
 
-function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-    const target = document.getElementById('tab-' + tabId);
-    if (target) { target.classList.remove('hidden'); }
-}
+// FUNÇÃO GLOBAL DE NAVEGAÇÃO DOS MÓDULOS (DESCONGELADA E ACESSÍVEL GLOBALMENTE)
+window.switchTab = function(tabId) {
+    // 1. Oculta todos os módulos/abas
+    const allTabs = document.querySelectorAll('.tab-content');
+    allTabs.forEach(el => el.classList.add('hidden'));
 
-function validarTrocaPerfil() {
+    // 2. Exibe o módulo selecionado
+    const target = document.getElementById('tab-' + tabId);
+    if (target) {
+        target.classList.remove('hidden');
+    }
+
+    // 3. Atualiza o destaque visual dos botões do menu
+    const navButtons = document.querySelectorAll('.nav-tab-btn');
+    navButtons.forEach(btn => {
+        btn.classList.remove('bg-blue-800', 'text-white');
+        btn.classList.add('text-slate-300');
+    });
+
+    const activeBtn = document.getElementById('nav-btn-' + tabId);
+    if (activeBtn) {
+        activeBtn.classList.remove('text-slate-300');
+        activeBtn.classList.add('bg-blue-800', 'text-white');
+    }
+
+    // 4. Recria ícones para renderização limpa
+    try {
+        if (window.lucide) { lucide.createIcons(); }
+    } catch(e) {}
+};function validarTrocaPerfil() {
     const select = document.getElementById('user-role-select');
     if (!select) return;
     currentRole = select.value;

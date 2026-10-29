@@ -1,4 +1,4 @@
-// BANCO DE DADOS INTEGRAL E COMPLETO DO INVENTÁRIO DE RISCOS (EXTRAÍDO DO DOCUMENTO ANEXADO)
+// BANCO DE DADOS INTEGRAL E COMPLETO DO INVENTÁRIO DE RISCOS (TODOS OS PERIGOS E AGENTES)
 const INVENTARIO_RISCOS_COMPLETO = {
     "ACIDENTES_AMPLIADOS": [
         { agente: "CIRCULAÇÃO DE VEÍCULOS NA RUA DA ÁREA EXTERNA OU ESTACIONAMENTO DA UNIDADE", risco: "ACIDENTE DE TRÂNSITO E ATROPELAMENTO", exame: "CLÍNICO", periodicidade: "BIENAL" },
@@ -125,7 +125,7 @@ const INVENTARIO_RISCOS_COMPLETO = {
         { agente: "ACETONITRILA / ÁCIDO ACÉTICO / ÁCIDO CIANÍDRICO / ÁCIDO CLORÍDRICO / ÁCIDO CRÔMICO / ÁCIDO FLUORÍDRICO", risco: "TOXICIDADE GRAVE, CORROSIVO / INTOXICAÇÃO CIANÍDRICA, ÚLCERAS, HIPOCALCEMIA", exame: "DOSAGEM DE TIOCIANATO / CROMO URINÁRIO / CÁLCIO SÉRICO / ESPIROMETRIA", periodicidade: "SEMESTRAL / ANUAL" },
         { agente: "ACRILATO DE METILA / ACRILONITRILA / ÁLCOOIS (BUTÍLICO, ETÍLICO, ISOAMÍLICO, FURFURÍLICO)", risco: "SENSIBILIZANTE, CARCINÓGENO, NARCÓTICO / DEPRESSÃO DO SNC, IRRITAÇÃO RESPIRATÓRIA", exame: "AVALIAÇÃO TOXICOLÓGICA + ESPIROMETRIA", periodicidade: "SEMESTRAL / ANUAL" },
         { agente: "AMÔNIA / ANILINA / ARGÔNIO / ARSINA / BROMETO DE METILA / BROMO", risco: "EDEMA PULMONAR, METEMOGLOBINEMIA, HEMÓLISE, NEUROTOXICIDADE", exame: "METEMOGLOBINA / HEMOGRAMA / UREIA / NEUROLÓGICO", periodicidade: "SEMESTRAL / ANUAL" },
-        { agente: "1,3-BUTADIENO / N-BUTANO / N-BUTILAMINA / BUTIL CELLOSOLVE / CHUMBO / CIANOGÊNIO", risco: "CARCINÓGENO (LEUCEMIA), SATURNISMO, TOXICIDADE CIANÍDRICA", exame: "PLUMBEMIA / HEMOGRAMA / CARBOXIHEMOGLOBINA", periodicIDADE: "SEMESTRAL / ANUAL" },
+        { agente: "1,3-BUTADIENO / N-BUTANO / N-BUTILAMINA / BUTIL CELLOSOLVE / CHUMBO / CIANOGÊNIO", risco: "CARCINÓGENO (LEUCEMIA), SATURNISMO, TOXICIDADE CIANÍDRICA", exame: "PLUMBEMIA / HEMOGRAMA / CARBOXIHEMOGLOBINA", periodicidade: "SEMESTRAL / ANUAL" },
         { agente: "CLORETO DE METILENO / CLORETO DE VINILA / CLORO / CLOROBENZENO / CLOROFÓRMIO", risco: "CARCINÓGENO HEPÁTICO, EDEMA PULMONAR, NARCOSE", exame: "CARBOXIHEMOGLOBINA / FUNÇÃO HEPÁTICA / ESPIROMETRIA", periodicidade: "SEMESTRAL / ANUAL" },
         { agente: "TDI (DIISOCIANATO DE TOLUENO) / FORMALDEÍDO / FOSFINA / GÁS SULFÍDRICO ($H_2S$)", risco: "SENSIBILIZANTE RESPIRATÓRIO, ASMA OCUPACIONAL, CARCINÓGENO, ASFIXIANTE QUÍMICO", exame: "ESPIROMETRIA + EXAME CLÍNICO RESPIRATÓRIO", periodicidade: "SEMESTRAL / ANUAL" }
     ],
@@ -217,17 +217,18 @@ const LISTA_EXAMES_INVENTARIO = [
 // ESTADO GLOBAL
 let currentRole = "GESTOR";
 let selectedAsoId = null;
+let selectedAgendamentoId = null;
 let orderItemsList = [];
 let tempFileAtestado = null;
 
 let clientesCadastrados = [
-    { id: 1, nome: "PREFEITURA MUNICIPAL", cnpj: "00.000.000/0001-91", tel: "(19) 3888-1000", email: "contato@prefeitura.sp.gov.br", medPcmso: "DRA. LUIZA BRABETZ SANDONATO", crmPcmso: "CRM SP 145328", ativo: true },
-    { id: 2, nome: "INDÚSTRIA METALÚRGICA", cnpj: "11.222.333/0001-44", tel: "(19) 3999-2000", email: "rh@metalurgica.com.br", medPcmso: "DR. MARCOS SILVA", crmPcmso: "CRM SP 98765", ativo: true }
+    { id: 1, nome: "PREFEITURA MUNICIPAL", cnpj: "00.000.000/0001-91", tel: "(19) 3888-1000", email: "contato@prefeitura.sp.gov.br", medPcmso: "DRA. LUIZA BRABETZ SANDONATO", crmPcmso: "CRM SP 145328", medWhats: "(19) 99156-7153", medEmail: "luiza.pcmso@borealengmed.com.br", ativo: true },
+    { id: 2, nome: "INDÚSTRIA METALÚRGICA", cnpj: "11.222.333/0001-44", tel: "(19) 3999-2000", email: "rh@metalurgica.com.br", medPcmso: "DR. MARCOS SILVA", crmPcmso: "CRM SP 98765", medWhats: "(19) 98888-9999", medEmail: "marcos.pcmso@metalurgica.com.br", ativo: true }
 ];
 
 let clinicasCadastradas = [
-    { id: 1, nome: "CLÍNICA CENTRAL PAULÍNIA", cnpj: "12.345.678/0001-90", whats: "(19) 99156-7153", email: "paulinia@borealengmed.com.br", ativo: true },
-    { id: 2, nome: "CENTRO MÉDICO MACAPÁ", cnpj: "98.765.432/0001-11", whats: "(96) 98888-7777", email: "macapa@centromedico.com.br", ativo: true }
+    { id: 1, nome: "CLÍNICA CENTRAL PAULÍNIA", cnpj: "12.345.678/0001-90", whats: "(19) 99156-7153", email: "paulinia@borealengmed.com.br", endereco: "AV. JOSÉ PAULINO, 1200 - CENTRO, PAULÍNIA - SP", ativo: true },
+    { id: 2, nome: "CENTRO MÉDICO MACAPÁ", cnpj: "98.765.432/0001-11", whats: "(96) 98888-7777", email: "macapa@centromedico.com.br", endereco: "RUA FAB, 450 - CENTRO, MACAPÁ - AP", ativo: true }
 ];
 
 let asoQueueData = [
@@ -241,18 +242,19 @@ let pcmsoMatrizData = [
 ];
 
 let atestadosHomologacaoData = [
-    { id: 1, cliente: "PREFEITURA MUNICIPAL", trab: "CARLOS FERREIRA - 111.222.333-44", setor: "MANUTENÇÃO", data: "28/10/2026", dias: 3, cid: "M54.5", medico: "DR. ALBERTO GOMES", status: "HOMOLOGADO", arquivoNome: "AtestadoExemplo.pdf", arquivoData: null }
+    { id: 1, cliente: "PREFEITURA MUNICIPAL", trab: "CARLOS FERREIRA - 111.222.333-44", setor: "MANUTENÇÃO", data: "28/10/2026", dias: 3, cid: "M54.5", medico: "DR. ALBERTO GOMES", status: "HOMOLOGADO", arquivoNome: "AtestadoExemplo.pdf", arquivoUrl: null }
 ];
 
 let monitorRequestsData = [
-    { fecha: "28/10/2026", cliente: "PREFEITURA MUNICIPAL", trab: "JOÃO DA SILVA - 123.456.789-00", obj: "ASO ADMISSONAL", qtd: 1, valor: "85,00", clinica: "CLÍNICA CENTRAL PAULÍNIA", status: "REALIZADO" }
+    { id: 1, fecha: "28/10/2026", cliente: "PREFEITURA MUNICIPAL", trab: "JOÃO DA SILVA - 123.456.789-00", obj: "ASO ADMISSONAL", qtd: 1, valor: "85,00", clinica: "CLÍNICA CENTRAL PAULÍNIA", respostaAgendamento: "AGUARDANDO RESPOSTA DA CLÍNICA", status: "PENDENTE" }
 ];
 
-// INICIALIZAÇÃO SEGURA E PROTEGIDA
+// INICIALIZAÇÃO
 document.addEventListener('DOMContentLoaded', () => {
     try { if (window.lucide) { lucide.createIcons(); } } catch(e){}
     popularDropdownExamesPcmso();
     atualizarDropdownsClinicas();
+    atualizarDropdownsClientes();
     validarTrocaPerfil();
     renderFilaAso();
     renderPcmsoMatriz();
@@ -261,6 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHomologacaoTabela();
     renderMonitorTable();
     renderProducaoTable();
+    renderHistoryTabela();
     initCanvasAssinatura();
 });
 
@@ -283,7 +286,6 @@ function limparAssinatura() {
     if (canvas) { canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height); }
 }
 
-// POPULAR SELECT DE EXAMES NO PCMSO
 function popularDropdownExamesPcmso() {
     const select = document.getElementById('pcmso_add_exame');
     if (!select) return;
@@ -296,14 +298,12 @@ function popularDropdownExamesPcmso() {
     });
 }
 
-// TROCA DE ABAS
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
     const target = document.getElementById('tab-' + tabId);
     if (target) { target.classList.remove('hidden'); }
 }
 
-// TROCA DE PERFIL COM REGRAS E SIGILO
 function validarTrocaPerfil() {
     const select = document.getElementById('user-role-select');
     if (!select) return;
@@ -339,7 +339,12 @@ function validarTrocaPerfil() {
 
     Object.values(navBtns).forEach(btn => { if(btn) btn.style.display = 'flex'; });
 
-    if (currentRole === 'MEDICO') {
+    if (currentRole === 'CLIENTE') {
+        if(navBtns.atendimento) navBtns.atendimento.style.display = 'none';
+        if(navBtns.producao) navBtns.producao.style.display = 'none';
+        if(navBtns.cadastros) navBtns.cadastros.style.display = 'none';
+        switchTab('pedidos');
+    } else if (currentRole === 'MEDICO') {
         if(navBtns.pedidos) navBtns.pedidos.style.display = 'none';
         if(navBtns.historico) navBtns.historico.style.display = 'none';
         if(navBtns.esocial) navBtns.esocial.style.display = 'none';
@@ -357,12 +362,6 @@ function validarTrocaPerfil() {
         if(navBtns.producao) navBtns.producao.style.display = 'none';
         if(navBtns.cadastros) navBtns.cadastros.style.display = 'none';
         switchTab('pcmso-matriz');
-    } else if (currentRole === 'CLIENTE') {
-        if(navBtns.pedidos) navBtns.pedidos.style.display = 'none';
-        if(navBtns.atendimento) navBtns.atendimento.style.display = 'none';
-        if(navBtns.producao) navBtns.producao.style.display = 'none';
-        if(navBtns.cadastros) navBtns.cadastros.style.display = 'none';
-        switchTab('historico');
     } else if (currentRole === 'CLINICA') {
         if(navBtns.historico) navBtns.historico.style.display = 'none';
         if(navBtns.esocial) navBtns.esocial.style.display = 'none';
@@ -375,6 +374,9 @@ function validarTrocaPerfil() {
     }
 
     renderPcmsoMatriz();
+    renderMonitorTable();
+    renderHistoryTabela();
+    atualizarHeaderPcmsoMedico();
 }
 
 function alterarSenhaMaster() {
@@ -382,7 +384,7 @@ function alterarSenhaMaster() {
     if (pwd) { alert("Senha Master redefinida com sucesso!"); }
 }
 
-// CADASTROS E INATIVAÇÃO/ATIVAÇÃO
+// CADASTROS DE CLIENTES E MÉDICO DO PCMSO (HOME OFFICE)
 function salvarNovoCliente() {
     if (currentRole !== 'GESTOR') { alert("Somente o GESTOR altera o cadastro de Clientes!"); return; }
     const nome = document.getElementById('cad_cli_nome').value.trim();
@@ -392,11 +394,14 @@ function salvarNovoCliente() {
     const end = document.getElementById('cad_cli_end').value.trim();
     const medPcmso = document.getElementById('cad_cli_med_pcmso').value.trim();
     const crmPcmso = document.getElementById('cad_cli_med_crm').value.trim();
+    const medWhats = document.getElementById('cad_cli_med_whats').value.trim();
+    const medEmail = document.getElementById('cad_cli_med_email').value.trim();
 
     if (!nome || !cnpj) { alert("Preencha Razão Social e CNPJ."); return; }
 
-    clientesCadastrados.push({ id: Date.now(), nome, cnpj, tel, email, end, medPcmso, crmPcmso, ativo: true });
+    clientesCadastrados.push({ id: Date.now(), nome, cnpj, tel, email, end, medPcmso, crmPcmso, medWhats, medEmail, ativo: true });
     renderClientesTabela();
+    atualizarDropdownsClientes();
 
     document.getElementById('cad_cli_nome').value = '';
     document.getElementById('cad_cli_cnpj').value = '';
@@ -412,6 +417,19 @@ function toggleStatusCliente(id) {
     }
 }
 
+function notificarMedicoPcmso(id) {
+    const cli = clientesCadastrados.find(c => c.id === id);
+    if (!cli) return;
+
+    const numClean = (cli.medWhats || '').replace(/\D/g, '');
+    const mensagem = encodeURIComponent(`Olá ${cli.medPcmso}, notificamos que a Matriz do PCMSO do cliente "${cli.nome}" está disponível no sistema Boreal Engmed para sua revisão e inserção dos exames/periodicidades.`);
+
+    if (numClean) {
+        window.open(`https://api.whatsapp.com/send?phone=55${numClean}&text=${mensagem}`, '_blank');
+    }
+    alert(`Notificação enviada para o Médico PCMSO Home Office:\nWhatsApp: ${cli.medWhats || 'Não informado'}\nE-mail: ${cli.medEmail || 'Não informado'}`);
+}
+
 function renderClientesTabela() {
     const tbody = document.getElementById('clientes-cadastrados-tbody');
     if (!tbody) return;
@@ -423,8 +441,16 @@ function renderClientesTabela() {
             <td class="p-2 font-bold">${c.nome}</td>
             <td class="p-2">${c.cnpj}</td>
             <td class="p-2">${c.tel}</td>
-            <td class="p-2">${c.email}</td>
             <td class="p-2 font-bold text-blue-900">${c.medPcmso || '-'} (${c.crmPcmso || ''})</td>
+            <td class="p-2">
+                <span class="font-bold text-emerald-800 block">📱 ${c.medWhats || 'Não inf.'}</span>
+                <span class="text-slate-500 block">✉️ ${c.medEmail || 'Não inf.'}</span>
+            </td>
+            <td class="p-2 text-center">
+                <button onclick="notificarMedicoPcmso(${c.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-1 rounded text-[10px] shadow">
+                    📲 Avisar Médico
+                </button>
+            </td>
             <td class="p-2 text-center"><span class="${c.ativo ? 'text-emerald-700 bg-emerald-100' : 'text-red-700 bg-red-100'} px-2 py-0.5 rounded font-bold">${c.ativo ? 'ATIVO' : 'INATIVO'}</span></td>
             <td class="p-2 text-center">
                 <button onclick="toggleStatusCliente(${c.id})" class="text-xs font-bold px-2 py-1 rounded ${c.ativo ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
@@ -442,15 +468,17 @@ function salvarNovaClinica() {
     const cnpj = document.getElementById('cad_clin_cnpj').value.trim();
     const whats = document.getElementById('cad_clin_whats').value.trim();
     const email = document.getElementById('cad_clin_email').value.trim();
+    const endereco = document.getElementById('cad_clin_endereco').value.trim();
 
     if (!nome) { alert("Informe o nome da clínica."); return; }
 
-    clinicasCadastradas.push({ id: Date.now(), nome, cnpj, whats, email, ativo: true });
+    clinicasCadastradas.push({ id: Date.now(), nome, cnpj, whats, email, endereco, ativo: true });
     atualizarDropdownsClinicas();
     renderClinicasTabela();
 
     document.getElementById('cad_clin_nome').value = '';
     document.getElementById('cad_clin_cnpj').value = '';
+    document.getElementById('cad_clin_endereco').value = '';
     alert("Clínica cadastrada com sucesso!");
 }
 
@@ -473,6 +501,7 @@ function renderClinicasTabela() {
         tr.innerHTML = `
             <td class="p-2 font-bold">${c.nome}</td>
             <td class="p-2">${c.cnpj}</td>
+            <td class="p-2 font-semibold text-slate-600">${c.endereco || 'NÃO CADASTRADO'}</td>
             <td class="p-2">${c.whats}</td>
             <td class="p-2">${c.email || '-'}</td>
             <td class="p-2 text-center"><span class="${c.ativo ? 'text-emerald-700 bg-emerald-100' : 'text-red-700 bg-red-100'} px-2 py-0.5 rounded font-bold">${c.ativo ? 'ATIVO' : 'INATIVO'}</span></td>
@@ -509,12 +538,34 @@ function atualizarDropdownsClientes() {
 }
 
 // SOLICITADOR DE PEDIDOS
+function verificarExameOutro() {
+    const select = document.getElementById('ped_objeto');
+    const inputCustom = document.getElementById('ped_objeto_custom');
+    if (select && inputCustom) {
+        if (select.value === 'OUTRO') {
+            inputCustom.disabled = false;
+            inputCustom.classList.remove('bg-slate-100');
+            inputCustom.classList.add('bg-white');
+            inputCustom.focus();
+        } else {
+            inputCustom.disabled = true;
+            inputCustom.value = '';
+            inputCustom.classList.remove('bg-white');
+            inputCustom.classList.add('bg-slate-100');
+        }
+    }
+}
+
 function addOrderItem() {
     const trab = document.getElementById('ped_trab_cpf').value.trim();
-    const obj = document.getElementById('ped_objeto').value;
+    const selectObj = document.getElementById('ped_objeto').value;
+    const customObj = document.getElementById('ped_objeto_custom').value.trim();
+    const obj = selectObj === 'OUTRO' ? customObj : selectObj;
     const qtd = document.getElementById('ped_qtd').value;
     const valor = document.getElementById('ped_valor').value;
+
     if (!trab) { alert("Informe o Trabalhador e CPF."); return; }
+    if (!obj) { alert("Informe ou digite o Objeto Solicitado."); return; }
 
     orderItemsList.push({ trab, obj, qtd, valor });
     renderOrderTable();
@@ -534,7 +585,7 @@ function renderOrderTable() {
         tr.className = "border-b";
         tr.innerHTML = `
             <td class="p-2 font-bold">${item.trab}</td>
-            <td class="p-2">${item.obj}</td>
+            <td class="p-2 font-bold text-blue-900">${item.obj}</td>
             <td class="p-2 text-center font-bold">${item.qtd}</td>
             <td class="p-2 text-center col-valor-sigilo font-bold text-emerald-700">R$ ${item.valor}</td>
             <td class="p-2 text-center"><button onclick="removeOrderItem(${index})" class="text-red-600 font-bold">✕</button></td>
@@ -547,17 +598,24 @@ function removeOrderItem(index) { orderItemsList.splice(index, 1); renderOrderTa
 
 function dispatchOrder() {
     if (orderItemsList.length === 0) { alert("Adicione itens ao pedido!"); return; }
-    const clinica = document.getElementById('ped_clinica_target').value;
-    
+    const clinicaNome = document.getElementById('ped_clinica_target').value;
+    const activeCliente = document.getElementById('active-cliente-select') ? document.getElementById('active-cliente-select').value : 'PREFEITURA MUNICIPAL';
+    const clienteNome = activeCliente === 'ALL' ? 'PREFEITURA MUNICIPAL' : activeCliente;
+
+    const clinicaObj = clinicasCadastradas.find(c => c.nome === clinicaNome);
+    const endClinica = clinicaObj ? clinicaObj.endereco : "ENDEREÇO DA CLÍNICA";
+
     orderItemsList.forEach(item => {
         monitorRequestsData.push({
-            fecha: "28/10/2026",
-            cliente: "PREFEITURA MUNICIPAL",
+            id: Date.now() + Math.random(),
+            fecha: new Date().toLocaleDateString('pt-BR'),
+            cliente: clienteNome,
             trab: item.trab,
             obj: item.obj,
             qtd: parseInt(item.qtd),
             valor: item.valor,
-            clinica: clinica,
+            clinica: clinicaNome,
+            respostaAgendamento: `Aguardando confirmação de data/hora na clínica (${endClinica})`,
             status: "PENDENTE"
         });
 
@@ -566,20 +624,48 @@ function dispatchOrder() {
             id: Date.now() + Math.random(),
             nome: partes[0] ? partes[0].trim() : item.trab,
             cpf: partes[1] ? partes[1].trim() : "000.000.000-00",
-            cliente: "PREFEITURA MUNICIPAL",
-            cargo: "SOLICITADO VIA PEDIDO",
+            cliente: clienteNome,
+            cargo: "SOLICITADO VIA AGENDAMENTO",
             tipo: item.obj,
             status: "AGUARDANDO",
             anamnese: null
         });
     });
 
-    alert("Pedido disparado com sucesso e enviado para a Fila ASO!");
+    alert("Solicitação de agendamento disparada para a Clínica Credenciada! Notificações enviadas.");
     orderItemsList = [];
     renderOrderTable();
     renderMonitorTable();
     renderFilaAso();
     renderProducaoTable();
+}
+
+function abrirModalRespostaAgendamento(id) {
+    selectedAgendamentoId = id;
+    const req = monitorRequestsData.find(x => x.id === id);
+    if (!req) return;
+
+    document.getElementById('resp_trab_lbl').value = `${req.trab} (${req.obj})`;
+    const clinicaObj = clinicasCadastradas.find(c => c.nome === req.clinica);
+    document.getElementById('resp_endereco').value = clinicaObj ? clinicaObj.endereco : "ENDEREÇO DA CLÍNICA";
+
+    document.getElementById('modal-resposta-agendamento').classList.remove('hidden');
+}
+
+function confirmarRespostaAgendamento() {
+    const req = monitorRequestsData.find(x => x.id === selectedAgendamentoId);
+    const horarios = document.getElementById('resp_horarios').value.trim();
+    const endereco = document.getElementById('resp_endereco').value.trim();
+
+    if (!horarios) { alert("Informe a data e horário agendados."); return; }
+
+    if (req) {
+        req.respostaAgendamento = `AGENDADO: ${horarios} | Local: ${endereco}`;
+        req.status = "CONFIRMADO";
+        alert("Resposta de agendamento gravada no sistema e enviada via WhatsApp/E-mail para o cliente!");
+        fecharModal('modal-resposta-agendamento');
+        renderMonitorTable();
+    }
 }
 
 function renderMonitorTable() {
@@ -588,16 +674,20 @@ function renderMonitorTable() {
     tbody.innerHTML = '';
     monitorRequestsData.forEach(r => {
         const tr = document.createElement('tr');
-        tr.className = "border-b";
+        tr.className = "border-b hover:bg-slate-50";
         tr.innerHTML = `
             <td class="p-2">${r.fecha}</td>
             <td class="p-2 font-bold">${r.cliente}</td>
             <td class="p-2">${r.trab}</td>
-            <td class="p-2">${r.obj}</td>
+            <td class="p-2 font-bold text-blue-900">${r.obj}</td>
             <td class="p-2 text-center font-bold">${r.qtd}</td>
             <td class="p-2 text-center col-valor-sigilo font-bold text-emerald-700">R$ ${r.valor}</td>
             <td class="p-2 font-bold">${r.clinica}</td>
-            <td class="p-2 text-center"><span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">${r.status}</span></td>
+            <td class="p-2 text-blue-950 font-semibold bg-blue-50/50">${r.respostaAgendamento}</td>
+            <td class="p-2 text-center"><span class="${r.status === 'CONFIRMADO' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'} px-2 py-0.5 rounded font-bold">${r.status}</span></td>
+            <td class="p-2 text-center">
+                ${(currentRole === 'CLINICA' || currentRole === 'GESTOR') ? `<button onclick="abrirModalRespostaAgendamento(${r.id})" class="bg-teal-700 text-white font-bold px-2 py-1 rounded text-[10px]">📅 Responder</button>` : `<span class="text-slate-400 italic">Visualização</span>`}
+            </td>
         `;
         tbody.appendChild(tr);
     });
@@ -785,9 +875,14 @@ function concluirEmissaoAsoBoreal() {
         nome: document.getElementById('aso_edit_nome').value,
         cpf: document.getElementById('aso_edit_cpf').value,
         cliente: document.getElementById('aso_edit_razao').value,
+        cargo: document.getElementById('aso_edit_cargo').value,
+        funcao: document.getElementById('aso_edit_funcao').value,
+        lotacao: document.getElementById('aso_edit_lotacao').value,
+        cnpj: document.getElementById('aso_edit_cnpj').value,
         resultado: parecer,
         medico: medico,
-        anamneseAssinada: item.anamnese ? true : false
+        agentes: document.getElementById('aso_doc_agentes_especificos').value,
+        anamneseDados: item.anamnese ? { ...item.anamnese } : null
     });
 
     asoQueueData = asoQueueData.filter(x => x.id !== selectedAsoId);
@@ -795,7 +890,7 @@ function concluirEmissaoAsoBoreal() {
     renderFilaAso();
     renderHistoryTabela();
     fecharModal('modal-aso');
-    alert("ASO Boreal oficial emitido, assinado e anexado individualmente no Banco de ASOs!");
+    alert("ASO Boreal oficial emitido, assinado e gravado individualmente no Banco de ASOs!");
 }
 
 function renderHistoryTabela() {
@@ -815,13 +910,13 @@ function renderHistoryTabela() {
             <td class="p-2.5 font-black text-emerald-700">${h.resultado}</td>
             <td class="p-2.5 font-bold">${h.medico}</td>
             <td class="p-2.5 text-center">
-                <button onclick="baixarAnamneseIndividual(${h.id})" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-900 border border-indigo-300 px-2.5 py-1 rounded font-bold text-xs flex items-center justify-center gap-1 mx-auto shadow-sm">
-                    📋 Baixar Anamnese Assinada (PDF)
+                <button onclick="visualizarAnamneseAnexada(${h.id})" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-900 border border-indigo-300 px-2.5 py-1 rounded font-bold text-xs flex items-center justify-center gap-1 mx-auto shadow-sm">
+                    📋 Visualizar / Baixar Anamnese Assinada (PDF)
                 </button>
             </td>
             <td class="p-2.5 text-center">
-                <button onclick="baixarAsoIndividual(${h.id})" class="bg-slate-900 hover:bg-slate-800 text-white px-3 py-1 rounded font-bold text-xs flex items-center justify-center gap-1 mx-auto shadow">
-                    📄 Baixar ASO Individual Assinado (PDF)
+                <button onclick="visualizarAsoAnexado(${h.id})" class="bg-slate-900 hover:bg-slate-800 text-white px-3 py-1 rounded font-bold text-xs flex items-center justify-center gap-1 mx-auto shadow">
+                    📄 Visualizar / Baixar ASO Individual Assinado (PDF)
                 </button>
             </td>
         `;
@@ -829,20 +924,136 @@ function renderHistoryTabela() {
     });
 }
 
-function baixarAnamneseIndividual(id) {
+function visualizarAsoAnexado(id) {
     const item = asoHistoryData.find(x => x.id === id);
-    if (item) {
-        alert(`Gerando PDF da Ficha de Anamnese individual de: ${item.nome} (${item.cpf})`);
-        window.print();
+    if (!item) return;
+
+    const paper = document.getElementById('aso-paper-visualizar');
+    if (paper) {
+        paper.innerHTML = `
+            <div class="border-b-2 border-black pb-2 flex justify-between items-center">
+                <div>
+                    <strong class="text-sm block font-black">Boreal Engenharia e Medicina</strong>
+                    <span class="text-[10px]">CRM Nº 1011385 | Tel. 19 99156-7153</span>
+                </div>
+                <div class="text-right">
+                    <strong class="text-base font-black uppercase">ATESTADO DE SAÚDE OCUPACIONAL - ASO</strong>
+                </div>
+            </div>
+            <div class="border border-black p-2 bg-slate-50 font-bold uppercase">
+                <span>EMPREGADOR:</span> ${item.cliente} (CNPJ: ${item.cnpj || '00.000.000/0001-00'})
+            </div>
+            <div class="border border-black p-2 space-y-1">
+                <strong>TRABALHADOR:</strong> ${item.nome} | <strong>CPF:</strong> ${item.cpf}<br>
+                <strong>CARGO:</strong> ${item.cargo} | <strong>FUNÇÃO:</strong> ${item.funcao || item.cargo} | <strong>SETOR:</strong> ${item.lotacao || 'OPERACIONAL'}
+            </div>
+            <div class="border border-black p-2 bg-emerald-50">
+                <strong class="text-emerald-950 uppercase">CONCLUSÃO DO EXAME MÉDICO OCUPACIONAL: ${item.resultado}</strong>
+            </div>
+            <div class="border border-black p-2">
+                <strong>RISCOS OCUPACIONAIS ESPECIFICADOS:</strong> ${item.agentes || 'NÃO HÁ RISCOS EM NÍVEL DE AÇÃO'}
+            </div>
+            <div class="border border-black p-2 text-center">
+                <strong>MÉDICO EXAMINADOR RESPONSÁVEL:</strong> ${item.medico}
+            </div>
+        `;
     }
+    document.getElementById('modal-visualizar-aso-anexado').classList.remove('hidden');
 }
 
-function baixarAsoIndividual(id) {
+function visualizarAnamneseAnexada(id) {
     const item = asoHistoryData.find(x => x.id === id);
-    if (item) {
-        alert(`Gerando PDF do ASO Boreal individual assinado de: ${item.nome} (${item.cpf})`);
-        window.print();
-    }
+    if (!item) return;
+    alert(`Abrindo Ficha de Anamnese Assinada e gravada do empregado: ${item.nome} (${item.cpf})`);
+    window.print();
+}
+
+function atualizarHeaderPcmsoMedico() {
+    const activeCliente = document.getElementById('active-cliente-select') ? document.getElementById('active-cliente-select').value : 'PREFEITURA MUNICIPAL';
+    const cliNome = activeCliente === 'ALL' ? 'PREFEITURA MUNICIPAL' : activeCliente;
+    const cli = clientesCadastrados.find(c => c.nome === cliNome) || clientesCadastrados[0];
+
+    const bannerNome = document.getElementById('pcmso_banner_cliente_nome');
+    const bannerMed = document.getElementById('pcmso_banner_med_nome');
+    const bannerCrm = document.getElementById('pcmso_banner_med_crm');
+
+    if (bannerNome) bannerNome.textContent = cli.nome;
+    if (bannerMed) bannerMed.textContent = cli.medPcmso || 'MÉDICO RESPONSÁVEL PCMSO';
+    if (bannerCrm) bannerCrm.textContent = `${cli.crmPcmso || 'CRM/UF'} | Whats: ${cli.medWhats || 'Home Office'}`;
+}
+
+function exportarMatrizPcmsoWord() {
+    const activeCliente = document.getElementById('active-cliente-select') ? document.getElementById('active-cliente-select').value : 'ALL';
+    const cliNome = activeCliente === 'ALL' ? 'PREFEITURA MUNICIPAL' : activeCliente;
+    const cli = clientesCadastrados.find(c => c.nome === cliNome) || clientesCadastrados[0];
+
+    let pcmsoFiltrado = pcmsoMatrizData.filter(p => activeCliente === 'ALL' || p.cliente === activeCliente);
+
+    let htmlContent = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><title>Matriz PCMSO Boreal</title>
+        <style>
+            body { font-family: Arial, sans-serif; font-size: 10pt; }
+            table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+            th { background-color: #0f172a; color: #ffffff; padding: 6px; font-size: 9pt; text-align: left; }
+            td { border: 1px solid #cccccc; padding: 6px; font-size: 9pt; }
+            .header-doc { background-color: #f1f5f9; padding: 10px; border: 1px solid #0f172a; margin-bottom: 15px; }
+        </style>
+        </head>
+        <body>
+            <div class="header-doc">
+                <h2>BOREAL ENGMED — MATRIZ DO PROGRAMA DE CONTROLE MÉDICO DE SAÚDE OCUPACIONAL (PCMSO - NR-07)</h2>
+                <p><strong>EMPRESA CLIENTE:</strong> ${cli.nome} | <strong>CNPJ:</strong> ${cli.cnpj}</p>
+                <p><strong>MÉDICO RESPONSÁVEL DO PCMSO:</strong> ${cli.medPcmso} — ${cli.crmPcmso}</p>
+                <p><strong>DATA DE EMISSÃO:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>LOTAÇÃO / SETOR</th>
+                        <th>PROCESSO OPERACIONAL</th>
+                        <th>CARGO</th>
+                        <th>QTD</th>
+                        <th>AGENTE (FONTE)</th>
+                        <th>RISCO (AGRAVO)</th>
+                        <th>EXAMES REQUISITADOS</th>
+                        <th>PERIODICIDADE</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    pcmsoFiltrado.forEach(item => {
+        htmlContent += `
+            <tr>
+                <td><b>${item.lotacao}</b></td>
+                <td>${item.processo}</td>
+                <td><b>${item.cargo}</b></td>
+                <td style="text-align:center;">${item.qtd}</td>
+                <td>${item.agente || 'AUSÊNCIA DE RISCO'}</td>
+                <td>${item.risco || 'NÃO ESPECIFICADO'}</td>
+                <td><b>${item.exame}</b></td>
+                <td style="text-align:center;"><b>${item.periodicidade}</b></td>
+            </tr>
+        `;
+    });
+
+    htmlContent += `
+                </tbody>
+            </table>
+        </body>
+        </html>
+    `;
+
+    const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Matriz_PCMSO_${cli.nome.replace(/\s+/g, '_')}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    alert(`Matriz do PCMSO exportada em arquivo Word (.docx/.doc) para cópia e colagem no documento principal!`);
 }
 
 function filtrarRiscosCat(catId, agenteId) {
@@ -923,12 +1134,13 @@ function renderPcmsoMatriz() {
                 <td class="p-2 text-center font-bold">${item.qtd}</td>
                 <td class="p-2 font-semibold text-slate-700">${item.agente || 'AUSÊNCIA DE RISCO'}</td>
                 <td class="p-2 font-semibold text-amber-800">${item.risco || 'NÃO ESPECIFICADO'}</td>
-                <td class="p-2">
+                <td class="p-2 space-y-1">
                     <select id="edit_ex_${item.id}" class="w-full border p-1 rounded font-bold bg-amber-50">
                         ${optionsExamesHtml}
                     </select>
+                    <input type="text" id="edit_ex_custom_${item.id}" placeholder="Outro Exame Avulso..." class="w-full border p-1 rounded font-semibold bg-white text-[10px]">
                 </td>
-                <td class="p-2 text-center">
+                <td class="p-2 text-center space-y-1">
                     <select id="edit_per_${item.id}" class="border p-1 rounded font-bold bg-amber-50">
                         <option value="Anual" ${item.periodicidade === 'Anual' ? 'selected' : ''}>Anual</option>
                         <option value="Bienal (24 meses)" ${item.periodicidade.includes('Bienal') ? 'selected' : ''}>Bienal</option>
@@ -936,9 +1148,11 @@ function renderPcmsoMatriz() {
                         <option value="Admissional" ${item.periodicidade === 'Admissional' ? 'selected' : ''}>Admissional</option>
                         <option value="Demissional" ${item.periodicidade === 'Demissional' ? 'selected' : ''}>Demissional</option>
                     </select>
+                    <input type="text" id="edit_per_custom_${item.id}" placeholder="Outro Período..." class="w-full border p-1 rounded font-semibold bg-white text-[10px]">
                 </td>
-                <td class="p-2 text-center">
-                    <button onclick="salvarMedicoPcmso(${item.id})" class="bg-emerald-600 text-white font-bold px-2.5 py-1 rounded text-[10px] shadow">💾 Salvar</button>
+                <td class="p-2 text-center space-y-1">
+                    <button onclick="salvarMedicoPcmso(${item.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-1 rounded text-[10px] shadow w-full">💾 Salvar</button>
+                    <button onclick="removerPcmso(${item.id})" class="bg-red-600 hover:bg-red-700 text-white font-bold px-2 py-1 rounded text-[10px] shadow w-full">🗑️ Apagar</button>
                 </td>
             `;
         } else {
@@ -963,16 +1177,24 @@ function renderPcmsoMatriz() {
 function salvarMedicoPcmso(id) {
     const item = pcmsoMatrizData.find(x => x.id === id);
     if (item) {
-        item.exame = document.getElementById(`edit_ex_${id}`).value;
-        item.periodicidade = document.getElementById(`edit_per_${id}`).value;
+        const exSelect = document.getElementById(`edit_ex_${id}`).value;
+        const exCustom = document.getElementById(`edit_ex_custom_${id}`).value.trim();
+        const perSelect = document.getElementById(`edit_per_${id}`).value;
+        const perCustom = document.getElementById(`edit_per_custom_${id}`).value.trim();
+
+        item.exame = exCustom !== '' ? exCustom : exSelect;
+        item.periodicidade = perCustom !== '' ? perCustom : perSelect;
+
         alert("Exame e Periodicidade atualizados com sucesso pelo Médico do PCMSO!");
         renderPcmsoMatriz();
     }
 }
 
 function removerPcmso(id) {
-    pcmsoMatrizData = pcmsoMatrizData.filter(x => x.id !== id);
-    renderPcmsoMatriz();
+    if(confirm("Tem certeza que deseja apagar esta linha do PCMSO?")) {
+        pcmsoMatrizData = pcmsoMatrizData.filter(x => x.id !== id);
+        renderPcmsoMatriz();
+    }
 }
 
 function abrirModalHomologacao() { document.getElementById('modal-homologacao-form').classList.remove('hidden'); }

@@ -357,54 +357,12 @@ window.switchTab = function(tabId) {
         btn.style.display = (currentRole === 'GESTOR') ? 'block' : 'none';
     });
 
-    const navBtns = {
-        pedidos: document.getElementById('nav-btn-pedidos'),
-        atendimento: document.getElementById('nav-btn-atendimento'),
-        historico: document.getElementById('nav-btn-historico'),
-        esocial: document.getElementById('nav-btn-esocial'),
-        homologacao: document.getElementById('nav-btn-homologacao'),
-        pcmsoMatriz: document.getElementById('nav-btn-pcmso-matriz'),
-        relatorioPcmso: document.getElementById('nav-btn-relatorio-pcmso'),
-        producao: document.getElementById('nav-btn-producao'),
-        chat: document.getElementById('nav-btn-chat'),
-        cadastros: document.getElementById('nav-btn-cadastros')
-    };
-
-    Object.values(navBtns).forEach(btn => { if(btn) btn.style.display = 'flex'; });
-
-    if (currentRole === 'CLIENTE') {
-        if(navBtns.atendimento) navBtns.atendimento.style.display = 'none';
-        if(navBtns.producao) navBtns.producao.style.display = 'none';
-        if(navBtns.cadastros) navBtns.cadastros.style.display = 'none';
-        switchTab('pedidos');
-    } else if (currentRole === 'MEDICO') {
-        if(navBtns.pedidos) navBtns.pedidos.style.display = 'none';
-        if(navBtns.historico) navBtns.historico.style.display = 'none';
-        if(navBtns.esocial) navBtns.esocial.style.display = 'none';
-        if(navBtns.relatorioPcmso) navBtns.relatorioPcmso.style.display = 'none';
-        if(navBtns.producao) navBtns.producao.style.display = 'none';
-        if(navBtns.cadastros) navBtns.cadastros.style.display = 'none';
-        switchTab('atendimento');
-    } else if (currentRole === 'MEDICO_PCMSO') {
-        if(navBtns.pedidos) navBtns.pedidos.style.display = 'none';
-        if(navBtns.atendimento) navBtns.atendimento.style.display = 'none';
-        if(navBtns.historico) navBtns.historico.style.display = 'none';
-        if(navBtns.esocial) navBtns.esocial.style.display = 'none';
-        if(navBtns.homologacao) navBtns.homologacao.style.display = 'none';
-        if(navBtns.relatorioPcmso) navBtns.relatorioPcmso.style.display = 'none';
-        if(navBtns.producao) navBtns.producao.style.display = 'none';
-        if(navBtns.cadastros) navBtns.cadastros.style.display = 'none';
-        switchTab('pcmso-matriz');
-    } else if (currentRole === 'CLINICA') {
-        if(navBtns.historico) navBtns.historico.style.display = 'none';
-        if(navBtns.esocial) navBtns.esocial.style.display = 'none';
-        if(navBtns.homologacao) navBtns.homologacao.style.display = 'none';
-        if(navBtns.relatorioPcmso) navBtns.relatorioPcmso.style.display = 'none';
-        if(navBtns.cadastros) navBtns.cadastros.style.display = 'none';
-        switchTab('pedidos');
-    } else {
-        switchTab('pedidos');
-    }
+   // DESCONGELA E LIBERA TODAS AS TECLAS/ABAS DOS MÓDULOS PARA QUALQUER PERFIL
+    document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+        btn.style.display = 'flex';
+        btn.removeAttribute('disabled');
+        btn.classList.remove('opacity-50', 'pointer-events-none', 'cursor-not-allowed');
+    });
 
     renderPcmsoMatriz();
     renderMonitorTable();
@@ -887,12 +845,40 @@ function abrirAsoModalBoreal(id) {
     if (document.getElementById('aso_edit_razao')) document.getElementById('aso_edit_razao').value = item.cliente || '';
     if (document.getElementById('aso_edit_cargo')) document.getElementById('aso_edit_cargo').value = item.cargo || '';
 
-    // Permite editar o local e a data da realização no momento do preenchimento
-    if (document.getElementById('aso_edit_local') && !document.getElementById('aso_edit_local').value) {
-        document.getElementById('aso_edit_local').value = 'Paulínia-SP';
+    // Remove qualquer texto fixo que contenha "Paulínia" e insere campos editáveis
+    const dataAtual = new Date().toLocaleDateString('pt-BR');
+    const containerLocal = document.getElementById('aso_local_container') || document.querySelector('#modal-aso .border-t, #modal-aso');
+
+    // Procura por qualquer elemento de texto que exiba "Paulínia" fixo e transforma em campo de digitação
+    const elementosTexto = document.querySelectorAll('#modal-aso *');
+    elementosTexto.forEach(el => {
+        if (el.children.length === 0 && el.textContent && el.textContent.includes('Paulínia')) {
+            el.innerHTML = `
+                <div class="flex items-center gap-1 justify-center my-1">
+                    <label class="font-bold text-[10px]">Local:</label>
+                    <input type="text" id="aso_edit_local" placeholder="Cidade/UF da Clínica" value="" class="border border-slate-400 bg-white px-1.5 py-0.5 rounded text-[10px] font-bold w-40">
+                    <label class="font-bold text-[10px] ml-1">Data:</label>
+                    <input type="text" id="aso_edit_data" value="${dataAtual}" class="border border-slate-400 bg-white px-1.5 py-0.5 rounded text-[10px] font-bold w-24 text-center">
+                </div>
+            `;
+        }
+    });
+
+    // Se já existirem os inputs com esses IDs, garante que fiquem livres para edição e limpos
+    if (document.getElementById('aso_edit_local')) {
+        if (document.getElementById('aso_edit_local').value.includes('Paulínia')) {
+            document.getElementById('aso_edit_local').value = '';
+        }
+        document.getElementById('aso_edit_local').removeAttribute('readonly');
+        document.getElementById('aso_edit_local').disabled = false;
+        document.getElementById('aso_edit_local').placeholder = 'Cidade/UF da Clínica';
     }
-    if (document.getElementById('aso_edit_data') && !document.getElementById('aso_edit_data').value) {
-        document.getElementById('aso_edit_data').value = new Date().toLocaleDateString('pt-BR');
+    if (document.getElementById('aso_edit_data')) {
+        if (!document.getElementById('aso_edit_data').value) {
+            document.getElementById('aso_edit_data').value = dataAtual;
+        }
+        document.getElementById('aso_edit_data').removeAttribute('readonly');
+        document.getElementById('aso_edit_data').disabled = false;
     }
 
     const cli = clientesCadastrados.find(c => c.nome === item.cliente) || clientesCadastrados[0];

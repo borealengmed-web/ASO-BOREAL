@@ -252,6 +252,10 @@ let monitorRequestsData = [
 // INICIALIZAÇÃO
 document.addEventListener('DOMContentLoaded', () => {
     try { if (window.lucide) { lucide.createIcons(); } } catch(e){}
+    const pedObjSelect = document.getElementById('ped_objeto');
+    if (pedObjSelect) {
+        pedObjSelect.addEventListener('change', verificarExameOutro);
+    }
     popularDropdownExamesPcmso();
     atualizarDropdownsClinicas();
     atualizarDropdownsClientes();
@@ -571,20 +575,21 @@ function verificarExameOutro() {
     const select = document.getElementById('ped_objeto');
     const inputCustom = document.getElementById('ped_objeto_custom');
     if (select && inputCustom) {
-        if (select.value === 'OUTRO') {
+        const val = (select.value || '').trim().toUpperCase();
+        if (val === 'OUTRO' || val.includes('OUTRO')) {
             inputCustom.disabled = false;
-            inputCustom.classList.remove('bg-slate-100');
+            inputCustom.removeAttribute('readonly');
+            inputCustom.classList.remove('bg-slate-100', 'cursor-not-allowed', 'opacity-50');
             inputCustom.classList.add('bg-white');
             inputCustom.focus();
         } else {
             inputCustom.disabled = true;
             inputCustom.value = '';
             inputCustom.classList.remove('bg-white');
-            inputCustom.classList.add('bg-slate-100');
+            inputCustom.classList.add('bg-slate-100', 'cursor-not-allowed');
         }
     }
 }
-
 function addOrderItem() {
     const trab = document.getElementById('ped_trab_cpf').value.trim();
     const selectObj = document.getElementById('ped_objeto').value;

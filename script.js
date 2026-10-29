@@ -309,8 +309,16 @@ function validarTrocaPerfil() {
     if (!select) return;
     currentRole = select.value;
 
+    const lblQtdVal = document.getElementById('lbl_ped_qtd_valor');
     if (currentRole === 'CLIENTE' || currentRole === 'MEDICO' || currentRole === 'MEDICO_PCMSO') {
         document.body.classList.add('hide-prices');
+        if (lblQtdVal) lblQtdVal.textContent = "Qtd / Valor Unit. (R$)";
+    } else if (currentRole === 'CLINICA') {
+        document.body.classList.remove('hide-prices');
+        if (lblQtdVal) lblQtdVal.textContent = "QUANT.";
+    } else {
+        document.body.classList.remove('hide-prices');
+        if (lblQtdVal) lblQtdVal.textContent = "Qtd / Valor Unit. (R$)";
     } else {
         document.body.classList.remove('hide-prices');
     }
@@ -868,6 +876,10 @@ function concluirEmissaoAsoBoreal() {
     const parecerRadio = document.querySelector('input[name="aso_conclusao"]:checked');
     const parecer = parecerRadio ? parecerRadio.value : "Apto";
     const medico = document.getElementById('aso_med_nome').value;
+    
+    // Captura a assinatura desenhada do médico no canvas
+    const canvas = document.getElementById('canvas-assinatura-medico');
+    const assinaturaImgData = canvas ? canvas.toDataURL() : null;
 
     asoHistoryData.push({
         id: Date.now(),
@@ -882,6 +894,7 @@ function concluirEmissaoAsoBoreal() {
         resultado: parecer,
         medico: medico,
         agentes: document.getElementById('aso_doc_agentes_especificos').value,
+        assinaturaMedico: assinaturaImgData,
         anamneseDados: item.anamnese ? { ...item.anamnese } : null
     });
 
@@ -890,7 +903,7 @@ function concluirEmissaoAsoBoreal() {
     renderFilaAso();
     renderHistoryTabela();
     fecharModal('modal-aso');
-    alert("ASO Boreal oficial emitido, assinado e gravado individualmente no Banco de ASOs!");
+    alert("ASO Boreal oficial emitido, assinado e gravado com valor jurídico no Banco de ASOs!");
 }
 
 function renderHistoryTabela() {
@@ -940,21 +953,46 @@ function visualizarAsoAnexado(id) {
                     <strong class="text-base font-black uppercase">ATESTADO DE SAÚDE OCUPACIONAL - ASO</strong>
                 </div>
             </div>
-            <div class="border border-black p-2 bg-slate-50 font-bold uppercase">
-                <span>EMPREGADOR:</span> ${item.cliente} (CNPJ: ${item.cnpj || '00.000.000/0001-00'})
+
+            <div class="border border-black p-2 bg-slate-50 flex gap-4 font-bold text-[10px] uppercase">
+                <span>EXAME MÉDICO: ASO ADMISSONAL / PERIÓDICO</span>
             </div>
+
+            <div class="border border-black p-2 space-y-2">
+                <strong class="block border-b border-black font-extrabold bg-slate-200 px-1 uppercase">IDENTIFICAÇÃO DO TRABALHADOR E CLIENTE</strong>
+                <div class="grid grid-cols-2 gap-2 text-[10px]">
+                    <div><strong>Razão Social:</strong> ${item.cliente}</div>
+                    <div><strong>CNPJ:</strong> ${item.cnpj || '00.000.000/0001-91'}</div>
+                    <div class="col-span-2"><strong>Nome do Empregado:</strong> <span class="font-black text-blue-900">${item.nome}</span></div>
+                    <div><strong>Cargo:</strong> ${item.cargo}</div>
+                    <div><strong>Função:</strong> ${item.funcao || item.cargo}</div>
+                    <div><strong>Setor:</strong> ${item.lotacao || 'OPERACIONAL'}</div>
+                    <div><strong>CPF:</strong> ${item.cpf}</div>
+                </div>
+            </div>
+
+            <div class="border border-black p-2 bg-amber-50">
+                <strong class="font-black text-sm uppercase">CONCLUSÃO DO EXAME: <span class="text-emerald-800">${item.resultado}</span></strong>
+            </div>
+
             <div class="border border-black p-2 space-y-1">
-                <strong>TRABALHADOR:</strong> ${item.nome} | <strong>CPF:</strong> ${item.cpf}<br>
-                <strong>CARGO:</strong> ${item.cargo} | <strong>FUNÇÃO:</strong> ${item.funcao || item.cargo} | <strong>SETOR:</strong> ${item.lotacao || 'OPERACIONAL'}
+                <strong class="block border-b border-black font-extrabold uppercase">RISCOS OCUPACIONAIS ESPECIFICADOS</strong>
+                <p class="font-bold text-[10px]">${item.agentes || 'NÃO HÁ RISCOS EM NÍVEL DE AÇÃO'}</p>
             </div>
-            <div class="border border-black p-2 bg-emerald-50">
-                <strong class="text-emerald-950 uppercase">CONCLUSÃO DO EXAME MÉDICO OCUPACIONAL: ${item.resultado}</strong>
-            </div>
-            <div class="border border-black p-2">
-                <strong>RISCOS OCUPACIONAIS ESPECIFICADOS:</strong> ${item.agentes || 'NÃO HÁ RISCOS EM NÍVEL DE AÇÃO'}
-            </div>
-            <div class="border border-black p-2 text-center">
-                <strong>MÉDICO EXAMINADOR RESPONSÁVEL:</strong> ${item.medico}
+
+            <div class="border border-black p-2 text-center space-y-2">
+                <p class="text-[9px] italic">"Estou ciente do resultado do presente exame médico e declaro que recebi uma cópia deste ASO."</p>
+                <div class="grid grid-cols-2 gap-4 border-t border-black pt-2">
+                    <div>
+                        <strong class="block border-t border-black">Assinatura do(a) Examinado(a)</strong>
+                        <span>Data: ${item.fecha}</span>
+                    </div>
+                    <div>
+                        ${item.assinaturaMedico ? `<img src="${item.assinaturaMedico}" class="h-10 mx-auto block mb-1">` : ''}
+                        <strong class="block border-t border-black">${item.medico}</strong>
+                        <span>Médico(a) Examinador(a)</span>
+                    </div>
+                </div>
             </div>
         `;
     }
@@ -980,6 +1018,10 @@ function atualizarHeaderPcmsoMedico() {
     if (bannerNome) bannerNome.textContent = cli.nome;
     if (bannerMed) bannerMed.textContent = cli.medPcmso || 'MÉDICO RESPONSÁVEL PCMSO';
     if (bannerCrm) bannerCrm.textContent = `${cli.crmPcmso || 'CRM/UF'} | Whats: ${cli.medWhats || 'Home Office'}`;
+}
+
+function exportarPcmsoWord() {
+    exportarMatrizPcmsoWord();
 }
 
 function exportarMatrizPcmsoWord() {
@@ -1102,8 +1144,14 @@ function adicionarLinhaPCMSO() {
     const agente = agenteSelect.value;
     const opt = agenteSelect.options[agenteSelect.selectedIndex];
     const risco = opt ? (opt.dataset.risco || 'RISCO ESPECÍFICO') : 'RISCO ESPECÍFICO';
-    const exame = document.getElementById('pcmso_add_exame').value;
-    const periodicidade = document.getElementById('pcmso_add_periodicidade').value;
+    
+    const exameSel = document.getElementById('pcmso_add_exame').value;
+    const exameCustom = document.getElementById('pcmso_add_exame_custom').value.trim();
+    const exame = exameCustom !== '' ? exameCustom : exameSel;
+
+    const perSel = document.getElementById('pcmso_add_periodicidade').value;
+    const perCustom = document.getElementById('pcmso_add_per_custom').value.trim();
+    const periodicidade = perCustom !== '' ? perCustom : perSel;
 
     if (!lotacao || !cargo || !exame) { alert("Preencha Lotação, Cargo e Exame."); return; }
 
@@ -1112,8 +1160,9 @@ function adicionarLinhaPCMSO() {
 
     document.getElementById('pcmso_add_lotacao').value = '';
     document.getElementById('pcmso_add_cargo').value = '';
+    document.getElementById('pcmso_add_exame_custom').value = '';
+    document.getElementById('pcmso_add_per_custom').value = '';
 }
-
 function renderPcmsoMatriz() {
     const tbody = document.getElementById('pcmso-matriz-tbody');
     if (!tbody) return;
@@ -1236,13 +1285,61 @@ function salvarHomologacaoAtestado() {
     alert("Atestado anexado, registrado e homologado com sucesso!");
 }
 
+let tempFileAtestadoTop = null;
+
+function processarArquivoAtestadoTop(evt) {
+    const file = evt.target.files[0];
+    if (file) {
+        tempFileAtestadoTop = { nome: file.name, url: URL.createObjectURL(file) };
+    }
+}
+
+function adicionarHomologacaoDireta() {
+    const trab = document.getElementById('hom_top_trab').value.trim();
+    const setor = document.getElementById('hom_top_setor').value.trim() || 'OPERACIONAL';
+    const dias = document.getElementById('hom_top_dias').value;
+    const cid = document.getElementById('hom_top_cid').value.trim();
+    const medico = document.getElementById('hom_top_medico').value.trim() || 'MÉDICO EMISSOR';
+    const activeCliente = document.getElementById('active-cliente-select') ? document.getElementById('active-cliente-select').value : 'PREFEITURA MUNICIPAL';
+    const clienteNome = activeCliente === 'ALL' ? 'PREFEITURA MUNICIPAL' : activeCliente;
+
+    if (!trab || !cid) { alert("Preencha Trabalhador e CID-10."); return; }
+
+    atestadosHomologacaoData.push({
+        id: Date.now(),
+        cliente: clienteNome,
+        trab,
+        setor,
+        data: new Date().toLocaleDateString('pt-BR'),
+        dias,
+        cid,
+        medico,
+        status: "HOMOLOGADO",
+        arquivoNome: tempFileAtestadoTop ? tempFileAtestadoTop.nome : "Atestado.pdf",
+        arquivoUrl: tempFileAtestadoTop ? tempFileAtestadoTop.url : "#"
+    });
+
+    tempFileAtestadoTop = null;
+    renderHomologacaoTabela();
+    document.getElementById('hom_top_trab').value = '';
+    document.getElementById('hom_top_cid').value = '';
+}
+
+function apagarHomologacao(id) {
+    if (currentRole !== 'GESTOR') { alert("Somente o GESTOR pode apagar atestados homologados!"); return; }
+    if (confirm("Tem certeza que deseja apagar este atestado?")) {
+        atestadosHomologacaoData = atestadosHomologacaoData.filter(x => x.id !== id);
+        renderHomologacaoTabela();
+    }
+}
+
 function renderHomologacaoTabela() {
     const tbody = document.getElementById('atestados-homologacao-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
     atestadosHomologacaoData.forEach(a => {
         const tr = document.createElement('tr');
-        tr.className = "border-b";
+        tr.className = "border-b hover:bg-slate-50";
         tr.innerHTML = `
             <td class="p-2 font-bold">${a.cliente}</td>
             <td class="p-2">${a.trab}</td>
@@ -1252,16 +1349,18 @@ function renderHomologacaoTabela() {
             <td class="p-2 text-center font-bold text-purple-900">${a.cid}</td>
             <td class="p-2">${a.medico}</td>
             <td class="p-2 text-center font-bold text-emerald-700">
-                <a href="${a.arquivoUrl || '#'}" download="${a.arquivoNome || 'atestado.pdf'}" target="_blank" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 px-2 py-1 rounded inline-flex items-center gap-1">
+                <a href="${a.arquivoUrl || '#'}" download="${a.arquivoNome || 'atestado.pdf'}" target="_blank" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 px-2 py-1 rounded inline-flex items-center gap-1 text-[10px]">
                     📄 ${a.arquivoNome || 'AtestadoAnexo.pdf'}
                 </a>
             </td>
             <td class="p-2 text-center"><span class="bg-purple-100 text-purple-900 px-2 py-0.5 rounded font-bold">${a.status}</span></td>
+            <td class="p-2 text-center">
+                ${currentRole === 'GESTOR' ? `<button onclick="apagarHomologacao(${a.id})" class="text-red-600 font-bold hover:underline">🗑️ Apagar</button>` : `<span class="text-slate-400 italic">-</span>`}
+            </td>
         `;
         tbody.appendChild(tr);
     });
 }
-
 function enviarMensagemChat() {
     const input = document.getElementById('chat-msg-input');
     const box = document.getElementById('chat-messages-box');

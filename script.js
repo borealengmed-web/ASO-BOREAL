@@ -241,7 +241,7 @@ let orderItemsList = [];
 let tempFileAtestado = null;
 
 // ==========================================
-// LOGIN CONECTADO DIRETAMENTE AO BANCO DE DADOS
+// LOGIN CONECTADO AO BANCO DE DADOS (SUPABASE) COM CONTINGÊNCIA
 // ==========================================
 window.realizarLoginSistema = async function() {
     const emailInput = document.getElementById('login_usuario_email');
@@ -261,35 +261,46 @@ window.realizarLoginSistema = async function() {
         return;
     }
 
-    // Feedback visual de carregamento
     const btnLogin = document.querySelector('#tela-login-container button');
-    const txtOriginal = btnLogin ? btnLogin.textContent : 'Entrar';
-    if (btnLogin) btnLogin.textContent = "Verificando no banco...";
+    const txtOriginal = btnLogin ? btnLogin.textContent : 'Entrar no Sistema';
+    if (btnLogin) btnLogin.textContent = "Verificando...";
 
     try {
         let userEncontrado = null;
 
-        // 1. Consulta em tempo real na tabela 'usuarios' do Supabase
+        // 1. Tenta autenticar no Supabase
         if (supabaseClient) {
-            const { data, error } = await supabaseClient
-                .from('usuarios')
-                .select('*')
-                .eq('email', email)
-                .eq('senha', senha)
-                .maybeSingle();
+            try {
+                const { data, error } = await supabaseClient
+                    .from('usuarios')
+                    .select('*')
+                    .eq('email', email)
+                    .eq('senha', senha)
+                    .maybeSingle();
 
-            if (!error && data) {
-                userEncontrado = {
-                    email: data.email,
-                    role: data.role,
-                    nome: data.nome,
-                    vinculoCliente: data.vinculo_cliente,
-                    tipoMedico: data.tipo_medico
-                };
+                if (!error && data) {
+                    userEncontrado = {
+                        email: data.email,
+                        role: data.role,
+                        nome: data.nome,
+                        vinculoCliente: data.vinculo_cliente || 'ALL',
+                        tipoMedico: data.tipo_medico || 'GESTOR'
+                    };
+                }
+            } catch (errDb) {
+                console.warn("Supabase indisponível no momento, checando lista local...", errDb);
             }
         }
 
-        // 2. Se o usuário existir no banco da nuvem:
+        // 2. Se o Supabase falhar ou não encontrar, valida pela lista local
+        if (!userEncontrado && typeof USUARIOS_SISTEMA !== 'undefined') {
+            userEncontrado = USUARIOS_SISTEMA.find(u => 
+                u.email.trim().toLowerCase() === email && 
+                String(u.senha).trim() === senha
+            );
+        }
+
+        // 3. Usuário validado com sucesso
         if (userEncontrado) {
             usuarioLogado = userEncontrado;
             currentRole = userEncontrado.role;
@@ -300,26 +311,26 @@ window.realizarLoginSistema = async function() {
             const selCli = document.getElementById('active-cliente-select');
             if (selCli && userEncontrado.vinculoCliente !== 'ALL') {
                 selCli.value = userEncontrado.vinculoCliente;
-                selCli.disabled = true; // Cliente fixado na própria empresa
+                selCli.disabled = true;
             } else if (selCli) {
                 selCli.disabled = false;
             }
 
-            // Oculta a tela de login
+            // Oculta a tela preta de login
             const telaLogin = document.getElementById('tela-login-container');
             if (telaLogin) {
                 telaLogin.classList.add('hidden');
                 telaLogin.style.display = 'none';
             }
 
-            // Aplica as permissões de módulo para o perfil logado
+            // Aplica as travas dos módulos para o perfil
             if (typeof aplicarPermissoesPerfilDefinitivo === 'function') {
                 aplicarPermissoesPerfilDefinitivo();
             } else if (typeof validarTrocaPerfil === 'function') {
                 validarTrocaPerfil();
             }
 
-            // Carrega os ASOs salvos em nuvem para a tabela
+            // Puxa os ASOs do Supabase se existirem
             if (typeof carregarAsosDoBanco === 'function') {
                 await carregarAsosDoBanco();
             }
@@ -327,15 +338,15 @@ window.realizarLoginSistema = async function() {
             if (msgErro) msgErro.classList.add('hidden');
         } else {
             if (msgErro) {
-                msgErro.textContent = "E-mail ou senha inválidos no banco de dados!";
+                msgErro.textContent = "E-mail ou senha incorretos!";
                 msgErro.classList.remove('hidden');
                 msgErro.style.display = 'block';
             }
-            alert("E-mail ou senha incorretos no banco de dados Supabase!\n\nVerifique se o usuário consta na tabela 'usuarios'.");
+            alert("E-mail ou senha incorretos!\n\nDados para teste:\nE-mail: gestor@boreal.com\nSenha: 123");
         }
     } catch (err) {
-        console.error("Erro na autenticação:", err);
-        alert("Falha de conexão com o banco de dados. Verifique sua conexão com a internet.");
+        console.error("Erro no login:", err);
+        alert("Ocorreu uma falha ao tentar entrar. Tente novamente.");
     } finally {
         if (btnLogin) btnLogin.textContent = txtOriginal;
     }
@@ -349,85 +360,6 @@ window.realizarLogoutSistema = function() {
         telaLogin.style.display = 'flex';
     }
 };
-// FUNÇÃO DE LOGIN E VALIDAÇÃO DE SENHA
-window.realizarLoginSistema = function() {
-    const emailInput = document.getElementById('login_usuario_email');
-    const senhaInput = document.getElementById('login_usuario_senha');
-    const msgErro = document.getElementById('login_msg_erro');
-
-    if (!emailInput || !senhaInput) {
-        alert("Campos de login não encontrados na tela!");
-        return;
-    }
-
-    const email = emailInput.value.trim().toLowerCase();
-    const senha = senhaInput.value.trim();
-
-    // Busca usuário ignorando maiúsculas e espaços
-    const userEncontrado = USUARIOS_SISTEMA.find(u => 
-        u.email.trim().toLowerCase() === email && 
-        String(u.senha).trim() === senha
-    );
-
-    if (userEncontrado) {
-        usuarioLogado = userEncontrado;
-        currentRole = userEncontrado.role;
-
-        // Atualiza o seletor do topo se existir
-        const selRole = document.getElementById('user-role-select');
-        if (selRole) selRole.value = currentRole;
-
-        const selCli = document.getElementById('active-cliente-select');
-        if (selCli && userEncontrado.vinculoCliente !== 'ALL') {
-            selCli.value = userEncontrado.vinculoCliente;
-            selCli.disabled = true;
-        } else if (selCli) {
-            selCli.disabled = false;
-        }
-
-        // Oculta a tela de login de forma forçada no CSS
-        const telaLogin = document.getElementById('tela-login-container');
-        if (telaLogin) {
-            telaLogin.classList.add('hidden');
-            telaLogin.style.display = 'none';
-        }
-
-        // Aplica os módulos do perfil
-        if (typeof aplicarPermissoesPerfilDefinitivo === 'function') {
-            aplicarPermissoesPerfilDefinitivo();
-        } else if (typeof validarTrocaPerfil === 'function') {
-            validarTrocaPerfil();
-        }
-
-        if (msgErro) msgErro.classList.add('hidden');
-    } else {
-        if (msgErro) {
-            msgErro.textContent = "E-mail ou senha incorretos!";
-            msgErro.classList.remove('hidden');
-            msgErro.style.display = 'block';
-        }
-        alert("E-mail ou senha incorretos!\n\nTeste com:\nLogin: gestor@boreal.com\nSenha: 123");
-    }
-};
-
-window.realizarLogoutSistema = function() {
-    usuarioLogado = null;
-    const telaLogin = document.getElementById('tela-login-container');
-    if (telaLogin) {
-        telaLogin.classList.remove('hidden');
-        telaLogin.style.display = 'flex';
-    }
-};
-
-function realizarLogoutSistema() {
-    usuarioLogado = null;
-    const telaLogin = document.getElementById('tela-login-container');
-    const appPrincipal = document.getElementById('app-principal-container');
-    if (telaLogin) telaLogin.classList.remove('hidden');
-    if (appPrincipal) appPrincipal.classList.add('hidden');
-}
-let orderItemsList = [];
-let tempFileAtestado = null;
 
 let clientesCadastrados = [
     { id: 1, nome: "PREFEITURA MUNICIPAL", cnpj: "00.000.000/0001-91", tel: "(19) 3888-1000", email: "contato@prefeitura.sp.gov.br", medPcmso: "DRA. LUIZA BRABETZ SANDONATO", crmPcmso: "CRM SP 145328", medWhats: "(19) 99156-7153", medEmail: "luiza.pcmso@borealengmed.com.br", ativo: true },

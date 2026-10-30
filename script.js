@@ -748,7 +748,6 @@ function processarCargaMassaExcel(evt) {
             const clienteNome = r.CLIENTE || r.RAZAO_SOCIAL || "PREFEITURA MUNICIPAL";
             const cliObj = clientesCadastrados.find(c => c.nome === clienteNome) || clientesCadastrados[0];
 
-            // Grava o ASO em massa diretamente no Banco de ASOs para avaliação do médico
             asoHistoryData.push({
                 id: Date.now() + Math.random(),
                 fecha: r.DATA || dataAtual,
@@ -971,56 +970,56 @@ function concluirEmissaoAsoBoreal() {
     fecharModal('modal-aso');
     alert("ASO preenchido com sucesso pelo Auxiliar e transferido para o Banco de ASOs para análise e parecer do Médico!");
 }
-function concluirEmissaoAsoBoreal() {
-    const item = asoQueueData.find(x => x.id === selectedAsoId);
-    if (!item) return;
 
-    // Captura local e data editáveis informados pelo auxiliar
-    const localRealizacao = (document.getElementById('aso_edit_local') && document.getElementById('aso_edit_local').value.trim()) || "Cidade da Clínica";
-    const dataRealizacao = (document.getElementById('aso_edit_data') && document.getElementById('aso_edit_data').value.trim()) || new Date().toLocaleDateString('pt-BR');
+function renderHistoryTabela() {
+    const tbody = document.getElementById('aso-history-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
 
-    // Vincula o Médico Responsável do PCMSO cadastrado na empresa cliente
-    const clienteNome = (document.getElementById('aso_edit_razao') && document.getElementById('aso_edit_razao').value) || item.cliente;
-    const cliObj = clientesCadastrados.find(c => c.nome === clienteNome) || clientesCadastrados[0];
-    const medPcmsoNome = cliObj ? cliObj.medPcmso : "DRA. LUIZA BRABETZ SANDONATO";
-    const medPcmsoCrm = cliObj ? cliObj.crmPcmso : "CRM SP 145328";
+    const activeCliente = document.getElementById('active-cliente-select') ? document.getElementById('active-cliente-select').value : 'ALL';
 
-    // Dados complementares
-    const dataNasc = (document.getElementById('aso_edit_nasc') && document.getElementById('aso_edit_nasc').value) || (item.nasc || 'Não informada');
-    const matricula = (document.getElementById('aso_edit_matricula') && document.getElementById('aso_edit_matricula').value) || (item.matricula || '-');
+    asoHistoryData.filter(h => activeCliente === 'ALL' || h.cliente === activeCliente).forEach(h => {
+        const tr = document.createElement('tr');
+        tr.className = "border-b hover:bg-slate-50";
 
-    // Salva o ASO preparado pelo auxiliar no Banco de ASOs aguardando parecer médico
-    asoHistoryData.push({
-        id: Date.now(),
-        fecha: dataRealizacao,
-        local: localRealizacao,
-        nome: (document.getElementById('aso_edit_nome') && document.getElementById('aso_edit_nome').value) || item.nome,
-        cpf: (document.getElementById('aso_edit_cpf') && document.getElementById('aso_edit_cpf').value) || item.cpf,
-        nasc: dataNasc,
-        matricula: matricula,
-        cliente: clienteNome,
-        cargo: (document.getElementById('aso_edit_cargo') && document.getElementById('aso_edit_cargo').value) || item.cargo,
-        funcao: (document.getElementById('aso_edit_funcao') && document.getElementById('aso_edit_funcao').value) || item.cargo,
-        lotacao: (document.getElementById('aso_edit_lotacao') && document.getElementById('aso_edit_lotacao').value) || 'OFICINA CENTRAL',
-        cnpj: (document.getElementById('aso_edit_cnpj') && document.getElementById('aso_edit_cnpj').value) || (cliObj ? cliObj.cnpj : '00.000.000/0001-91'),
-        tipoExame: item.tipo || 'ASO ADMISSIONAL / PERIÓDICO',
-        resultado: "AGUARDANDO PARECER DO MÉDICO",
-        medico: "A DEFINIR PELO EXAMINADOR",
-        medicoPcmso: medPcmsoNome,
-        crmPcmso: medPcmsoCrm,
-        agentes: (document.getElementById('aso_doc_agentes_especificos') && document.getElementById('aso_doc_agentes_especificos').value) || 'RUÍDO CONTÍNUO DE MÁQUINAS; POSTURA SENTADA POR LONGOS PERÍODOS',
-        arquivoAssinadoUrl: null,
-        arquivoAssinadoNome: null,
-        anamneseDados: item.anamnese ? { ...item.anamnese, local: localRealizacao, data: dataRealizacao } : null
+        const isPendenteParecer = h.resultado === "AGUARDANDO PARECER DO MÉDICO";
+        const corStatus = isPendenteParecer ? 'text-amber-600 bg-amber-50 border border-amber-300' : 'text-emerald-700 bg-emerald-50 border border-emerald-300';
+
+        tr.innerHTML = `
+            <td class="p-2.5 text-xs">${h.fecha}</td>
+            <td class="p-2.5 font-bold text-xs">${h.nome}<br><span class="text-slate-500 font-normal">${h.cpf}</span></td>
+            <td class="p-2.5 font-bold text-xs">${h.cliente}</td>
+            <td class="p-2.5 text-center">
+                <span class="font-extrabold text-[11px] px-2 py-1 rounded block ${corStatus}">
+                    ${h.resultado}
+                </span>
+            </td>
+            <td class="p-2.5 font-bold text-xs">${h.medico}</td>
+            <td class="p-2.5 text-center">
+                <button onclick="visualizarAnamneseAnexada(${h.id})" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-900 border border-indigo-300 px-2 py-1 rounded font-bold text-[11px] flex items-center justify-center gap-1 mx-auto shadow-sm">
+                    📋 Anamnese (PDF)
+                </button>
+            </td>
+            <td class="p-2.5 text-center">
+                <button onclick="visualizarAsoAnexado(${h.id})" class="${isPendenteParecer ? 'bg-amber-700 hover:bg-amber-800' : 'bg-slate-900 hover:bg-slate-800'} text-white px-2.5 py-1 rounded font-bold text-[11px] flex items-center justify-center gap-1 mx-auto shadow mb-1">
+                    ${isPendenteParecer ? '🩺 Dar Parecer (Médico)' : '📄 Abrir ASO A4 / Imprimir'}
+                </button>
+                <div class="mt-1">
+                    ${h.arquivoAssinadoUrl ? `
+                        <a href="${h.arquivoAssinadoUrl}" download="${h.arquivoAssinadoNome || 'ASO_Assinado.pdf'}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded font-bold text-[10px] inline-flex items-center gap-1 shadow">
+                            ✅ Baixar ASO Assinado (ICP / Escaneado)
+                        </a>
+                    ` : `
+                        <label class="bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-1.5 py-0.5 rounded font-bold text-[10px] cursor-pointer inline-flex items-center gap-1">
+                            📎 Anexar ASO Assinado
+                            <input type="file" accept=".pdf,image/*" class="hidden" onchange="anexarAsoAssinadoIcp(${h.id}, event)">
+                        </label>
+                    `}
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
     });
-
-    // Remove da fila provisória de preenchimento
-    asoQueueData = asoQueueData.filter(x => x.id !== selectedAsoId);
-
-    renderFilaAso();
-    renderHistoryTabela();
-    fecharModal('modal-aso');
-    alert("ASO preenchido com sucesso pelo Auxiliar e transferido para o Banco de ASOs para análise e parecer do Médico!");
 }
 
 function anexarAsoAssinadoIcp(id, evt) {
@@ -1031,15 +1030,55 @@ function anexarAsoAssinadoIcp(id, evt) {
     if (item) {
         item.arquivoAssinadoNome = file.name;
         item.arquivoAssinadoUrl = URL.createObjectURL(file);
-        alert(`ASO Assinado ICP-Brasil ("${file.name}") anexado com sucesso ao prontuário de ${item.nome}!`);
+        alert(`ASO Assinado ("${file.name}") anexado com sucesso ao prontuário de ${item.nome}!`);
         renderHistoryTabela();
+    }
+}
+
+function salvarParecerMedicoBanco(id) {
+    const item = asoHistoryData.find(x => x.id === id);
+    if (!item) return;
+
+    const radioParecer = document.querySelector('input[name="parecer_medico_radio"]:checked');
+    if (!radioParecer) {
+        alert("Por favor, selecione: APTO, INAPTO ou APTO COM RESTRIÇÃO.");
+        return;
+    }
+
+    const nomeMed = document.getElementById('parecer_medico_nome').value.trim() || "DR. ROBERTO ALVES - CRM SP 184920";
+    
+    item.resultado = radioParecer.value;
+    item.medico = nomeMed;
+
+    alert(`Parecer médico gravado com sucesso como: "${item.resultado}"! O ASO está pronto para impressão ou assinatura digital.`);
+    renderHistoryTabela();
+    visualizarAsoAnexado(id);
+}
+
+function fecharModalVisualizacaoAso() {
+    // Procura os possíveis IDs de modais de visualização e fecha o que estiver aberto
+    const possiveisModais = [
+        'modal-visualizar-aso-anexado',
+        'modal-aso',
+        'modal-aso-visualizar'
+    ];
+    
+    possiveisModais.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+
+    // Como garantia extra, se o papel estiver dentro de qualquer modal com fundo escuro, fecha o elemento pai
+    const paper = document.getElementById('aso-paper-visualizar');
+    if (paper) {
+        const modalPai = paper.closest('.fixed, [id*="modal"]');
+        if (modalPai) modalPai.classList.add('hidden');
     }
 }
 
 function imprimirAsoA4() {
     window.print();
 }
-
 function visualizarAsoAnexado(id) {
     const item = asoHistoryData.find(x => x.id === id);
     if (!item) return;
@@ -1062,9 +1101,9 @@ function visualizarAsoAnexado(id) {
                         <button onclick="imprimirAsoA4()" class="bg-blue-700 hover:bg-blue-800 text-white font-extrabold px-3 py-1 rounded text-xs shadow">
                             🖨️ Imprimir / Salvar PDF
                         </button>
-                        <button onclick="fecharModal('modal-visualizar-aso-anexado')" class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3 py-1 rounded text-xs">
-                            ✕ Fechar
-                        </button>
+                        <button onclick="fecharModalVisualizacaoAso()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3 py-1 rounded text-xs">
+    ✕ Fechar
+</button>
                     </div>
                 </div>
 

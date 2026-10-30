@@ -214,15 +214,13 @@ const LISTA_EXAMES_INVENTARIO = [
     "PATCH TEST (TESTE DE CONTATO)"
 ];
 
-// LISTA LOCAL DE CONTINGÊNCIA (FALLBACK DE SEGURANÇA)
+// BANCO DE USUÁRIOS E SENHAS DO SISTEMA (POR PERFIL)
 const USUARIOS_SISTEMA = [
-    { email: "gestor@boreal.com", senha: "123", role: "GESTOR", nome: "GESTOR CENTRAL", vinculoCliente: "ALL", tipoMedico: "GESTOR" },
-    { email: "medico.pcmso@boreal.com", senha: "123", role: "MEDICO_PCMSO", nome: "DRA. LUIZA BRABETZ SANDONATO", vinculoCliente: "PREFEITURA MUNICIPAL", tipoMedico: "PCMSO" },
-    { email: "medico.examinador@boreal.com", senha: "123", role: "MEDICO", nome: "DR. ROBERTO ALVES", vinculoCliente: "PREFEITURA MUNICIPAL", tipoMedico: "CREDENCIADO" },
-    { email: "medico.independente@boreal.com", senha: "123", role: "MEDICO_EXAMINADOR_IND", nome: "DR. CARLOS AUTONOMO", vinculoCliente: "PREFEITURA MUNICIPAL", tipoMedico: "INDEPENDENTE" },
-    { email: "medico.homologador@boreal.com", senha: "123", role: "MEDICO_HOMOLOGADOR", nome: "DR. FERNANDO HOMOLOGADOR", vinculoCliente: "PREFEITURA MUNICIPAL", tipoMedico: "HOMOLOGADOR" },
-    { email: "clinica.paulinia@boreal.com", senha: "123", role: "CLINICA", nome: "CLÍNICA CENTRAL PAULÍNIA", vinculoCliente: "PREFEITURA MUNICIPAL", tipoMedico: "CLINICA" },
-    { email: "prefeitura@cliente.com", senha: "123", role: "CLIENTE", nome: "PREFEITURA MUNICIPAL", vinculoCliente: "PREFEITURA MUNICIPAL", tipoMedico: "CLIENTE" }
+    { email: "gestor@boreal.com", senha: "123", role: "GESTOR", nome: "GESTOR CENTRAL", vinculoCliente: "ALL" },
+    { email: "medico.pcmso@boreal.com", senha: "123", role: "MEDICO_PCMSO", nome: "DRA. LUIZA BRABETZ SANDONATO", vinculoCliente: "PREFEITURA MUNICIPAL" },
+    { email: "medico.examinador@boreal.com", senha: "123", role: "MEDICO", nome: "DR. ROBERTO ALVES", vinculoCliente: "PREFEITURA MUNICIPAL" },
+    { email: "clinica.paulinia@boreal.com", senha: "123", role: "CLINICA", nome: "CLÍNICA CENTRAL PAULÍNIA", vinculoCliente: "PREFEITURA MUNICIPAL" },
+    { email: "prefeitura@cliente.com", senha: "123", role: "CLIENTE", nome: "PREFEITURA MUNICIPAL", vinculoCliente: "PREFEITURA MUNICIPAL" }
 ];
 
 // ==========================================
@@ -270,7 +268,7 @@ window.realizarLoginSistema = async function() {
     try {
         let userEncontrado = null;
 
-        // 1. Procura prioritariamente na tabela 'usuarios' do Supabase
+        // 1. Tenta autenticar no Supabase
         if (supabaseClient) {
             try {
                 const { data, error } = await supabaseClient
@@ -290,11 +288,11 @@ window.realizarLoginSistema = async function() {
                     };
                 }
             } catch (errDb) {
-                console.warn("Supabase temporariamente indisponível, checando lista local...", errDb);
+                console.warn("Supabase indisponível no momento, checando lista local...", errDb);
             }
         }
 
-        // 2. Fallback de contingência pela memória local
+        // 2. Se o Supabase falhar ou não encontrar, valida pela lista local
         if (!userEncontrado && typeof USUARIOS_SISTEMA !== 'undefined') {
             userEncontrado = USUARIOS_SISTEMA.find(u => 
                 u.email.trim().toLowerCase() === email && 
@@ -302,7 +300,7 @@ window.realizarLoginSistema = async function() {
             );
         }
 
-        // 3. Usuário autenticado com sucesso
+        // 3. Usuário validado com sucesso
         if (userEncontrado) {
             usuarioLogado = userEncontrado;
             currentRole = userEncontrado.role;
@@ -318,18 +316,21 @@ window.realizarLoginSistema = async function() {
                 selCli.disabled = false;
             }
 
+            // Oculta a tela preta de login
             const telaLogin = document.getElementById('tela-login-container');
             if (telaLogin) {
                 telaLogin.classList.add('hidden');
                 telaLogin.style.display = 'none';
             }
 
+            // Aplica as travas dos módulos para o perfil
             if (typeof aplicarPermissoesPerfilDefinitivo === 'function') {
                 aplicarPermissoesPerfilDefinitivo();
             } else if (typeof validarTrocaPerfil === 'function') {
                 validarTrocaPerfil();
             }
 
+            // Puxa os ASOs do Supabase se existirem
             if (typeof carregarAsosDoBanco === 'function') {
                 await carregarAsosDoBanco();
             }
@@ -341,10 +342,10 @@ window.realizarLoginSistema = async function() {
                 msgErro.classList.remove('hidden');
                 msgErro.style.display = 'block';
             }
-            alert("E-mail ou senha incorretos no banco de dados!");
+            alert("E-mail ou senha incorretos!\n\nDados para teste:\nE-mail: gestor@boreal.com\nSenha: 123");
         }
     } catch (err) {
-        console.error("Erro no processamento do login:", err);
+        console.error("Erro no login:", err);
         alert("Ocorreu uma falha ao tentar entrar. Tente novamente.");
     } finally {
         if (btnLogin) btnLogin.textContent = txtOriginal;
@@ -441,10 +442,11 @@ function popularDropdownExamesPcmso() {
     });
 }
 
-// FUNÇÃO GLOBAL DE NAVEGAÇÃO DOS MÓDULOS (100% OPERACIONAL)
+// FUNÇÃO GLOBAL DE NAVEGAÇÃO DOS MÓDULOS (100% DESCONGELADA E OPERACIONAL)
 window.switchTab = function(tabId) {
     if (!tabId) return;
 
+    // 1. Exibe a aba clicada e oculta as demais diretamente no CSS
     const allTabs = document.querySelectorAll('.tab-content');
     allTabs.forEach(el => {
         el.classList.add('hidden');
@@ -457,6 +459,7 @@ window.switchTab = function(tabId) {
         target.style.display = 'block';
     }
 
+    // 2. Destaca visualmente a tecla ativa e mantém todas clicáveis
     document.querySelectorAll('.nav-tab-btn').forEach(btn => {
         btn.classList.remove('bg-blue-800', 'text-white');
         btn.classList.add('text-slate-300');
@@ -498,6 +501,7 @@ function aplicarPermissoesPerfilDefinitivo() {
         btn.style.display = (currentRole === 'GESTOR') ? 'block' : 'none';
     });
 
+    // MAPEAMENTO DE TODAS AS TECLAS DE NAVEGAÇÃO DOS MÓDULOS
     const nav = {
         pedidos: document.getElementById('nav-btn-pedidos'),
         atendimento: document.getElementById('nav-btn-atendimento'),
@@ -511,6 +515,7 @@ function aplicarPermissoesPerfilDefinitivo() {
         cadastros: document.getElementById('nav-btn-cadastros')
     };
 
+    // 1. Garante que os botões fiquem limpos e clicáveis
     Object.values(nav).forEach(btn => {
         if (!btn) return;
         btn.style.display = 'flex';
@@ -526,7 +531,7 @@ function aplicarPermissoesPerfilDefinitivo() {
         }
     });
 
-    // REGRAS DE ACESSO POR PERFIL DE USUÁRIO
+    // 2. REGRAS DE ACESSO POR PERFIL DE USUÁRIO
     if (currentRole === 'MEDICO_PCMSO') {
         if (nav.pedidos) nav.pedidos.style.display = 'none';
         if (nav.atendimento) nav.atendimento.style.display = 'none';
@@ -536,6 +541,7 @@ function aplicarPermissoesPerfilDefinitivo() {
         if (nav.cadastros) nav.cadastros.style.display = 'none';
         window.switchTab('pcmso-matriz');
     } else if (currentRole === 'MEDICO_HOMOLOGADOR') {
+        // Médico Homologador Independente: Acessa exclusivamente Homologação e Chat
         if (nav.pedidos) nav.pedidos.style.display = 'none';
         if (nav.atendimento) nav.atendimento.style.display = 'none';
         if (nav.historico) nav.historico.style.display = 'none';
@@ -546,6 +552,7 @@ function aplicarPermissoesPerfilDefinitivo() {
         if (nav.cadastros) nav.cadastros.style.display = 'none';
         window.switchTab('homologacao');
     } else if (currentRole === 'MEDICO_EXAMINADOR_IND') {
+        // Médico Examinador Independente: Abre no Banco de ASOs (somente carga/avulsos)
         if (nav.pedidos) nav.pedidos.style.display = 'none';
         if (nav.atendimento) nav.atendimento.style.display = 'none';
         if (nav.homologacao) nav.homologacao.style.display = 'none';
@@ -556,6 +563,7 @@ function aplicarPermissoesPerfilDefinitivo() {
         if (nav.historico) nav.historico.style.display = 'flex';
         window.switchTab('historico');
     } else if (currentRole === 'MEDICO') {
+        // Médico Examinador Vinculado a Clínica
         if (nav.pedidos) nav.pedidos.style.display = 'none';
         if (nav.producao) nav.producao.style.display = 'none';
         if (nav.esocial) nav.esocial.style.display = 'none';
@@ -563,17 +571,20 @@ function aplicarPermissoesPerfilDefinitivo() {
         if (nav.historico) nav.historico.style.display = 'flex';
         window.switchTab('historico');
     } else if (currentRole === 'CLINICA') {
+        // Clínica Credenciada
         if (nav.homologacao) nav.homologacao.style.display = 'none';
         if (nav.esocial) nav.esocial.style.display = 'none';
         if (nav.relatorioPcmso) nav.relatorioPcmso.style.display = 'none';
         if (nav.cadastros) nav.cadastros.style.display = 'none';
         window.switchTab('pedidos');
     } else if (currentRole === 'CLIENTE') {
+        // Cliente (Empresa)
         if (nav.atendimento) nav.atendimento.style.display = 'none';
         if (nav.producao) nav.producao.style.display = 'none';
         if (nav.cadastros) nav.cadastros.style.display = 'none';
         window.switchTab('pedidos');
     } else {
+        // GESTOR (Boreal) - Acesso total
         window.switchTab('pedidos');
     }
 
@@ -582,50 +593,33 @@ function aplicarPermissoesPerfilDefinitivo() {
     renderHistoryTabela();
     atualizarHeaderPcmsoMedico();
 }
-
 function alterarSenhaMaster() {
     const pwd = prompt("Digite a nova Senha Master:");
     if (pwd) { alert("Senha Master redefinida com sucesso!"); }
 }
 
-// CADASTROS DE CLIENTES E MÉDICO DO PCMSO
-async function salvarNovoCliente() {
+// CADASTROS DE CLIENTES E MÉDICO DO PCMSO (HOME OFFICE)
+function salvarNovoCliente() {
     if (currentRole !== 'GESTOR') { alert("Somente o GESTOR altera o cadastro de Clientes!"); return; }
     const nome = document.getElementById('cad_cli_nome').value.trim();
     const cnpj = document.getElementById('cad_cli_cnpj').value.trim();
     const tel = document.getElementById('cad_cli_tel').value.trim();
-    const email = document.getElementById('cad_cli_email').value.trim().toLowerCase();
+    const email = document.getElementById('cad_cli_email').value.trim();
     const end = document.getElementById('cad_cli_end').value.trim();
     const medPcmso = document.getElementById('cad_cli_med_pcmso').value.trim();
     const crmPcmso = document.getElementById('cad_cli_med_crm').value.trim();
     const medWhats = document.getElementById('cad_cli_med_whats').value.trim();
     const medEmail = document.getElementById('cad_cli_med_email').value.trim();
 
-    if (!nome || !cnpj || !email) { alert("Preencha Razão Social, CNPJ e E-mail."); return; }
+    if (!nome || !cnpj) { alert("Preencha Razão Social e CNPJ."); return; }
 
     clientesCadastrados.push({ id: Date.now(), nome, cnpj, tel, email, end, medPcmso, crmPcmso, medWhats, medEmail, ativo: true });
     renderClientesTabela();
     atualizarDropdownsClientes();
 
-    // Pré-autoriza o login do cliente no Supabase com senha provisória
-    if (supabaseClient) {
-        try {
-            await supabaseClient.from('usuarios').upsert([{
-                email: email,
-                senha: '123',
-                role: 'CLIENTE',
-                nome: nome,
-                vinculo_cliente: nome,
-                tipo_medico: 'CLIENTE'
-            }], { onConflict: 'email' });
-        } catch (e) {
-            console.warn("Aviso ao salvar login no Supabase:", e);
-        }
-    }
-
     document.getElementById('cad_cli_nome').value = '';
     document.getElementById('cad_cli_cnpj').value = '';
-    alert("Cliente salvo com sucesso e pré-autorizado para acesso no sistema!");
+    alert("Cliente e Médico Responsável do PCMSO salvos com sucesso!");
 }
 
 function toggleStatusCliente(id) {
@@ -647,7 +641,7 @@ function notificarMedicoPcmso(id) {
     if (numClean) {
         window.open(`https://api.whatsapp.com/send?phone=55${numClean}&text=${mensagem}`, '_blank');
     }
-    alert(`Notificação enviada para o Médico PCMSO:\nWhatsApp: ${cli.medWhats || 'Não informado'}\nE-mail: ${cli.medEmail || 'Não informado'}`);
+    alert(`Notificação enviada para o Médico PCMSO Home Office:\nWhatsApp: ${cli.medWhats || 'Não informado'}\nE-mail: ${cli.medEmail || 'Não informado'}`);
 }
 
 function renderClientesTabela() {
@@ -682,40 +676,24 @@ function renderClientesTabela() {
     });
 }
 
-async function salvarNovaClinica() {
+function salvarNovaClinica() {
     if (currentRole !== 'GESTOR') { alert("Somente o GESTOR altera o cadastro de Clínicas!"); return; }
     const nome = document.getElementById('cad_clin_nome').value.trim();
     const cnpj = document.getElementById('cad_clin_cnpj').value.trim();
     const whats = document.getElementById('cad_clin_whats').value.trim();
-    const email = document.getElementById('cad_clin_email').value.trim().toLowerCase();
+    const email = document.getElementById('cad_clin_email').value.trim();
     const endereco = document.getElementById('cad_clin_endereco').value.trim();
 
-    if (!nome || !email) { alert("Informe o nome da clínica e o e-mail."); return; }
+    if (!nome) { alert("Informe o nome da clínica."); return; }
 
     clinicasCadastradas.push({ id: Date.now(), nome, cnpj, whats, email, endereco, ativo: true });
     atualizarDropdownsClinicas();
     renderClinicasTabela();
 
-    // Pré-autoriza o login da clínica no Supabase
-    if (supabaseClient) {
-        try {
-            await supabaseClient.from('usuarios').upsert([{
-                email: email,
-                senha: '123',
-                role: 'CLINICA',
-                nome: nome,
-                vinculo_cliente: 'ALL',
-                tipo_medico: 'CLINICA'
-            }], { onConflict: 'email' });
-        } catch (e) {
-            console.warn("Aviso ao salvar clínica no Supabase:", e);
-        }
-    }
-
     document.getElementById('cad_clin_nome').value = '';
     document.getElementById('cad_clin_cnpj').value = '';
     document.getElementById('cad_clin_endereco').value = '';
-    alert("Clínica cadastrada e pré-autorizada no sistema!");
+    alert("Clínica cadastrada com sucesso!");
 }
 
 function toggleStatusClinica(id) {
@@ -793,7 +771,6 @@ function verificarExameOutro() {
         }
     }
 }
-
 function addOrderItem() {
     const trab = document.getElementById('ped_trab_cpf').value.trim();
     const selectObj = document.getElementById('ped_objeto').value;
@@ -969,7 +946,7 @@ function processarCargaMassaExcel(evt) {
     const file = evt.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = async function(e) {
+    reader.onload = function(e) {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -977,11 +954,12 @@ function processarCargaMassaExcel(evt) {
 
         const dataAtual = new Date().toLocaleDateString('pt-BR');
 
-        for (const r of rows) {
+        rows.forEach(r => {
             const clienteNome = r.CLIENTE || r.RAZAO_SOCIAL || "PREFEITURA MUNICIPAL";
             const cliObj = clientesCadastrados.find(c => c.nome === clienteNome) || clientesCadastrados[0];
 
-            const novoAso = {
+            asoHistoryData.push({
+                id: Date.now() + Math.random(),
                 fecha: r.DATA || dataAtual,
                 local: r.CIDADE || r.LOCAL || "Cidade da Clínica",
                 nome: r.NOME || r.EMPREGADO || "FUNCIONÁRIO EXCEL",
@@ -993,30 +971,23 @@ function processarCargaMassaExcel(evt) {
                 funcao: r.FUNCAO || r.CARGO || "OPERACIONAL",
                 lotacao: r.SETOR || r.LOTACAO || "OPERACIONAL",
                 cnpj: cliObj ? cliObj.cnpj : "00.000.000/0001-91",
-                tipo_exame: r.TIPO_EXAME || "ASO PERIÓDICO",
+                tipoExame: r.TIPO_EXAME || "ASO PERIÓDICO",
                 resultado: "AGUARDANDO PARECER DO MÉDICO",
                 medico: "A DEFINIR PELO EXAMINADOR",
-                medico_pcmso: cliObj ? cliObj.medPcmso : "DRA. LUIZA BRABETZ SANDONATO",
-                crm_pcmso: cliObj ? cliObj.crmPcmso : "CRM SP 145328",
+                medicoPcmso: cliObj ? cliObj.medPcmso : "DRA. LUIZA BRABETZ SANDONATO",
+                crmPcmso: cliObj ? cliObj.crmPcmso : "CRM SP 145328",
                 agentes: r.RISCOS || r.AGENTES || "RUÍDO CONTÍNUO DE MÁQUINAS; POSTURA SENTADA POR LONGOS PERÍODOS",
-                origem: "EXCEL_MASSA"
-            };
+                arquivoAssinadoUrl: null,
+                arquivoAssinadoNome: null,
+                anamneseDados: null
+            });
+        });
 
-            if (supabaseClient) {
-                try {
-                    await supabaseClient.from('asos').insert([novoAso]);
-                } catch (errSup) {
-                    console.error("Erro ao salvar carga no Supabase:", errSup);
-                }
-            }
-        }
-
-        await carregarAsosDoBanco();
+        renderHistoryTabela();
         alert(`${rows.length} ASOs importados com sucesso! Todos já foram cadastrados no Banco de ASOs aguardando parecer do Médico.`);
     };
     reader.readAsArrayBuffer(file);
 }
-
 function abrirModalNovoAso() { document.getElementById('modal-novo-aso-avulso').classList.remove('hidden'); }
 function fecharModal(id) { document.getElementById(id).classList.add('hidden'); }
 
@@ -1114,8 +1085,11 @@ function abrirAsoModalBoreal(id) {
     if (document.getElementById('aso_edit_razao')) document.getElementById('aso_edit_razao').value = item.cliente || '';
     if (document.getElementById('aso_edit_cargo')) document.getElementById('aso_edit_cargo').value = item.cargo || '';
 
+    // Remove qualquer texto fixo que contenha "Paulínia" e insere campos editáveis
     const dataAtual = new Date().toLocaleDateString('pt-BR');
+    const containerLocal = document.getElementById('aso_local_container') || document.querySelector('#modal-aso .border-t, #modal-aso');
 
+    // Procura por qualquer elemento de texto que exiba "Paulínia" fixo e transforma em campo de digitação
     const elementosTexto = document.querySelectorAll('#modal-aso *');
     elementosTexto.forEach(el => {
         if (el.children.length === 0 && el.textContent && el.textContent.includes('Paulínia')) {
@@ -1130,6 +1104,7 @@ function abrirAsoModalBoreal(id) {
         }
     });
 
+    // Se já existirem os inputs com esses IDs, garante que fiquem livres para edição e limpos
     if (document.getElementById('aso_edit_local')) {
         if (document.getElementById('aso_edit_local').value.includes('Paulínia')) {
             document.getElementById('aso_edit_local').value = '';
@@ -1146,7 +1121,7 @@ function abrirAsoModalBoreal(id) {
         document.getElementById('aso_edit_data').disabled = false;
     }
 
-    const cli = clientesCadastrados.find(c => c.nome === item.cliente) || clientesCadastrados[0];
+   const cli = clientesCadastrados.find(c => c.nome === item.cliente) || clientesCadastrados[0];
     if (cli && document.getElementById('aso_lbl_medico_pcmso')) {
         document.getElementById('aso_lbl_medico_pcmso').textContent = `${cli.medPcmso} — ${cli.crmPcmso}`;
     }
@@ -1154,22 +1129,27 @@ function abrirAsoModalBoreal(id) {
     document.getElementById('modal-aso').classList.remove('hidden');
 }
 
-async function concluirEmissaoAsoBoreal() {
+function concluirEmissaoAsoBoreal() {
     const item = asoQueueData.find(x => x.id === selectedAsoId);
     if (!item) return;
 
+    // Captura local e data editáveis informados pelo auxiliar
     const localRealizacao = (document.getElementById('aso_edit_local') && document.getElementById('aso_edit_local').value.trim()) || "Cidade da Clínica";
     const dataRealizacao = (document.getElementById('aso_edit_data') && document.getElementById('aso_edit_data').value.trim()) || new Date().toLocaleDateString('pt-BR');
 
+    // Vincula o Médico Responsável do PCMSO cadastrado na empresa cliente
     const clienteNome = (document.getElementById('aso_edit_razao') && document.getElementById('aso_edit_razao').value) || item.cliente;
     const cliObj = clientesCadastrados.find(c => c.nome === clienteNome) || clientesCadastrados[0];
     const medPcmsoNome = cliObj ? cliObj.medPcmso : "DRA. LUIZA BRABETZ SANDONATO";
     const medPcmsoCrm = cliObj ? cliObj.crmPcmso : "CRM SP 145328";
 
+    // Dados complementares
     const dataNasc = (document.getElementById('aso_edit_nasc') && document.getElementById('aso_edit_nasc').value) || (item.nasc || 'Não informada');
     const matricula = (document.getElementById('aso_edit_matricula') && document.getElementById('aso_edit_matricula').value) || (item.matricula || '-');
 
-    const asoNovoObj = {
+    // Salva o ASO preparado pelo auxiliar no Banco de ASOs aguardando parecer médico
+    asoHistoryData.push({
+        id: Date.now(),
         fecha: dataRealizacao,
         local: localRealizacao,
         nome: (document.getElementById('aso_edit_nome') && document.getElementById('aso_edit_nome').value) || item.nome,
@@ -1181,30 +1161,23 @@ async function concluirEmissaoAsoBoreal() {
         funcao: (document.getElementById('aso_edit_funcao') && document.getElementById('aso_edit_funcao').value) || item.cargo,
         lotacao: (document.getElementById('aso_edit_lotacao') && document.getElementById('aso_edit_lotacao').value) || 'OFICINA CENTRAL',
         cnpj: (document.getElementById('aso_edit_cnpj') && document.getElementById('aso_edit_cnpj').value) || (cliObj ? cliObj.cnpj : '00.000.000/0001-91'),
-        tipo_exame: item.tipo || 'ASO ADMISSIONAL / PERIÓDICO',
+        tipoExame: item.tipo || 'ASO ADMISSIONAL / PERIÓDICO',
         origem: "CLINICA_CREDENCIADA",
         resultado: "AGUARDANDO PARECER DO MÉDICO",
         medico: "A DEFINIR PELO EXAMINADOR",
-        medico_pcmso: medPcmsoNome,
-        crm_pcmso: medPcmsoCrm,
+        medicoPcmso: medPcmsoNome,
+        crmPcmso: medPcmsoCrm,
         agentes: (document.getElementById('aso_doc_agentes_especificos') && document.getElementById('aso_doc_agentes_especificos').value) || 'RUÍDO CONTÍNUO DE MÁQUINAS; POSTURA SENTADA POR LONGOS PERÍODOS',
-        arquivo_assinado_url: null,
-        arquivo_assinado_nome: null,
-        anamnese_dados: item.anamnese ? { ...item.anamnese, local: localRealizacao, data: dataRealizacao } : null
-    };
+        arquivoAssinadoUrl: null,
+        arquivoAssinadoNome: null,
+        anamneseDados: item.anamnese ? { ...item.anamnese, local: localRealizacao, data: dataRealizacao } : null
+    });
 
-    if (supabaseClient) {
-        try {
-            await supabaseClient.from('asos').insert([asoNovoObj]);
-        } catch (e) {
-            console.error("Erro ao gravar ASO no Supabase:", e);
-        }
-    }
-
+    // Remove da fila provisória de preenchimento
     asoQueueData = asoQueueData.filter(x => x.id !== selectedAsoId);
 
     renderFilaAso();
-    await carregarAsosDoBanco();
+    renderHistoryTabela();
     fecharModal('modal-aso');
     alert("ASO preenchido com sucesso pelo Auxiliar e transferido para o Banco de ASOs para análise e parecer do Médico!");
 }
@@ -1217,9 +1190,11 @@ function renderHistoryTabela() {
     const activeCliente = document.getElementById('active-cliente-select') ? document.getElementById('active-cliente-select').value : 'ALL';
 
     asoHistoryData.filter(h => {
+        // 1. Filtro por Cliente Ativo
         const matchCliente = (activeCliente === 'ALL' || h.cliente === activeCliente);
         if (!matchCliente) return false;
 
+        // 2. Médico Independente NÃO visualiza registros de clínicas credenciadas
         if (currentRole === 'MEDICO_EXAMINADOR_IND') {
             return h.origem !== 'CLINICA_CREDENCIADA';
         }
@@ -1297,14 +1272,15 @@ async function salvarParecerMedicoBanco(id) {
     item.resultado = radioParecer.value;
     item.medico = nomeMed;
 
+    // Atualiza imediatamente na nuvem em tempo real
     await salvarParecerMedicoEmNuvem(id, item.resultado, item.medico);
 
     alert(`Parecer médico gravado com sucesso como: "${item.resultado}"! O ASO está pronto para impressão ou assinatura digital.`);
     renderHistoryTabela();
     visualizarAsoAnexado(id);
 }
-
 function fecharModalVisualizacaoAso() {
+    // Procura os possíveis IDs de modais de visualização e fecha o que estiver aberto
     const possiveisModais = [
         'modal-visualizar-aso-anexado',
         'modal-aso',
@@ -1316,6 +1292,7 @@ function fecharModalVisualizacaoAso() {
         if (el) el.classList.add('hidden');
     });
 
+    // Como garantia extra, se o papel estiver dentro de qualquer modal com fundo escuro, fecha o elemento pai
     const paper = document.getElementById('aso-paper-visualizar');
     if (paper) {
         const modalPai = paper.closest('.fixed, [id*="modal"]');
@@ -1326,7 +1303,6 @@ function fecharModalVisualizacaoAso() {
 function imprimirAsoA4() {
     window.print();
 }
-
 function visualizarAsoAnexado(id) {
     const item = asoHistoryData.find(x => x.id === id);
     if (!item) return;
@@ -1339,6 +1315,7 @@ function visualizarAsoAnexado(id) {
 
         paper.className = "bg-white p-8 max-w-4xl mx-auto text-slate-900 border-2 border-black shadow-2xl text-[13px] leading-relaxed space-y-4 my-2";
         paper.innerHTML = `
+            <!-- PAINEL SUPERIOR DO MÉDICO: APARECE SOMENTE NA TELA (NÃO SAI NA IMPRESSÃO) -->
             <div class="no-print bg-amber-50 border-2 border-amber-500 p-3 rounded-lg shadow-md mb-4 space-y-2">
                 <div class="flex justify-between items-center">
                     <strong class="text-xs text-amber-950 font-black uppercase flex items-center gap-1">
@@ -1349,8 +1326,8 @@ function visualizarAsoAnexado(id) {
                             🖨️ Imprimir / Salvar PDF
                         </button>
                         <button onclick="fecharModalVisualizacaoAso()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3 py-1 rounded text-xs">
-                            ✕ Fechar
-                        </button>
+    ✕ Fechar
+</button>
                     </div>
                 </div>
 
@@ -1378,6 +1355,7 @@ function visualizarAsoAnexado(id) {
                 </div>
             </div>
 
+            <!-- CORPO DO ASO EM TAMANHO FOLHA A4 OFICIAL NR-07 -->
             <div class="border-b-2 border-black pb-3 flex justify-between items-center">
                 <div>
                     <strong class="text-base block font-black uppercase text-blue-950">Boreal Engenharia e Medicina</strong>
@@ -1654,7 +1632,6 @@ function adicionarLinhaPCMSO() {
     document.getElementById('pcmso_add_exame_custom').value = '';
     document.getElementById('pcmso_add_per_custom').value = '';
 }
-
 function renderPcmsoMatriz() {
     const tbody = document.getElementById('pcmso-matriz-tbody');
     if (!tbody) return;
@@ -1806,3 +1783,268 @@ function adicionarHomologacaoDireta() {
         dias,
         cid,
         medico,
+        status: "HOMOLOGADO",
+        arquivoNome: tempFileAtestadoTop ? tempFileAtestadoTop.nome : "Atestado.pdf",
+        arquivoUrl: tempFileAtestadoTop ? tempFileAtestadoTop.url : "#"
+    });
+
+    tempFileAtestadoTop = null;
+    renderHomologacaoTabela();
+    document.getElementById('hom_top_trab').value = '';
+    document.getElementById('hom_top_cid').value = '';
+}
+
+function apagarHomologacao(id) {
+    if (currentRole !== 'GESTOR') { alert("Somente o GESTOR pode apagar atestados homologados!"); return; }
+    if (confirm("Tem certeza que deseja apagar este atestado?")) {
+        atestadosHomologacaoData = atestadosHomologacaoData.filter(x => x.id !== id);
+        renderHomologacaoTabela();
+    }
+}
+
+function visualizarLaudoHomologacao(id) {
+    const item = atestadosHomologacaoData.find(x => x.id === id);
+    if (!item) return;
+
+    const paper = document.getElementById('aso-paper-visualizar');
+    if (paper) {
+        paper.innerHTML = `
+            <div class="border-b-2 border-black pb-2 flex justify-between items-center">
+                <div>
+                    <strong class="text-sm block font-black">Boreal Engenharia e Medicina</strong>
+                    <span class="text-[10px]">CRM Nº 1011385 | Tel. 19 99156-7153</span>
+                </div>
+                <div class="text-right">
+                    <strong class="text-base font-black uppercase">PARECER DE HOMOLOGAÇÃO DE ATESTADO MÉDICO</strong>
+                </div>
+            </div>
+
+            <div class="border border-black p-2 bg-slate-50 font-bold uppercase text-[10px]">
+                <span>EMPRESA CLIENTE:</span> ${item.cliente}
+            </div>
+
+            <div class="border border-black p-2 space-y-1 text-[10px]">
+                <strong class="block border-b border-black font-extrabold uppercase">DADOS DO EMPREGADO E ATESTADO EXTERNO</strong>
+                <div><strong>TRABALHADOR:</strong> ${item.trab}</div>
+                <div><strong>SETOR / LOTAÇÃO:</strong> ${item.setor}</div>
+                <div><strong>MÉDICO EMISSOR DO ATESTADO:</strong> ${item.medico}</div>
+                <div><strong>DIAS DE AFASTAMENTO:</strong> ${item.dias} DIA(S) | <strong>DIAGNÓSTICO (CID-10):</strong> ${item.cid}</div>
+                <div><strong>DATA DO ATESTADO:</strong> ${item.data}</div>
+            </div>
+
+            <div class="border border-black p-2 bg-purple-50 text-[10px]">
+                <strong class="font-black text-sm uppercase text-purple-950">PARECER DO MÉDICO HOMOLOGADOR: ATESTADO VALIDADO E HOMOLOGADO</strong>
+                <p class="mt-1 font-semibold">"Após análise do atestado médico apresentado, ratifico a necessidade do afastamento do trabalho pelo período solicitado conforme as diretrizes do PCMSO e Legislação Trabalhista."</p>
+            </div>
+
+            <div class="border border-black p-2 text-center space-y-2 text-[10px]">
+                <div class="grid grid-cols-2 gap-4 border-t border-black pt-4 mt-6">
+                    <div>
+                        <strong class="block border-t border-black pt-1">Assinatura / Ciente do Empregado</strong>
+                        <span>Data: ${item.data}</span>
+                    </div>
+                    <div>
+                        <strong class="block border-t border-black pt-1">DR. ROBERTO ALVES — CRM SP 184920</strong>
+                        <span>Médico Ocupacional Homologador (Assinado Digitalmente)</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    document.getElementById('modal-visualizar-aso-anexado').classList.remove('hidden');
+}
+
+function renderHomologacaoTabela() {
+    const tbody = document.getElementById('atestados-homologacao-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    atestadosHomologacaoData.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.className = "border-b hover:bg-slate-50";
+        tr.innerHTML = `
+            <td class="p-2 font-bold">${a.cliente}</td>
+            <td class="p-2">${a.trab}</td>
+            <td class="p-2 font-bold">${a.setor}</td>
+            <td class="p-2">${a.data}</td>
+            <td class="p-2 text-center font-bold">${a.dias} dias</td>
+            <td class="p-2 text-center font-bold text-purple-900">${a.cid}</td>
+            <td class="p-2">${a.medico}</td>
+            <td class="p-2 text-center font-bold text-emerald-700">
+                <a href="${a.arquivoUrl || '#'}" download="${a.arquivoNome || 'atestado.pdf'}" target="_blank" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 px-2 py-1 rounded inline-flex items-center gap-1 text-[10px] mb-1">
+                    📄 Original Escaneado
+                </a>
+                <button onclick="visualizarLaudoHomologacao(${a.id})" class="bg-purple-800 hover:bg-purple-900 text-white px-2 py-1 rounded text-[10px] font-bold block mx-auto shadow">
+                    📜 Gerar Documento Assinado
+                </button>
+            </td>
+            <td class="p-2 text-center"><span class="bg-purple-100 text-purple-900 px-2 py-0.5 rounded font-bold">${a.status}</span></td>
+            <td class="p-2 text-center">
+                ${currentRole === 'GESTOR' ? `<button onclick="apagarHomologacao(${a.id})" class="text-red-600 font-bold hover:underline">🗑️ Apagar</button>` : `<span class="text-slate-400 italic">-</span>`}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+function enviarMensagemChat() {
+    const input = document.getElementById('chat-msg-input');
+    const box = document.getElementById('chat-messages-box');
+    const remetente = document.getElementById('chat_remetente_select').value;
+    const destinatario = document.getElementById('chat_destinatario_select').value;
+    
+    if (input && input.value.trim() !== '') {
+        const div = document.createElement('div');
+        div.className = "bg-white p-2 rounded border max-w-md shadow-sm";
+        div.innerHTML = `<strong class="text-teal-800 block">${remetente} ➔ ${destinatario}:</strong> ${input.value.trim()}`;
+        box.appendChild(div);
+        input.value = '';
+        box.scrollTop = box.scrollHeight;
+    }
+}
+
+function gerarLoteESocial() {
+    const container = document.getElementById('esocial-preview-container');
+    if (container) {
+        container.textContent = JSON.stringify({
+            evtMonit: {
+                ideEvento: { tpAmb: 1, procEmi: 1, verProc: "1.0.0" },
+                ideEmpregador: { tpInsc: 1, nrInsc: "00000000000000" },
+                trabalhador: asoHistoryData
+            }
+        }, null, 2);
+    }
+}
+
+// ==========================================
+// SINCRONIZAÇÃO DO BANCO DE ASOS COM A NUVEM
+// ==========================================
+
+// Carrega os ASOs salvos no Supabase ao iniciar
+async function carregarAsosDoBanco() {
+    if (!supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient
+            .from('asos')
+            .select('*')
+            .order('id', { ascending: false });
+
+        if (!error && data) {
+            asoHistoryData = data.map(d => ({
+                id: d.id,
+                fecha: d.fecha,
+                local: d.local,
+                nome: d.nome,
+                cpf: d.cpf,
+                nasc: d.nasc,
+                matricula: d.matricula,
+                cliente: d.cliente,
+                cargo: d.cargo,
+                funcao: d.funcao,
+                lotacao: d.lotacao,
+                cnpj: d.cnpj,
+                tipoExame: d.tipo_exame,
+                origem: d.origem,
+                resultado: d.resultado,
+                medico: d.medico,
+                medicoPcmso: d.medico_pcmso,
+                crmPcmso: d.crm_pcmso,
+                agentes: d.agentes,
+                arquivoAssinadoUrl: d.arquivo_assinado_url,
+                arquivoAssinadoNome: d.arquivo_assinado_nome,
+                anamneseDados: d.anamnese_dados
+            }));
+            renderHistoryTabela();
+        }
+    } catch (e) {
+        console.warn("Aviso ao carregar dados remotos:", e);
+    }
+}
+
+// Salva o parecer médico diretamente no Supabase
+async function salvarParecerMedicoEmNuvem(id, resultado, medico) {
+    if (!supabaseClient) return;
+    try {
+        await supabaseClient
+            .from('asos')
+            .update({ resultado: resultado, medico: medico })
+            .eq('id', id);
+    } catch (e) {
+        console.error("Erro ao atualizar parecer no banco:", e);
+    }
+}
+
+// ==========================================
+// FLUXO DE PRIMEIRO ACESSO / CRIAÇÃO DE SENHA PRÓPRIA
+// ==========================================
+function abrirModalPrimeiroAcesso() {
+    const modal = document.getElementById('modal-primeiro-acesso');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function fecharModalPrimeiroAcesso() {
+    const modal = document.getElementById('modal-primeiro-acesso');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function salvarPropriaSenhaUsuario() {
+    const email = document.getElementById('cad_auto_email').value.trim().toLowerCase();
+    const senha = document.getElementById('cad_auto_senha').value.trim();
+    const conf = document.getElementById('cad_auto_senha_conf').value.trim();
+
+    if (!email || !senha) {
+        alert("Preencha o e-mail e a nova senha.");
+        return;
+    }
+
+    if (senha !== conf) {
+        alert("As senhas digitadas não conferem!");
+        return;
+    }
+
+    if (senha.length < 3) {
+        alert("A senha precisa ter pelo menos 3 dígitos.");
+        return;
+    }
+
+    if (!supabaseClient) {
+        alert("Conexão com o banco de dados indisponível.");
+        return;
+    }
+
+    try {
+        // 1. Verifica se o e-mail foi previamente autorizado pela Boreal no banco
+        const { data: usuario, error: errBusca } = await supabaseClient
+            .from('usuarios')
+            .select('*')
+            .eq('email', email)
+            .maybeSingle();
+
+        if (errBusca || !usuario) {
+            alert("Acesso não autorizado!\n\nEste e-mail ainda não possui autorização no sistema Boreal Engmed. Solicite previamente a liberação do seu perfil ao Gestor.");
+            return;
+        }
+
+        // 2. Grava a senha escolhida pelo próprio usuário na nuvem
+        const { error: errUpdate } = await supabaseClient
+            .from('usuarios')
+            .update({ senha: senha })
+            .eq('email', email);
+
+        if (errUpdate) {
+            alert("Ocorreu um erro ao salvar sua senha no banco de dados.");
+            return;
+        }
+
+        alert(`Senha cadastrada com sucesso para: ${usuario.nome}!\n\nAgora você já pode entrar no sistema com a senha que acabou de criar.`);
+        fecharModalPrimeiroAcesso();
+
+        // Preenche automaticamente os campos de login para facilitar
+        const loginEmail = document.getElementById('login_usuario_email');
+        const loginSenha = document.getElementById('login_usuario_senha');
+        if (loginEmail) loginEmail.value = email;
+        if (loginSenha) loginSenha.value = senha;
+
+    } catch (e) {
+        console.error("Erro no primeiro acesso:", e);
+        alert("Falha de conexão com o banco de dados.");
+    }
+}

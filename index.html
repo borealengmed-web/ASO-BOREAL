@@ -43,17 +43,20 @@
                 <input type="password" id="login_usuario_senha" placeholder="••••••••" class="w-full border p-2 rounded text-sm font-semibold">
             </div>
             <p id="login_msg_erro" class="text-red-600 text-xs font-bold hidden text-center"></p>
-            <button onclick="realizarLoginSistema()" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-black py-2.5 rounded shadow text-sm uppercase">
+            <button type="button" onclick="realizarLoginSistema()" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-black py-2.5 rounded shadow text-sm uppercase">
                 Entrar no Sistema
             </button>
             <div class="flex justify-between items-center text-xs pt-1">
                 <button type="button" onclick="abrirModalPrimeiroAcesso()" class="text-blue-700 hover:underline font-bold">
                     Primeiro Acesso? Criar Senha
                 </button>
+                <button type="button" onclick="abrirModalPrimeiroAcesso()" class="text-slate-500 hover:underline">
+                    Esqueci minha senha
+                </button>
             </div>
         </div>
         <div class="text-[10px] text-slate-400 text-center border-t pt-2">
-            Acesso integrado via Supabase Cloud
+            Acessos integrados via Supabase Cloud
         </div>
     </div>
 </div>
@@ -85,18 +88,18 @@
                     </select>
                 </div>
 
+                <button type="button" onclick="alterarSenhaMaster()" class="bg-slate-900 hover:bg-slate-800 text-slate-300 px-2.5 py-1 rounded border border-slate-700 font-bold text-[11px]">
+                    🔑 Senha Master
+                </button>
+
                 <div id="cliente-filter-container" class="bg-slate-900/90 border border-blue-400/30 px-2 py-1 rounded-lg flex items-center gap-1">
                     <span class="text-blue-300 font-bold">CLIENTE:</span>
-                    <select id="active-cliente-select" onchange="renderPcmsoMatriz(); renderHistoryTabela(); atualizarHeaderPcmsoMedico();" class="bg-slate-800 text-white font-bold rounded px-2 py-0.5 border border-slate-700">
+                    <select id="active-cliente-select" onchange="renderPcmsoMatriz(); renderHistoryTabela(); atualizarDestaqueMedicoPcmso();" class="bg-slate-800 text-white font-bold rounded px-2 py-0.5 border border-slate-700">
                         <option value="ALL">TODOS OS CLIENTES</option>
                         <option value="PREFEITURA MUNICIPAL">PREFEITURA MUNICIPAL</option>
                         <option value="INDUSTRIA METALURGICA">INDÚSTRIA METALÚRGICA</option>
                     </select>
                 </div>
-
-                <button type="button" onclick="realizarLogoutSistema()" class="bg-red-700 hover:bg-red-800 text-white px-2.5 py-1 rounded font-bold text-[11px] shadow">
-                    Sair
-                </button>
             </div>
         </div>
 
@@ -341,6 +344,7 @@
                     <p class="text-xs text-slate-500">Cadastre o empregado e anexe o atestado para homologação médica abaixo.</p>
                 </div>
 
+                <!-- PAINEL DE INCLUSÃO DIRETA NA TELA -->
                 <div class="bg-purple-50 border border-purple-200 p-3 rounded-lg space-y-2 text-xs">
                     <span class="font-bold text-purple-950 block uppercase">➕ Relacionar Novo Empregado para Homologação:</span>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
@@ -383,6 +387,8 @@
 
         <!-- ABA 6: MATRIZ PCMSO SEQUENCIAL (NR-07) -->
         <section id="tab-pcmso-matriz" class="tab-content hidden space-y-4">
+            
+            <!-- DESTAQUE DO NOME DO CLIENTE & MÉDICO RESPONSÁVEL DO PCMSO -->
             <div id="pcmso-medico-header-info" class="bg-sky-900 text-white p-3.5 rounded-xl flex flex-wrap justify-between items-center gap-2 shadow border border-sky-700">
                 <div class="text-xs">
                     <span class="text-sky-300 font-extrabold uppercase block">MATRIZ DO PCMSO EM EDIÇÃO / REVISÃO MÉDICA:</span>
@@ -445,7 +451,7 @@
                             <option value="">-- Selecione o Agente do Inventário PGR --</option>
                         </select>
                     </div>
-                   <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                         <select id="pcmso_add_exame" class="border p-1.5 rounded font-semibold bg-white">
                             <option value="">-- Selecione o Exame --</option>
                         </select>
@@ -604,6 +610,8 @@
 
         <!-- ABA 10: CADASTROS DE CLIENTES, MÉDICO RESPONSÁVEL DO PCMSO & CLÍNICAS -->
         <section id="tab-cadastros" class="tab-content hidden space-y-6">
+            
+            <!-- DADOS DO GESTOR BOREAL -->
             <div class="bg-slate-900 text-white p-4 rounded-xl space-y-2 shadow">
                 <h3 class="font-extrabold text-amber-400 text-xs uppercase flex items-center gap-1.5">
                     <i data-lucide="shield-check" class="w-4 h-4"></i> Dados do Gestor Master Boreal Engmed
@@ -615,10 +623,10 @@
                 </div>
             </div>
 
-            <!-- CADASTRO DE CLIENTES & MÉDICO RESPONSÁVEL DO PCMSO -->
+            <!-- CADASTRO DE CLIENTES & MÉDICO RESPONSÁVEL DO PCMSO (COM CONTATOS HOME OFFICE) -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
                 <h2 class="font-extrabold text-slate-900 text-sm uppercase border-b pb-2 flex items-center gap-2">
-                    <i data-lucide="building" class="w-4 h-4 text-blue-700"></i> Cadastro de Clientes & Pré-Autorização de Login
+                    <i data-lucide="building" class="w-4 h-4 text-blue-700"></i> Cadastro de Clientes & Médico Responsável pelo PCMSO
                 </h2>
                 
                 <div id="box-form-cliente" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs bg-slate-50 p-3 rounded border">
@@ -639,7 +647,7 @@
                         <input type="text" id="cad_cli_end" placeholder="RUA, Nº, BAIRRO, CIDADE - UF" class="w-full border rounded p-1.5 bg-white font-bold">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="font-bold block mb-1">E-mail de Contato (Login) *</label>
+                        <label class="font-bold block mb-1">E-mail de Contato *</label>
                         <input type="text" id="cad_cli_email" placeholder="CONTATO@CLIENTE.COM.BR" class="w-full border rounded p-1.5 bg-white font-bold">
                     </div>
 
@@ -713,12 +721,12 @@
                         <input type="text" id="cad_clin_whats" placeholder="(19) 99999-9999" class="w-full border rounded p-1.5 bg-white font-bold">
                     </div>
                     <div>
-                        <label class="font-bold block mb-1">E-mail da Clínica (Login) *</label>
+                        <label class="font-bold block mb-1">E-mail da Clínica *</label>
                         <input type="text" id="cad_clin_email" placeholder="CLINICA@EMAIL.COM" class="w-full border rounded p-1.5 bg-white font-bold">
                     </div>
                     <div class="md:col-span-4">
                         <label class="font-bold block mb-1">Endereço de Atendimento Completo *</label>
-                        <input type="text" id="cad_clin_endereco" placeholder="RUA / AV, Nº, BAIRRO, CIDADE - UF" class="w-full border rounded p-1.5 bg-white font-bold">
+                        <input type="text" id="cad_clin_endereco" placeholder="RUA / AV, Nº, BAIRRO, CIDADE - UF (Aparece para o cliente no agendamento)" class="w-full border rounded p-1.5 bg-white font-bold">
                     </div>
                     <div class="md:col-span-4 flex justify-end">
                         <button type="button" onclick="salvarNovaClinica()" class="btn-only-gestor bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold px-5 py-2 rounded text-xs uppercase shadow">
@@ -989,12 +997,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                         <div class="border-t border-black text-center pt-1">
                             <strong class="block">Assinatura do(a) Examinado(a)</strong>
-                            <div class="flex items-center gap-1 justify-center my-1">
-                                <label class="font-bold text-[10px]">Local:</label>
-                                <input type="text" id="aso_edit_local" placeholder="Cidade/UF da Clínica" value="" class="border border-slate-400 bg-white px-1.5 py-0.5 rounded text-[10px] font-bold w-40">
-                                <label class="font-bold text-[10px] ml-1">Data:</label>
-                                <input type="text" id="aso_edit_data" value="" class="border border-slate-400 bg-white px-1.5 py-0.5 rounded text-[10px] font-bold w-24 text-center">
-                            </div>
+                            <span>Local: Paulínia-SP | Data: 28/10/2026</span>
                         </div>
                         <div class="border-t border-black text-center pt-1 space-y-1">
                             <strong class="block">Médico(a) Examinador(a) & Assinatura Digital:</strong>
@@ -1103,13 +1106,13 @@
         <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl border p-4 space-y-3 max-h-[95vh] overflow-y-auto text-xs">
             <div class="flex justify-between items-center border-b pb-2">
                 <h3 class="font-extrabold text-sm text-slate-900 uppercase">📄 ASO BOREAL OFICIAL ANEXADO E ARQUIVADO</h3>
-                <button type="button" onclick="fecharModalVisualizacaoAso()" class="text-slate-500 font-bold text-lg">✕</button>
+                <button type="button" onclick="fecharModal('modal-visualizar-aso-anexado')" class="text-slate-500 font-bold text-lg">✕</button>
             </div>
             <div id="aso-paper-visualizar" class="aso-boreal-paper space-y-2 text-[11px]">
             </div>
             <div class="flex justify-end gap-2 border-t pt-3">
-                <button type="button" onclick="fecharModalVisualizacaoAso()" class="bg-slate-300 font-bold px-4 py-1.5 rounded uppercase">Fechar</button>
-                <button type="button" onclick="imprimirAsoA4()" class="bg-slate-900 text-white font-bold px-4 py-1.5 rounded uppercase shadow">🖨️ Imprimir / Salvar PDF</button>
+                <button type="button" onclick="fecharModal('modal-visualizar-aso-anexado')" class="bg-slate-300 font-bold px-4 py-1.5 rounded uppercase">Fechar</button>
+                <button type="button" onclick="window.print()" class="bg-slate-900 text-white font-bold px-4 py-1.5 rounded uppercase shadow">🖨️ Imprimir / Salvar PDF</button>
             </div>
         </div>
     </div>

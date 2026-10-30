@@ -241,7 +241,7 @@ let orderItemsList = [];
 let tempFileAtestado = null;
 
 // ==========================================
-// LOGIN CONECTADO AO BANCO DE DADOS (SUPABASE) COM CONTINGÊNCIA
+// LOGIN CONECTADO AO BANCO DE DADOS (SUPABASE AUTH + PERFIS)
 // ==========================================
 window.realizarLoginSistema = async function() {
     const emailInput = document.getElementById('login_usuario_email');
@@ -268,31 +268,35 @@ window.realizarLoginSistema = async function() {
     try {
         let userEncontrado = null;
 
-        // 1. Tenta autenticar no Supabase
+        // 1. Tenta autenticar pelo Supabase Auth oficial
         if (supabaseClient) {
             try {
-                const { data, error } = await supabaseClient
-                    .from('usuarios')
-                    .select('*')
-                    .eq('email', email)
-                    .eq('senha', senha)
-                    .maybeSingle();
+                const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: senha
+                });
 
-                if (!error && data) {
+                if (!authError && authData && authData.user) {
+                    // Busca os dados do perfil na tabela perfis_usuarios
+                    const { data: perfilData } = await supabaseClient
+                        .from('perfis_usuarios')
+                        .select('*')
+                        .eq('email', email)
+                        .maybeSingle();
+
                     userEncontrado = {
-                        email: data.email,
-                        role: data.role,
-                        nome: data.nome,
-                        vinculoCliente: data.vinculo_cliente || 'ALL',
-                        tipoMedico: data.tipo_medico || 'GESTOR'
+                        email: authData.user.email,
+                        role: perfilData ? perfilData.perfil : (email === 'borealengmed@gmail.com' ? 'GESTOR' : 'CLIENTE'),
+                        nome: perfilData ? perfilData.nome : 'GESTOR MASTER',
+                        vinculoCliente: (perfilData && perfilData.empresa_ou_clinica) ? perfilData.empresa_ou_clinica : 'ALL'
                     };
                 }
-            } catch (errDb) {
-                console.warn("Supabase indisponível no momento, checando lista local...", errDb);
+            } catch (errAuth) {
+                console.warn("Falha no Supabase Auth, tentando tabela alternativa...", errAuth);
             }
         }
 
-        // 2. Se o Supabase falhar ou não encontrar, valida pela lista local
+        // 2. Se não encontrou no Auth, tenta a lista local de contingência
         if (!userEncontrado && typeof USUARIOS_SISTEMA !== 'undefined') {
             userEncontrado = USUARIOS_SISTEMA.find(u => 
                 u.email.trim().toLowerCase() === email && 
@@ -316,7 +320,7 @@ window.realizarLoginSistema = async function() {
                 selCli.disabled = false;
             }
 
-            // Oculta a tela preta de login
+            // Oculta a tela de login
             const telaLogin = document.getElementById('tela-login-container');
             if (telaLogin) {
                 telaLogin.classList.add('hidden');
@@ -342,7 +346,7 @@ window.realizarLoginSistema = async function() {
                 msgErro.classList.remove('hidden');
                 msgErro.style.display = 'block';
             }
-            alert("E-mail ou senha incorretos!\n\nDados para teste:\nE-mail: gestor@boreal.com\nSenha: 123");
+            alert("E-mail ou senha incorretos!");
         }
     } catch (err) {
         console.error("Erro no login:", err);
@@ -351,8 +355,6 @@ window.realizarLoginSistema = async function() {
         if (btnLogin) btnLogin.textContent = txtOriginal;
     }
 };
-
-window.realizarLogoutSistema = function() {
     usuarioLogado = null;
     const telaLogin = document.getElementById('tela-login-container');
     if (telaLogin) {

@@ -742,25 +742,43 @@ function processarCargaMassaExcel(evt) {
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(firstSheet);
 
+        const dataAtual = new Date().toLocaleDateString('pt-BR');
+
         rows.forEach(r => {
-            asoQueueData.push({
+            const clienteNome = r.CLIENTE || r.RAZAO_SOCIAL || "PREFEITURA MUNICIPAL";
+            const cliObj = clientesCadastrados.find(c => c.nome === clienteNome) || clientesCadastrados[0];
+
+            // Grava o ASO em massa diretamente no Banco de ASOs para avaliação do médico
+            asoHistoryData.push({
                 id: Date.now() + Math.random(),
+                fecha: r.DATA || dataAtual,
+                local: r.CIDADE || r.LOCAL || "Cidade da Clínica",
                 nome: r.NOME || r.EMPREGADO || "FUNCIONÁRIO EXCEL",
                 cpf: r.CPF || "000.000.000-00",
-                cliente: r.CLIENTE || r.RAZAO_SOCIAL || "PREFEITURA MUNICIPAL",
-                cargo: r.CARGO || "MECÂNICO",
-                tipo: r.TIPO_EXAME || "ASO ADMISSONAL",
-                status: "AGUARDANDO",
-                anamnese: null
+                nasc: r.NASCIMENTO || r.DATA_NASC || "Não informada",
+                matricula: r.MATRICULA || "-",
+                cliente: clienteNome,
+                cargo: r.CARGO || "OPERACIONAL",
+                funcao: r.FUNCAO || r.CARGO || "OPERACIONAL",
+                lotacao: r.SETOR || r.LOTACAO || "OPERACIONAL",
+                cnpj: cliObj ? cliObj.cnpj : "00.000.000/0001-91",
+                tipoExame: r.TIPO_EXAME || "ASO PERIÓDICO",
+                resultado: "AGUARDANDO PARECER DO MÉDICO",
+                medico: "A DEFINIR PELO EXAMINADOR",
+                medicoPcmso: cliObj ? cliObj.medPcmso : "DRA. LUIZA BRABETZ SANDONATO",
+                crmPcmso: cliObj ? cliObj.crmPcmso : "CRM SP 145328",
+                agentes: r.RISCOS || r.AGENTES || "RUÍDO CONTÍNUO DE MÁQUINAS; POSTURA SENTADA POR LONGOS PERÍODOS",
+                arquivoAssinadoUrl: null,
+                arquivoAssinadoNome: null,
+                anamneseDados: null
             });
         });
 
-        renderFilaAso();
-        alert("Planilha de ASOs carregada com sucesso!");
+        renderHistoryTabela();
+        alert(`${rows.length} ASOs importados com sucesso! Todos já foram cadastrados no Banco de ASOs aguardando parecer do Médico.`);
     };
     reader.readAsArrayBuffer(file);
 }
-
 function abrirModalNovoAso() { document.getElementById('modal-novo-aso-avulso').classList.remove('hidden'); }
 function fecharModal(id) { document.getElementById(id).classList.add('hidden'); }
 
@@ -906,32 +924,21 @@ function concluirEmissaoAsoBoreal() {
     const item = asoQueueData.find(x => x.id === selectedAsoId);
     if (!item) return;
 
-    const parecerRadio = document.querySelector('input[name="aso_conclusao"]:checked');
-    const parecer = parecerRadio ? parecerRadio.value : "Apto";
-
-    // Captura local e data editáveis informados no formulário
-    const localRealizacao = (document.getElementById('aso_edit_local') && document.getElementById('aso_edit_local').value.trim()) || "Paulínia-SP";
+    // Captura local e data editáveis informados pelo auxiliar
+    const localRealizacao = (document.getElementById('aso_edit_local') && document.getElementById('aso_edit_local').value.trim()) || "Cidade da Clínica";
     const dataRealizacao = (document.getElementById('aso_edit_data') && document.getElementById('aso_edit_data').value.trim()) || new Date().toLocaleDateString('pt-BR');
 
-    // Identifica e vincula o Médico Responsável do PCMSO cadastrado para a empresa cliente
+    // Vincula o Médico Responsável do PCMSO cadastrado na empresa cliente
     const clienteNome = (document.getElementById('aso_edit_razao') && document.getElementById('aso_edit_razao').value) || item.cliente;
     const cliObj = clientesCadastrados.find(c => c.nome === clienteNome) || clientesCadastrados[0];
     const medPcmsoNome = cliObj ? cliObj.medPcmso : "DRA. LUIZA BRABETZ SANDONATO";
     const medPcmsoCrm = cliObj ? cliObj.crmPcmso : "CRM SP 145328";
 
-    // Captura médico examinador
-    const medicoExaminador = (document.getElementById('aso_med_nome') && document.getElementById('aso_med_nome').value) || "DR. ROBERTO ALVES - CRM SP 184920";
-    const medCrm = (document.getElementById('aso_med_crm') && document.getElementById('aso_med_crm').value) || "";
-    const medRqe = (document.getElementById('aso_med_rqe') && document.getElementById('aso_med_rqe').value) || "";
-
-    // Captura data de nascimento e matrícula
+    // Dados complementares
     const dataNasc = (document.getElementById('aso_edit_nasc') && document.getElementById('aso_edit_nasc').value) || (item.nasc || 'Não informada');
     const matricula = (document.getElementById('aso_edit_matricula') && document.getElementById('aso_edit_matricula').value) || (item.matricula || '-');
 
-    // Captura a assinatura desenhada do médico
-    const canvas = document.getElementById('canvas-assinatura-medico');
-    const assinaturaImgData = canvas ? canvas.toDataURL() : null;
-
+    // Salva o ASO preparado pelo auxiliar no Banco de ASOs aguardando parecer médico
     asoHistoryData.push({
         id: Date.now(),
         fecha: dataRealizacao,
@@ -946,53 +953,91 @@ function concluirEmissaoAsoBoreal() {
         lotacao: (document.getElementById('aso_edit_lotacao') && document.getElementById('aso_edit_lotacao').value) || 'OFICINA CENTRAL',
         cnpj: (document.getElementById('aso_edit_cnpj') && document.getElementById('aso_edit_cnpj').value) || (cliObj ? cliObj.cnpj : '00.000.000/0001-91'),
         tipoExame: item.tipo || 'ASO ADMISSIONAL / PERIÓDICO',
-        resultado: parecer,
-        medico: medicoExaminador,
-        medCrm: medCrm,
-        medRqe: medRqe,
+        resultado: "AGUARDANDO PARECER DO MÉDICO",
+        medico: "A DEFINIR PELO EXAMINADOR",
         medicoPcmso: medPcmsoNome,
         crmPcmso: medPcmsoCrm,
         agentes: (document.getElementById('aso_doc_agentes_especificos') && document.getElementById('aso_doc_agentes_especificos').value) || 'RUÍDO CONTÍNUO DE MÁQUINAS; POSTURA SENTADA POR LONGOS PERÍODOS',
-        assinaturaMedico: assinaturaImgData,
+        arquivoAssinadoUrl: null,
+        arquivoAssinadoNome: null,
         anamneseDados: item.anamnese ? { ...item.anamnese, local: localRealizacao, data: dataRealizacao } : null
     });
 
+    // Remove da fila provisória de preenchimento
     asoQueueData = asoQueueData.filter(x => x.id !== selectedAsoId);
 
     renderFilaAso();
     renderHistoryTabela();
     fecharModal('modal-aso');
-    alert("ASO Boreal oficial emitido, assinado e gravado com valor jurídico no Banco de ASOs!");
+    alert("ASO preenchido com sucesso pelo Auxiliar e transferido para o Banco de ASOs para análise e parecer do Médico!");
 }
-function renderHistoryTabela() {
-    const tbody = document.getElementById('aso-history-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+function concluirEmissaoAsoBoreal() {
+    const item = asoQueueData.find(x => x.id === selectedAsoId);
+    if (!item) return;
 
-    const activeCliente = document.getElementById('active-cliente-select') ? document.getElementById('active-cliente-select').value : 'ALL';
+    // Captura local e data editáveis informados pelo auxiliar
+    const localRealizacao = (document.getElementById('aso_edit_local') && document.getElementById('aso_edit_local').value.trim()) || "Cidade da Clínica";
+    const dataRealizacao = (document.getElementById('aso_edit_data') && document.getElementById('aso_edit_data').value.trim()) || new Date().toLocaleDateString('pt-BR');
 
-    asoHistoryData.filter(h => activeCliente === 'ALL' || h.cliente === activeCliente).forEach(h => {
-        const tr = document.createElement('tr');
-        tr.className = "border-b hover:bg-slate-50";
-        tr.innerHTML = `
-            <td class="p-2.5">${h.fecha}</td>
-            <td class="p-2.5 font-bold">${h.nome}<br><span class="text-slate-500 font-normal">${h.cpf}</span></td>
-            <td class="p-2.5 font-bold">${h.cliente}</td>
-            <td class="p-2.5 font-black text-emerald-700">${h.resultado}</td>
-            <td class="p-2.5 font-bold">${h.medico}</td>
-            <td class="p-2.5 text-center">
-                <button onclick="visualizarAnamneseAnexada(${h.id})" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-900 border border-indigo-300 px-2.5 py-1 rounded font-bold text-xs flex items-center justify-center gap-1 mx-auto shadow-sm">
-                    📋 Visualizar / Baixar Anamnese Assinada (PDF)
-                </button>
-            </td>
-            <td class="p-2.5 text-center">
-                <button onclick="visualizarAsoAnexado(${h.id})" class="bg-slate-900 hover:bg-slate-800 text-white px-3 py-1 rounded font-bold text-xs flex items-center justify-center gap-1 mx-auto shadow">
-                    📄 Visualizar / Baixar ASO Individual Assinado (PDF)
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
+    // Vincula o Médico Responsável do PCMSO cadastrado na empresa cliente
+    const clienteNome = (document.getElementById('aso_edit_razao') && document.getElementById('aso_edit_razao').value) || item.cliente;
+    const cliObj = clientesCadastrados.find(c => c.nome === clienteNome) || clientesCadastrados[0];
+    const medPcmsoNome = cliObj ? cliObj.medPcmso : "DRA. LUIZA BRABETZ SANDONATO";
+    const medPcmsoCrm = cliObj ? cliObj.crmPcmso : "CRM SP 145328";
+
+    // Dados complementares
+    const dataNasc = (document.getElementById('aso_edit_nasc') && document.getElementById('aso_edit_nasc').value) || (item.nasc || 'Não informada');
+    const matricula = (document.getElementById('aso_edit_matricula') && document.getElementById('aso_edit_matricula').value) || (item.matricula || '-');
+
+    // Salva o ASO preparado pelo auxiliar no Banco de ASOs aguardando parecer médico
+    asoHistoryData.push({
+        id: Date.now(),
+        fecha: dataRealizacao,
+        local: localRealizacao,
+        nome: (document.getElementById('aso_edit_nome') && document.getElementById('aso_edit_nome').value) || item.nome,
+        cpf: (document.getElementById('aso_edit_cpf') && document.getElementById('aso_edit_cpf').value) || item.cpf,
+        nasc: dataNasc,
+        matricula: matricula,
+        cliente: clienteNome,
+        cargo: (document.getElementById('aso_edit_cargo') && document.getElementById('aso_edit_cargo').value) || item.cargo,
+        funcao: (document.getElementById('aso_edit_funcao') && document.getElementById('aso_edit_funcao').value) || item.cargo,
+        lotacao: (document.getElementById('aso_edit_lotacao') && document.getElementById('aso_edit_lotacao').value) || 'OFICINA CENTRAL',
+        cnpj: (document.getElementById('aso_edit_cnpj') && document.getElementById('aso_edit_cnpj').value) || (cliObj ? cliObj.cnpj : '00.000.000/0001-91'),
+        tipoExame: item.tipo || 'ASO ADMISSIONAL / PERIÓDICO',
+        resultado: "AGUARDANDO PARECER DO MÉDICO",
+        medico: "A DEFINIR PELO EXAMINADOR",
+        medicoPcmso: medPcmsoNome,
+        crmPcmso: medPcmsoCrm,
+        agentes: (document.getElementById('aso_doc_agentes_especificos') && document.getElementById('aso_doc_agentes_especificos').value) || 'RUÍDO CONTÍNUO DE MÁQUINAS; POSTURA SENTADA POR LONGOS PERÍODOS',
+        arquivoAssinadoUrl: null,
+        arquivoAssinadoNome: null,
+        anamneseDados: item.anamnese ? { ...item.anamnese, local: localRealizacao, data: dataRealizacao } : null
     });
+
+    // Remove da fila provisória de preenchimento
+    asoQueueData = asoQueueData.filter(x => x.id !== selectedAsoId);
+
+    renderFilaAso();
+    renderHistoryTabela();
+    fecharModal('modal-aso');
+    alert("ASO preenchido com sucesso pelo Auxiliar e transferido para o Banco de ASOs para análise e parecer do Médico!");
+}
+
+function anexarAsoAssinadoIcp(id, evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+
+    const item = asoHistoryData.find(x => x.id === id);
+    if (item) {
+        item.arquivoAssinadoNome = file.name;
+        item.arquivoAssinadoUrl = URL.createObjectURL(file);
+        alert(`ASO Assinado ICP-Brasil ("${file.name}") anexado com sucesso ao prontuário de ${item.nome}!`);
+        renderHistoryTabela();
+    }
+}
+
+function imprimirAsoA4() {
+    window.print();
 }
 
 function visualizarAsoAnexado(id) {
@@ -1001,59 +1046,105 @@ function visualizarAsoAnexado(id) {
 
     const paper = document.getElementById('aso-paper-visualizar');
     if (paper) {
-        // Enquadramento limpo proporcional para caber na tela sem transbordar
-        paper.className = "bg-white p-4 max-w-2xl mx-auto text-slate-900 border border-slate-300 rounded shadow text-[11px] leading-tight space-y-2";
+        const isApto = item.resultado === 'APTO';
+        const isInapto = item.resultado === 'INAPTO';
+        const isRestricao = item.resultado === 'APTO COM RESTRIÇÃO';
+
+        paper.className = "bg-white p-8 max-w-4xl mx-auto text-slate-900 border-2 border-black shadow-2xl text-[13px] leading-relaxed space-y-4 my-2";
         paper.innerHTML = `
-            <div class="border-b-2 border-black pb-1.5 flex justify-between items-center">
+            <!-- PAINEL SUPERIOR DO MÉDICO: APARECE SOMENTE NA TELA (NÃO SAI NA IMPRESSÃO) -->
+            <div class="no-print bg-amber-50 border-2 border-amber-500 p-3 rounded-lg shadow-md mb-4 space-y-2">
+                <div class="flex justify-between items-center">
+                    <strong class="text-xs text-amber-950 font-black uppercase flex items-center gap-1">
+                        🩺 Painel de Decisão do Médico Examinador (Selecione apenas o Parecer):
+                    </strong>
+                    <div class="flex gap-2">
+                        <button onclick="imprimirAsoA4()" class="bg-blue-700 hover:bg-blue-800 text-white font-extrabold px-3 py-1 rounded text-xs shadow">
+                            🖨️ Imprimir / Salvar PDF
+                        </button>
+                        <button onclick="fecharModal('modal-visualizar-aso-anexado')" class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3 py-1 rounded text-xs">
+                            ✕ Fechar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-4 bg-white p-2 rounded border border-amber-200">
+                    <label class="font-black text-xs text-emerald-800 flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="parecer_medico_radio" value="APTO" ${isApto ? 'checked' : ''} class="w-4 h-4 text-emerald-600">
+                        APTO
+                    </label>
+                    <label class="font-black text-xs text-amber-700 flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="parecer_medico_radio" value="APTO COM RESTRIÇÃO" ${isRestricao ? 'checked' : ''} class="w-4 h-4 text-amber-600">
+                        APTO COM RESTRIÇÃO
+                    </label>
+                    <label class="font-black text-xs text-red-700 flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="parecer_medico_radio" value="INAPTO" ${isInapto ? 'checked' : ''} class="w-4 h-4 text-red-600">
+                        INAPTO
+                    </label>
+
+                    <div class="flex items-center gap-1 ml-auto">
+                        <span class="text-[11px] font-bold text-slate-600">Médico:</span>
+                        <input type="text" id="parecer_medico_nome" value="${item.medico !== 'A DEFINIR PELO EXAMINADOR' ? item.medico : 'DR. ROBERTO ALVES - CRM SP 184920'}" class="border px-2 py-0.5 rounded text-xs font-bold w-64 bg-slate-50">
+                        <button onclick="salvarParecerMedicoBanco(${item.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-3 py-1 rounded text-xs shadow">
+                            💾 Gravar Parecer
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CORPO DO ASO EM TAMANHO FOLHA A4 OFICIAL NR-07 -->
+            <div class="border-b-2 border-black pb-3 flex justify-between items-center">
                 <div>
-                    <strong class="text-xs block font-black uppercase text-blue-950">Boreal Engenharia e Medicina</strong>
-                    <span class="text-[9px] text-slate-600">CRM Nº 1011385 | Tel. 19 99156-7153</span>
+                    <strong class="text-base block font-black uppercase text-blue-950">Boreal Engenharia e Medicina</strong>
+                    <span class="text-xs text-slate-600 font-semibold">CRM Nº 1011385 | Tel. (19) 99156-7153</span>
                 </div>
                 <div class="text-right">
-                    <strong class="text-xs font-black uppercase tracking-tight">ATESTADO DE SAÚDE OCUPACIONAL - ASO</strong>
+                    <strong class="text-base font-black uppercase tracking-tight">ATESTADO DE SAÚDE OCUPACIONAL - ASO</strong>
                 </div>
             </div>
 
-            <div class="border border-black px-2 py-1 bg-slate-100 font-bold text-[10px] uppercase flex justify-between items-center">
-                <span>EXAME MÉDICO: ${item.tipoExame || 'ADMISSIONAL / PERIÓDICO'}</span>
-                <span class="text-emerald-800 font-black">CONCLUSÃO: ${item.resultado || 'APTO'}</span>
+            <div class="border border-black px-3 py-2 bg-slate-100 font-bold text-xs uppercase flex justify-between items-center">
+                <span>☑ EXAME MÉDICO: ${item.tipoExame || 'ADMISSIONAL / PERIÓDICO'}</span>
+                <span class="font-black text-sm ${item.resultado === 'APTO' ? 'text-emerald-800' : (item.resultado === 'INAPTO' ? 'text-red-700' : 'text-amber-800')}">
+                    CONCLUSÃO DO EXAME: ${item.resultado}
+                </span>
             </div>
 
-            <div class="border border-black p-2 space-y-1">
-                <strong class="block border-b border-black text-[10px] font-black bg-slate-200 px-1 uppercase">IDENTIFICAÇÃO DO TRABALHADOR E CLIENTE</strong>
-                <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px]">
-                    <div><strong>Razão Social:</strong> ${item.cliente}</div>
-                    <div><strong>CNPJ:</strong> ${item.cnpj || '00.000.000/0001-91'}</div>
-                    <div class="col-span-2"><strong>Nome do Empregado:</strong> <span class="font-black text-blue-900">${item.nome}</span></div>
-                    <div><strong>CPF:</strong> ${item.cpf}</div>
-                    <div><strong>Data Nasc.:</strong> ${item.nasc || 'Não informada'}</div>
-                    <div><strong>Cargo:</strong> ${item.cargo}</div>
-                    <div><strong>Função:</strong> ${item.funcao || item.cargo}</div>
-                    <div><strong>Lotação / Setor:</strong> ${item.lotacao || 'OFICINA CENTRAL'}</div>
-                    <div><strong>Matrícula:</strong> ${item.matricula || '-'}</div>
+            <div class="border border-black p-3 space-y-2">
+                <strong class="block border-b border-black text-xs font-black bg-slate-200 px-2 py-0.5 uppercase">IDENTIFICAÇÃO DO TRABALHADOR E CLIENTE</strong>
+                <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs pt-1">
+                    <div><strong>Razão Social do Empregador:</strong> <span class="font-semibold">${item.cliente}</span></div>
+                    <div><strong>CNPJ:</strong> <span class="font-semibold">${item.cnpj || '00.000.000/0001-91'}</span></div>
+                    <div class="col-span-2"><strong>Nome do Empregado:</strong> <span class="font-black text-blue-950 text-sm">${item.nome}</span></div>
+                    <div><strong>CPF:</strong> <span class="font-semibold">${item.cpf}</span></div>
+                    <div><strong>Data de Nascimento:</strong> <span class="font-semibold">${item.nasc || 'Não informada'}</span></div>
+                    <div><strong>Cargo:</strong> <span class="font-semibold">${item.cargo}</span></div>
+                    <div><strong>Função:</strong> <span class="font-semibold">${item.funcao || item.cargo}</span></div>
+                    <div><strong>Lotação / Setor:</strong> <span class="font-semibold">${item.lotacao || 'OFICINA CENTRAL'}</span></div>
+                    <div><strong>Matrícula:</strong> <span class="font-semibold">${item.matricula || '-'}</span></div>
                 </div>
             </div>
 
-            <div class="border border-black p-2 space-y-1">
-                <strong class="block border-b border-black text-[10px] font-black uppercase">RISCOS OCUPACIONAIS ESPECIFICADOS</strong>
-                <p class="font-semibold text-[10px] text-slate-800">${item.agentes || 'RUÍDO CONTÍNUO DE MÁQUINAS; POSTURA SENTADA POR LONGOS PERÍODOS'}</p>
+            <div class="border border-black p-3 space-y-1">
+                <strong class="block border-b border-black text-xs font-black uppercase mb-1">RISCOS OCUPACIONAIS EM NÍVEL DE AÇÃO</strong>
+                <p class="font-semibold text-xs text-slate-800 leading-normal">${item.agentes || 'RUÍDO CONTÍNUO DE MÁQUINAS; POSTURA SENTADA POR LONGOS PERÍODOS'}</p>
             </div>
 
-            <div class="border border-black p-2 text-center space-y-1.5 bg-slate-50">
-                <p class="text-[9px] italic text-slate-700">"Estou ciente do resultado do presente exame médico e declaro que recebi uma cópia deste ASO."</p>
-                <div class="grid grid-cols-2 gap-3 border-t border-black pt-1.5 items-end">
+            <div class="border border-black p-4 text-center space-y-4 bg-slate-50 mt-4">
+                <p class="text-xs italic text-slate-700">"Estou ciente do resultado do presente exame médico e declaro que recebi uma cópia deste ASO."</p>
+                <div class="grid grid-cols-2 gap-8 border-t border-black pt-4 items-end">
                     <div>
                         <div class="border-b border-black w-4/5 mx-auto mb-1"></div>
-                        <strong class="block text-[9px] uppercase">Assinatura do(a) Examinado(a)</strong>
-                        <span class="text-[9px] block text-slate-700 font-semibold">Local: ${item.local || 'Paulínia-SP'} | Data: ${item.fecha}</span>
+                        <strong class="block text-xs uppercase">Assinatura do(a) Examinado(a)</strong>
+                        <span class="text-xs block text-slate-700 font-semibold mt-1">Local: ${item.local || 'Cidade da Clínica'} | Data: ${item.fecha}</span>
                     </div>
                     <div>
-                        ${item.assinaturaMedico ? `<img src="${item.assinaturaMedico}" class="h-8 mx-auto block mb-1">` : '<div class="border-b border-black w-4/5 mx-auto mb-1"></div>'}
-                        <strong class="block text-[9px] uppercase">${item.medico}</strong>
-                        <span class="text-[8px] text-slate-600 block">Médico(a) Examinador(a)</span>
+                        <div class="border-b border-black w-4/5 mx-auto mb-1"></div>
+                        <strong class="block text-xs uppercase">${item.medico}</strong>
+                        <span class="text-xs text-slate-600 block">Médico(a) Examinador(a) / Assinatura e Carimbo</span>
                     </div>
                 </div>
-                <div class="border-t border-dashed border-slate-400 pt-1 text-[9px] font-bold text-slate-900">
+                <div class="border-t border-dashed border-slate-400 pt-2 text-xs font-bold text-slate-900">
                     Nome do Médico Responsável do PCMSO: <span class="text-blue-950 font-black">${item.medicoPcmso || 'DRA. LUIZA BRABETZ SANDONATO'} — ${item.crmPcmso || 'CRM SP 145328'}</span>
                 </div>
             </div>

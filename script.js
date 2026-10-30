@@ -229,8 +229,17 @@ const USUARIOS_SISTEMA = [
 const SUPABASE_URL = "https://mmbufdwvfbuzjhpswpvz.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tYnVmZHd2ZmJ1empocHN3cHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNzIwMTAsImV4cCI6MjEwODk0ODAxMH0.ZQj9E-Ls-wENmLWEeq007whFHKjvoUy36jhGzgva6oI";
 
-// Inicializa o cliente do Supabase
-const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+// Inicializa o cliente do Supabase compatível com V2 CDN
+let supabaseClient = null;
+try {
+    if (typeof supabase !== 'undefined' && supabase.createClient) {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } else if (window.supabase && window.supabase.createClient) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+} catch (e) {
+    console.error("Erro ao inicializar Supabase Client:", e);
+}
 
 // ESTADO GLOBAL
 let usuarioLogado = null;
@@ -270,29 +279,45 @@ window.realizarLoginSistema = async function() {
 
         // 1. Tenta autenticar pelo Supabase Auth oficial
         if (supabaseClient) {
-            try {
-                const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
-                    email: email,
-                    password: senha
-                });
+            const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: senha
+            });
 
-                if (!authError && authData && authData.user) {
-                    // Busca os dados do perfil na tabela perfis_usuarios
+            if (authError) {
+                console.warn("Erro no Supabase Auth:", authError.message);
+                if (authError.message.includes("Email not confirmed")) {
+                    alert("Atenção: Seu e-mail ainda não foi confirmado no Supabase Auth!\n\nConfirme o link enviado ou marque 'Confirm email' no painel.");
+                    return;
+                }
+            } else if (authData && authData.user) {
+                // Busca os dados do perfil na tabela perfis_usuarios
+                let perfilRole = (email === 'borealengmed@gmail.com') ? 'GESTOR' : 'CLIENTE';
+                let empresaOuClinica = 'ALL';
+                let nomeUsuario = 'GESTOR MASTER';
+
+                try {
                     const { data: perfilData } = await supabaseClient
                         .from('perfis_usuarios')
                         .select('*')
                         .eq('email', email)
                         .maybeSingle();
 
-                    userEncontrado = {
-                        email: authData.user.email,
-                        role: perfilData ? perfilData.perfil : (email === 'borealengmed@gmail.com' ? 'GESTOR' : 'CLIENTE'),
-                        nome: perfilData ? perfilData.nome : 'GESTOR MASTER',
-                        vinculoCliente: (perfilData && perfilData.empresa_ou_clinica) ? perfilData.empresa_ou_clinica : 'ALL'
-                    };
+                    if (perfilData) {
+                        if (perfilData.perfil) perfilRole = perfilData.perfil;
+                        if (perfilData.empresa_ou_clinica) empresaOuClinica = perfilData.empresa_ou_clinica;
+                        if (perfilData.nome) nomeUsuario = perfilData.nome;
+                    }
+                } catch (ePerfil) {
+                    console.warn("Perfil lido com fallback padrão:", ePerfil);
                 }
-            } catch (errAuth) {
-                console.warn("Falha no Supabase Auth, tentando tabela alternativa...", errAuth);
+
+                userEncontrado = {
+                    email: authData.user.email,
+                    role: perfilRole,
+                    nome: nomeUsuario,
+                    vinculoCliente: empresaOuClinica
+                };
             }
         }
 
@@ -346,12 +371,12 @@ window.realizarLoginSistema = async function() {
                 msgErro.classList.remove('hidden');
                 msgErro.style.display = 'block';
             }
-            alert("E-mail ou senha incorretos!");
+            alert("E-mail ou senha incorretos!\n\nVerifique se o e-mail 'borealengmed@gmail.com' e a senha conferem com o cadastro do Supabase.");
         }
     } catch (err) {
         console.error("Erro no login:", err);
         alert("Ocorreu uma falha ao tentar entrar. Tente novamente.");
-} finally {
+    } finally {
         if (btnLogin) btnLogin.textContent = txtOriginal;
     }
 };
@@ -364,7 +389,6 @@ window.realizarLogoutSistema = function() {
         telaLogin.style.display = 'flex';
     }
 };
-
 let clientesCadastrados = [
     { id: 1, nome: "PREFEITURA MUNICIPAL", cnpj: "00.000.000/0001-91", tel: "(19) 3888-1000", email: "contato@prefeitura.sp.gov.br", medPcmso: "DRA. LUIZA BRABETZ SANDONATO", crmPcmso: "CRM SP 145328", medWhats: "(19) 99156-7153", medEmail: "luiza.pcmso@borealengmed.com.br", ativo: true },
     { id: 2, nome: "INDÚSTRIA METALÚRGICA", cnpj: "11.222.333/0001-44", tel: "(19) 3999-2000", email: "rh@metalurgica.com.br", medPcmso: "DR. MARCOS SILVA", crmPcmso: "CRM SP 98765", medWhats: "(19) 98888-9999", medEmail: "marcos.pcmso@metalurgica.com.br", ativo: true }

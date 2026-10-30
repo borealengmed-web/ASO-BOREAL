@@ -2048,3 +2048,34 @@ async function salvarPropriaSenhaUsuario() {
         alert("Falha de conexão com o banco de dados.");
     }
 }
+
+// CARREGAR E APLICAR PERFIL DO USUÁRIO VIA SUPABASE
+async function carregarPerfilUsuarioSupabase(user) {
+    if (!user || !window.supabase) return;
+
+    try {
+        const { data: userProfile, error } = await window.supabase
+            .from('perfis_usuarios')
+            .select('perfil, empresa_ou_clinica, email')
+            .eq('id', user.id)
+            .single();
+
+        if (userProfile && !error) {
+            // 1. Atualiza o seletor visual com o perfil vindo do banco
+            const selectPerfil = document.getElementById('user-role-select');
+            if (selectPerfil) {
+                selectPerfil.value = userProfile.perfil;
+                
+                // 2. Trava o seletor se não for Gestor, para não alterarem na mão
+                if (userProfile.perfil !== 'GESTOR') {
+                    selectPerfil.disabled = true;
+                }
+            }
+
+            // 3. Libera apenas os módulos correspondentes
+            validarTrocaPerfil();
+        }
+    } catch (e) {
+        console.error("Erro ao carregar perfil do Supabase:", e);
+    }
+}

@@ -214,10 +214,98 @@ const LISTA_EXAMES_INVENTARIO = [
     "PATCH TEST (TESTE DE CONTATO)"
 ];
 
+// BANCO DE USUÁRIOS E SENHAS DO SISTEMA (POR PERFIL)
+const USUARIOS_SISTEMA = [
+    { email: "gestor@boreal.com", senha: "123", role: "GESTOR", nome: "GESTOR CENTRAL", vinculoCliente: "ALL" },
+    { email: "medico.pcmso@boreal.com", senha: "123", role: "MEDICO_PCMSO", nome: "DRA. LUIZA BRABETZ SANDONATO", vinculoCliente: "PREFEITURA MUNICIPAL" },
+    { email: "medico.examinador@boreal.com", senha: "123", role: "MEDICO", nome: "DR. ROBERTO ALVES", vinculoCliente: "PREFEITURA MUNICIPAL" },
+    { email: "clinica.paulinia@boreal.com", senha: "123", role: "CLINICA", nome: "CLÍNICA CENTRAL PAULÍNIA", vinculoCliente: "PREFEITURA MUNICIPAL" },
+    { email: "prefeitura@cliente.com", senha: "123", role: "CLIENTE", nome: "PREFEITURA MUNICIPAL", vinculoCliente: "PREFEITURA MUNICIPAL" }
+];
+
 // ESTADO GLOBAL
+let usuarioLogado = null;
 let currentRole = "GESTOR";
 let selectedAsoId = null;
 let selectedAgendamentoId = null;
+
+// FUNÇÃO DE LOGIN E VALIDAÇÃO DE SENHA
+window.realizarLoginSistema = function() {
+    const emailInput = document.getElementById('login_usuario_email');
+    const senhaInput = document.getElementById('login_usuario_senha');
+    const msgErro = document.getElementById('login_msg_erro');
+
+    if (!emailInput || !senhaInput) {
+        alert("Campos de login não encontrados na tela!");
+        return;
+    }
+
+    const email = emailInput.value.trim().toLowerCase();
+    const senha = senhaInput.value.trim();
+
+    // Busca usuário ignorando maiúsculas e espaços
+    const userEncontrado = USUARIOS_SISTEMA.find(u => 
+        u.email.trim().toLowerCase() === email && 
+        String(u.senha).trim() === senha
+    );
+
+    if (userEncontrado) {
+        usuarioLogado = userEncontrado;
+        currentRole = userEncontrado.role;
+
+        // Atualiza o seletor do topo se existir
+        const selRole = document.getElementById('user-role-select');
+        if (selRole) selRole.value = currentRole;
+
+        const selCli = document.getElementById('active-cliente-select');
+        if (selCli && userEncontrado.vinculoCliente !== 'ALL') {
+            selCli.value = userEncontrado.vinculoCliente;
+            selCli.disabled = true;
+        } else if (selCli) {
+            selCli.disabled = false;
+        }
+
+        // Oculta a tela de login de forma forçada no CSS
+        const telaLogin = document.getElementById('tela-login-container');
+        if (telaLogin) {
+            telaLogin.classList.add('hidden');
+            telaLogin.style.display = 'none';
+        }
+
+        // Aplica os módulos do perfil
+        if (typeof aplicarPermissoesPerfilDefinitivo === 'function') {
+            aplicarPermissoesPerfilDefinitivo();
+        } else if (typeof validarTrocaPerfil === 'function') {
+            validarTrocaPerfil();
+        }
+
+        if (msgErro) msgErro.classList.add('hidden');
+    } else {
+        if (msgErro) {
+            msgErro.textContent = "E-mail ou senha incorretos!";
+            msgErro.classList.remove('hidden');
+            msgErro.style.display = 'block';
+        }
+        alert("E-mail ou senha incorretos!\n\nTeste com:\nLogin: gestor@boreal.com\nSenha: 123");
+    }
+};
+
+window.realizarLogoutSistema = function() {
+    usuarioLogado = null;
+    const telaLogin = document.getElementById('tela-login-container');
+    if (telaLogin) {
+        telaLogin.classList.remove('hidden');
+        telaLogin.style.display = 'flex';
+    }
+};
+
+function realizarLogoutSistema() {
+    usuarioLogado = null;
+    const telaLogin = document.getElementById('tela-login-container');
+    const appPrincipal = document.getElementById('app-principal-container');
+    if (telaLogin) telaLogin.classList.remove('hidden');
+    if (appPrincipal) appPrincipal.classList.add('hidden');
+}
 let orderItemsList = [];
 let tempFileAtestado = null;
 
@@ -339,13 +427,13 @@ window.switchTab = function(tabId) {
 function validarTrocaPerfil() {
     const select = document.getElementById('user-role-select');
     if (select) currentRole = select.value;
+    aplicarPermissoesPerfilDefinitivo();
+}
 
+function aplicarPermissoesPerfilDefinitivo() {
     const lblQtdVal = document.getElementById('lbl_ped_qtd_valor');
-    if (currentRole === 'CLIENTE' || currentRole === 'MEDICO' || currentRole === 'MEDICO_PCMSO') {
+    if (currentRole === 'CLIENTE') {
         document.body.classList.add('hide-prices');
-        if (lblQtdVal) lblQtdVal.textContent = "Qtd / Valor Unit. (R$)";
-    } else if (currentRole === 'CLINICA') {
-        document.body.classList.remove('hide-prices');
         if (lblQtdVal) lblQtdVal.textContent = "QUANT.";
     } else {
         document.body.classList.remove('hide-prices');
@@ -361,13 +449,27 @@ function validarTrocaPerfil() {
         btn.style.display = (currentRole === 'GESTOR') ? 'block' : 'none';
     });
 
-    // LIBERAÇÃO ABSOLUTA DE TODAS AS TECLAS DE MÓDULOS E ATIVAÇÃO DOS CLIQUES
-    document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+    // MAPEAMENTO DE TODAS AS TECLAS DE NAVEGAÇÃO DOS MÓDULOS
+    const nav = {
+        pedidos: document.getElementById('nav-btn-pedidos'),
+        atendimento: document.getElementById('nav-btn-atendimento'),
+        historico: document.getElementById('nav-btn-historico'),
+        esocial: document.getElementById('nav-btn-esocial'),
+        homologacao: document.getElementById('nav-btn-homologacao'),
+        pcmsoMatriz: document.getElementById('nav-btn-pcmso-matriz'),
+        relatorioPcmso: document.getElementById('nav-btn-relatorio-pcmso'),
+        producao: document.getElementById('nav-btn-producao'),
+        chat: document.getElementById('nav-btn-chat'),
+        cadastros: document.getElementById('nav-btn-cadastros')
+    };
+
+    // 1. Garante que os botões fiquem limpos e clicáveis
+    Object.values(nav).forEach(btn => {
+        if (!btn) return;
         btn.style.display = 'flex';
         btn.removeAttribute('disabled');
-        btn.classList.remove('opacity-50', 'pointer-events-none', 'cursor-not-allowed', 'hidden');
+        btn.classList.remove('opacity-50', 'pointer-events-none', 'cursor-not-allowed');
 
-        // Garante que o clique funcione mesmo se não houver onclick inline no HTML
         if (!btn.dataset.hasTabListener) {
             btn.dataset.hasTabListener = 'true';
             btn.addEventListener('click', () => {
@@ -377,12 +479,68 @@ function validarTrocaPerfil() {
         }
     });
 
+    // 2. REGRAS DE ACESSO POR PERFIL DE USUÁRIO
+    if (currentRole === 'MEDICO_PCMSO') {
+        if (nav.pedidos) nav.pedidos.style.display = 'none';
+        if (nav.atendimento) nav.atendimento.style.display = 'none';
+        if (nav.homologacao) nav.homologacao.style.display = 'none';
+        if (nav.producao) nav.producao.style.display = 'none';
+        if (nav.esocial) nav.esocial.style.display = 'none';
+        if (nav.cadastros) nav.cadastros.style.display = 'none';
+        window.switchTab('pcmso-matriz');
+    } else if (currentRole === 'MEDICO_HOMOLOGADOR') {
+        // Médico Homologador Independente: Acessa exclusivamente Homologação e Chat
+        if (nav.pedidos) nav.pedidos.style.display = 'none';
+        if (nav.atendimento) nav.atendimento.style.display = 'none';
+        if (nav.historico) nav.historico.style.display = 'none';
+        if (nav.pcmsoMatriz) nav.pcmsoMatriz.style.display = 'none';
+        if (nav.relatorioPcmso) nav.relatorioPcmso.style.display = 'none';
+        if (nav.producao) nav.producao.style.display = 'none';
+        if (nav.esocial) nav.esocial.style.display = 'none';
+        if (nav.cadastros) nav.cadastros.style.display = 'none';
+        window.switchTab('homologacao');
+    } else if (currentRole === 'MEDICO_EXAMINADOR_IND') {
+        // Médico Examinador Independente: Abre no Banco de ASOs (somente carga/avulsos)
+        if (nav.pedidos) nav.pedidos.style.display = 'none';
+        if (nav.atendimento) nav.atendimento.style.display = 'none';
+        if (nav.homologacao) nav.homologacao.style.display = 'none';
+        if (nav.producao) nav.producao.style.display = 'none';
+        if (nav.esocial) nav.esocial.style.display = 'none';
+        if (nav.cadastros) nav.cadastros.style.display = 'none';
+        if (nav.relatorioPcmso) nav.relatorioPcmso.style.display = 'none';
+        if (nav.historico) nav.historico.style.display = 'flex';
+        window.switchTab('historico');
+    } else if (currentRole === 'MEDICO') {
+        // Médico Examinador Vinculado a Clínica
+        if (nav.pedidos) nav.pedidos.style.display = 'none';
+        if (nav.producao) nav.producao.style.display = 'none';
+        if (nav.esocial) nav.esocial.style.display = 'none';
+        if (nav.cadastros) nav.cadastros.style.display = 'none';
+        if (nav.historico) nav.historico.style.display = 'flex';
+        window.switchTab('historico');
+    } else if (currentRole === 'CLINICA') {
+        // Clínica Credenciada
+        if (nav.homologacao) nav.homologacao.style.display = 'none';
+        if (nav.esocial) nav.esocial.style.display = 'none';
+        if (nav.relatorioPcmso) nav.relatorioPcmso.style.display = 'none';
+        if (nav.cadastros) nav.cadastros.style.display = 'none';
+        window.switchTab('pedidos');
+    } else if (currentRole === 'CLIENTE') {
+        // Cliente (Empresa)
+        if (nav.atendimento) nav.atendimento.style.display = 'none';
+        if (nav.producao) nav.producao.style.display = 'none';
+        if (nav.cadastros) nav.cadastros.style.display = 'none';
+        window.switchTab('pedidos');
+    } else {
+        // GESTOR (Boreal) - Acesso total
+        window.switchTab('pedidos');
+    }
+
     renderPcmsoMatriz();
     renderMonitorTable();
     renderHistoryTabela();
     atualizarHeaderPcmsoMedico();
 }
-
 function alterarSenhaMaster() {
     const pwd = prompt("Digite a nova Senha Master:");
     if (pwd) { alert("Senha Master redefinida com sucesso!"); }
@@ -952,6 +1110,7 @@ function concluirEmissaoAsoBoreal() {
         lotacao: (document.getElementById('aso_edit_lotacao') && document.getElementById('aso_edit_lotacao').value) || 'OFICINA CENTRAL',
         cnpj: (document.getElementById('aso_edit_cnpj') && document.getElementById('aso_edit_cnpj').value) || (cliObj ? cliObj.cnpj : '00.000.000/0001-91'),
         tipoExame: item.tipo || 'ASO ADMISSIONAL / PERIÓDICO',
+        origem: "CLINICA_CREDENCIADA",
         resultado: "AGUARDANDO PARECER DO MÉDICO",
         medico: "A DEFINIR PELO EXAMINADOR",
         medicoPcmso: medPcmsoNome,
@@ -978,7 +1137,18 @@ function renderHistoryTabela() {
 
     const activeCliente = document.getElementById('active-cliente-select') ? document.getElementById('active-cliente-select').value : 'ALL';
 
-    asoHistoryData.filter(h => activeCliente === 'ALL' || h.cliente === activeCliente).forEach(h => {
+    asoHistoryData.filter(h => {
+        // 1. Filtro por Cliente Ativo
+        const matchCliente = (activeCliente === 'ALL' || h.cliente === activeCliente);
+        if (!matchCliente) return false;
+
+        // 2. Médico Independente NÃO visualiza registros de clínicas credenciadas
+        if (currentRole === 'MEDICO_EXAMINADOR_IND') {
+            return h.origem !== 'CLINICA_CREDENCIADA';
+        }
+
+        return true;
+    }).forEach(h => {
         const tr = document.createElement('tr');
         tr.className = "border-b hover:bg-slate-50";
 

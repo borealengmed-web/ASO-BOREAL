@@ -1971,3 +1971,80 @@ async function salvarParecerMedicoEmNuvem(id, resultado, medico) {
         console.error("Erro ao atualizar parecer no banco:", e);
     }
 }
+
+// ==========================================
+// FLUXO DE PRIMEIRO ACESSO / CRIAÇÃO DE SENHA PRÓPRIA
+// ==========================================
+function abrirModalPrimeiroAcesso() {
+    const modal = document.getElementById('modal-primeiro-acesso');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function fecharModalPrimeiroAcesso() {
+    const modal = document.getElementById('modal-primeiro-acesso');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function salvarPropriaSenhaUsuario() {
+    const email = document.getElementById('cad_auto_email').value.trim().toLowerCase();
+    const senha = document.getElementById('cad_auto_senha').value.trim();
+    const conf = document.getElementById('cad_auto_senha_conf').value.trim();
+
+    if (!email || !senha) {
+        alert("Preencha o e-mail e a nova senha.");
+        return;
+    }
+
+    if (senha !== conf) {
+        alert("As senhas digitadas não conferem!");
+        return;
+    }
+
+    if (senha.length < 3) {
+        alert("A senha precisa ter pelo menos 3 dígitos.");
+        return;
+    }
+
+    if (!supabaseClient) {
+        alert("Conexão com o banco de dados indisponível.");
+        return;
+    }
+
+    try {
+        // 1. Verifica se o e-mail foi previamente autorizado pela Boreal no banco
+        const { data: usuario, error: errBusca } = await supabaseClient
+            .from('usuarios')
+            .select('*')
+            .eq('email', email)
+            .maybeSingle();
+
+        if (errBusca || !usuario) {
+            alert("Acesso não autorizado!\n\nEste e-mail ainda não possui autorização no sistema Boreal Engmed. Solicite previamente a liberação do seu perfil ao Gestor.");
+            return;
+        }
+
+        // 2. Grava a senha escolhida pelo próprio usuário na nuvem
+        const { error: errUpdate } = await supabaseClient
+            .from('usuarios')
+            .update({ senha: senha })
+            .eq('email', email);
+
+        if (errUpdate) {
+            alert("Ocorreu um erro ao salvar sua senha no banco de dados.");
+            return;
+        }
+
+        alert(`Senha cadastrada com sucesso para: ${usuario.nome}!\n\nAgora você já pode entrar no sistema com a senha que acabou de criar.`);
+        fecharModalPrimeiroAcesso();
+
+        // Preenche automaticamente os campos de login para facilitar
+        const loginEmail = document.getElementById('login_usuario_email');
+        const loginSenha = document.getElementById('login_usuario_senha');
+        if (loginEmail) loginEmail.value = email;
+        if (loginSenha) loginSenha.value = senha;
+
+    } catch (e) {
+        console.error("Erro no primeiro acesso:", e);
+        alert("Falha de conexão com o banco de dados.");
+    }
+}

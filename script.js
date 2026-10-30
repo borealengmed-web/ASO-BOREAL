@@ -223,12 +223,132 @@ const USUARIOS_SISTEMA = [
     { email: "prefeitura@cliente.com", senha: "123", role: "CLIENTE", nome: "PREFEITURA MUNICIPAL", vinculoCliente: "PREFEITURA MUNICIPAL" }
 ];
 
+// ==========================================
+// CONEXÃO COM O BANCO DE DADOS EM NUVEM (SUPABASE)
+// ==========================================
+const SUPABASE_URL = "https://mmbufdwvfbuzjhpswpvz.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tYnVmZHd2ZmJ1empocHN3cHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNzIwMTAsImV4cCI6MjEwODk0ODAxMH0.ZQj9E-Ls-wENmLWEeq007whFHKjvoUy36jhGzgva6oI";
+
+// Inicializa o cliente do Supabase
+const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
 // ESTADO GLOBAL
 let usuarioLogado = null;
 let currentRole = "GESTOR";
 let selectedAsoId = null;
 let selectedAgendamentoId = null;
+let orderItemsList = [];
+let tempFileAtestado = null;
 
+// ==========================================
+// LOGIN CONECTADO DIRETAMENTE AO BANCO DE DADOS
+// ==========================================
+window.realizarLoginSistema = async function() {
+    const emailInput = document.getElementById('login_usuario_email');
+    const senhaInput = document.getElementById('login_usuario_senha');
+    const msgErro = document.getElementById('login_msg_erro');
+
+    if (!emailInput || !senhaInput) {
+        alert("Campos de login não encontrados na tela!");
+        return;
+    }
+
+    const email = emailInput.value.trim().toLowerCase();
+    const senha = senhaInput.value.trim();
+
+    if (!email || !senha) {
+        alert("Preencha o e-mail e a senha.");
+        return;
+    }
+
+    // Feedback visual de carregamento
+    const btnLogin = document.querySelector('#tela-login-container button');
+    const txtOriginal = btnLogin ? btnLogin.textContent : 'Entrar';
+    if (btnLogin) btnLogin.textContent = "Verificando no banco...";
+
+    try {
+        let userEncontrado = null;
+
+        // 1. Consulta em tempo real na tabela 'usuarios' do Supabase
+        if (supabaseClient) {
+            const { data, error } = await supabaseClient
+                .from('usuarios')
+                .select('*')
+                .eq('email', email)
+                .eq('senha', senha)
+                .maybeSingle();
+
+            if (!error && data) {
+                userEncontrado = {
+                    email: data.email,
+                    role: data.role,
+                    nome: data.nome,
+                    vinculoCliente: data.vinculo_cliente,
+                    tipoMedico: data.tipo_medico
+                };
+            }
+        }
+
+        // 2. Se o usuário existir no banco da nuvem:
+        if (userEncontrado) {
+            usuarioLogado = userEncontrado;
+            currentRole = userEncontrado.role;
+
+            const selRole = document.getElementById('user-role-select');
+            if (selRole) selRole.value = currentRole;
+
+            const selCli = document.getElementById('active-cliente-select');
+            if (selCli && userEncontrado.vinculoCliente !== 'ALL') {
+                selCli.value = userEncontrado.vinculoCliente;
+                selCli.disabled = true; // Cliente fixado na própria empresa
+            } else if (selCli) {
+                selCli.disabled = false;
+            }
+
+            // Oculta a tela de login
+            const telaLogin = document.getElementById('tela-login-container');
+            if (telaLogin) {
+                telaLogin.classList.add('hidden');
+                telaLogin.style.display = 'none';
+            }
+
+            // Aplica as permissões de módulo para o perfil logado
+            if (typeof aplicarPermissoesPerfilDefinitivo === 'function') {
+                aplicarPermissoesPerfilDefinitivo();
+            } else if (typeof validarTrocaPerfil === 'function') {
+                validarTrocaPerfil();
+            }
+
+            // Carrega os ASOs salvos em nuvem para a tabela
+            if (typeof carregarAsosDoBanco === 'function') {
+                await carregarAsosDoBanco();
+            }
+
+            if (msgErro) msgErro.classList.add('hidden');
+        } else {
+            if (msgErro) {
+                msgErro.textContent = "E-mail ou senha inválidos no banco de dados!";
+                msgErro.classList.remove('hidden');
+                msgErro.style.display = 'block';
+            }
+            alert("E-mail ou senha incorretos no banco de dados Supabase!\n\nVerifique se o usuário consta na tabela 'usuarios'.");
+        }
+    } catch (err) {
+        console.error("Erro na autenticação:", err);
+        alert("Falha de conexão com o banco de dados. Verifique sua conexão com a internet.");
+    } finally {
+        if (btnLogin) btnLogin.textContent = txtOriginal;
+    }
+};
+
+window.realizarLogoutSistema = function() {
+    usuarioLogado = null;
+    const telaLogin = document.getElementById('tela-login-container');
+    if (telaLogin) {
+        telaLogin.classList.remove('hidden');
+        telaLogin.style.display = 'flex';
+    }
+};
 // FUNÇÃO DE LOGIN E VALIDAÇÃO DE SENHA
 window.realizarLoginSistema = function() {
     const emailInput = document.getElementById('login_usuario_email');
@@ -1205,7 +1325,7 @@ function anexarAsoAssinadoIcp(id, evt) {
     }
 }
 
-function salvarParecerMedicoBanco(id) {
+async function salvarParecerMedicoBanco(id) {
     const item = asoHistoryData.find(x => x.id === id);
     if (!item) return;
 
@@ -1220,11 +1340,13 @@ function salvarParecerMedicoBanco(id) {
     item.resultado = radioParecer.value;
     item.medico = nomeMed;
 
+    // Atualiza imediatamente na nuvem em tempo real
+    await salvarParecerMedicoEmNuvem(id, item.resultado, item.medico);
+
     alert(`Parecer médico gravado com sucesso como: "${item.resultado}"! O ASO está pronto para impressão ou assinatura digital.`);
     renderHistoryTabela();
     visualizarAsoAnexado(id);
 }
-
 function fecharModalVisualizacaoAso() {
     // Procura os possíveis IDs de modais de visualização e fecha o que estiver aberto
     const possiveisModais = [
@@ -1857,5 +1979,63 @@ function gerarLoteESocial() {
                 trabalhador: asoHistoryData
             }
         }, null, 2);
+    }
+}
+
+// ==========================================
+// SINCRONIZAÇÃO DO BANCO DE ASOS COM A NUVEM
+// ==========================================
+
+// Carrega os ASOs salvos no Supabase ao iniciar
+async function carregarAsosDoBanco() {
+    if (!supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient
+            .from('asos')
+            .select('*')
+            .order('id', { ascending: false });
+
+        if (!error && data) {
+            asoHistoryData = data.map(d => ({
+                id: d.id,
+                fecha: d.fecha,
+                local: d.local,
+                nome: d.nome,
+                cpf: d.cpf,
+                nasc: d.nasc,
+                matricula: d.matricula,
+                cliente: d.cliente,
+                cargo: d.cargo,
+                funcao: d.funcao,
+                lotacao: d.lotacao,
+                cnpj: d.cnpj,
+                tipoExame: d.tipo_exame,
+                origem: d.origem,
+                resultado: d.resultado,
+                medico: d.medico,
+                medicoPcmso: d.medico_pcmso,
+                crmPcmso: d.crm_pcmso,
+                agentes: d.agentes,
+                arquivoAssinadoUrl: d.arquivo_assinado_url,
+                arquivoAssinadoNome: d.arquivo_assinado_nome,
+                anamneseDados: d.anamnese_dados
+            }));
+            renderHistoryTabela();
+        }
+    } catch (e) {
+        console.warn("Aviso ao carregar dados remotos:", e);
+    }
+}
+
+// Salva o parecer médico diretamente no Supabase
+async function salvarParecerMedicoEmNuvem(id, resultado, medico) {
+    if (!supabaseClient) return;
+    try {
+        await supabaseClient
+            .from('asos')
+            .update({ resultado: resultado, medico: medico })
+            .eq('id', id);
+    } catch (e) {
+        console.error("Erro ao atualizar parecer no banco:", e);
     }
 }

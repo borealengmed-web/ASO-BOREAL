@@ -65,13 +65,15 @@
             <div class="flex items-center space-x-2 text-xs">
                 <div class="bg-slate-900/90 border border-blue-400/30 px-3 py-1 rounded-lg flex items-center gap-2">
                     <span class="text-amber-400 font-bold">PERFIL:</span>
-                    <select id="user-role-select" onchange="validarTrocaPerfil()" class="bg-slate-800 text-white font-bold rounded px-2 py-0.5 border border-slate-700 focus:outline-none">
-                        <option value="GESTOR" selected>GESTOR BOREAL (Acesso Total)</option>
-                        <option value="CLIENTE">CLIENTE (Solicitar Pedidos, ASOs e eSocial)</option>
-                        <option value="CLINICA">CLÍNICA CREDENCIADA (Agendamentos & Atendimento)</option>
-                        <option value="MEDICO">MÉDICO EXAMINADOR (Atendimento & Fila)</option>
-                        <option value="MEDICO_PCMSO">MÉDICO RESPONSÁVEL PCMSO</option>
-                    </select>
+                   <select id="user-role-select" onchange="validarTrocaPerfil()" class="border border-slate-300 bg-white font-bold text-xs p-1 rounded shadow-sm">
+    <option value="GESTOR">GESTOR CENTRAL</option>
+    <option value="CLINICA">CLÍNICA CREDENCIADA</option>
+    <option value="CLIENTE">CLIENTE (EMPRESA)</option>
+    <option value="MEDICO">MÉDICO EXAMINADOR (CLÍNICA)</option>
+    <option value="MEDICO_EXAMINADOR_IND">MÉDICO EXAMINADOR INDEPENDENTE</option>
+    <option value="MEDICO_HOMOLOGADOR">MÉDICO HOMOLOGADOR INDEPENDENTE</option>
+    <option value="MEDICO_PCMSO">MÉDICO RESPONSÁVEL PCMSO</option>
+</select>
                 </div>
 
                 <button type="button" onclick="alterarSenhaMaster()" class="bg-slate-900 hover:bg-slate-800 text-slate-300 px-2.5 py-1 rounded border border-slate-700 font-bold text-[11px]">

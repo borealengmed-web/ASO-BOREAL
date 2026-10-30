@@ -351,10 +351,12 @@ window.realizarLoginSistema = async function() {
     } catch (err) {
         console.error("Erro no login:", err);
         alert("Ocorreu uma falha ao tentar entrar. Tente novamente.");
-    } finally {
+} finally {
         if (btnLogin) btnLogin.textContent = txtOriginal;
     }
 };
+
+window.realizarLogoutSistema = function() {
     usuarioLogado = null;
     const telaLogin = document.getElementById('tela-login-container');
     if (telaLogin) {

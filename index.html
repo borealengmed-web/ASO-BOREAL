@@ -334,24 +334,45 @@
             <pre id="esocial-preview-container" class="bg-slate-900 text-emerald-400 font-mono p-4 rounded-xl text-xs overflow-x-auto max-h-96">// Clique no botão acima para compilar o lote de XMLs...</pre>
         </section>
 
-        <!-- ABA 5: MÓDULO HOMOLOGAÇÃO DE ATESTADOS OCUPACIONAIS -->
+       <!-- ABA 5: MÓDULO HOMOLOGAÇÃO DE ATESTADOS OCUPACIONAIS -->
         <section id="tab-homologacao" class="tab-content hidden space-y-4">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
-                <div class="border-b pb-3">
-                    <h2 class="font-extrabold text-slate-900 text-sm md:text-base uppercase flex items-center gap-2">
-                        <i data-lucide="file-check" class="w-5 h-5 text-purple-700"></i> Homologação de Atestados Médicos Externos
-                    </h2>
-                    <p class="text-xs text-slate-500">Cadastre o empregado e anexe o atestado para homologação médica abaixo.</p>
+                <div class="flex flex-wrap justify-between items-center border-b pb-3 gap-2">
+                    <div>
+                        <h2 class="font-extrabold text-slate-900 text-sm md:text-base uppercase flex items-center gap-2">
+                            <i data-lucide="file-check" class="w-5 h-5 text-purple-700"></i> Homologação de Atestados Médicos Externos
+                        </h2>
+                        <p class="text-xs text-slate-500">Cadastre o empregado e anexe o atestado para homologação médica abaixo.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-1.5 rounded cursor-pointer flex items-center shadow">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1"></i> Upload Planilha Afastados (.XLSX)
+                            <input type="file" accept=".xlsx, .xls" class="hidden" onchange="processarCargaMassaAtestados(event)">
+                        </label>
+                    </div>
                 </div>
 
                 <!-- PAINEL DE INCLUSÃO DIRETA NA TELA -->
                 <div class="bg-purple-50 border border-purple-200 p-3 rounded-lg space-y-2 text-xs">
                     <span class="font-bold text-purple-950 block uppercase">➕ Relacionar Novo Empregado para Homologação:</span>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                        <input type="text" id="hom_top_trab" placeholder="TRABALHADOR & CPF *" class="border p-1.5 rounded font-bold bg-white">
-                        <input type="text" id="hom_top_setor" placeholder="LOTAÇÃO / SETOR" class="border p-1.5 rounded font-bold bg-white">
-                        <input type="number" id="hom_top_dias" value="1" placeholder="DIAS AFAST." class="border p-1.5 rounded text-center font-bold bg-white">
-                        <input type="text" id="hom_top_cid" placeholder="CID-10 *" class="border p-1.5 rounded text-center font-bold bg-white">
+                        <div>
+                            <label class="font-bold text-slate-700 block mb-0.5">Trabalhador & CPF *</label>
+                            <input type="text" id="hom_top_trab" placeholder="EX: CARLOS SILVA - 111.222.333-44" class="w-full border p-1.5 rounded font-bold bg-white">
+                        </div>
+                        <div>
+                            <label class="font-bold text-slate-700 block mb-0.5">Lotação / Setor</label>
+                            <input type="text" id="hom_top_setor" placeholder="LOTAÇÃO / SETOR" class="w-full border p-1.5 rounded font-bold bg-white">
+                        </div>
+                        <div>
+                            <label class="font-bold text-purple-950 block mb-0.5">Tempo de Afastamento *</label>
+                            <input type="number" id="hom_top_dias" value="1" placeholder="DIAS AFAST." class="w-full border p-1.5 rounded text-center font-bold bg-white">
+                        </div>
+                        <div>
+                            <label class="font-bold text-slate-700 block mb-0.5">Diagnóstico (CID-10 ou Doença) *</label>
+                            <input list="lista-cid10-homologacao" type="text" id="hom_top_cid" placeholder="DIGITE O CID OU O NOME..." class="w-full border p-1.5 rounded text-center font-bold bg-white" onchange="formatarCidSelecionado(this)">
+                            <datalist id="lista-cid10-homologacao"></datalist>
+                        </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <input type="text" id="hom_top_medico" placeholder="MÉDICO EMISSOR DO ATESTADO" class="border p-1.5 rounded font-semibold bg-white">
@@ -370,11 +391,12 @@
                                 <th class="p-2">Trabalhador & CPF</th>
                                 <th class="p-2">Lotação / Setor</th>
                                 <th class="p-2">Data Atestado</th>
-                                <th class="p-2 text-center">Dias Afast.</th>
+                                <th class="p-2 text-center">Tempo Afast.</th>
                                 <th class="p-2 text-center">CID-10</th>
                                 <th class="p-2">Médico Emissor</th>
-                                <th class="p-2 text-center">Arquivo Anexo</th>
+                                <th class="p-2 text-center">Original Escaneado</th>
                                 <th class="p-2 text-center">Status Homologação</th>
+                                <th class="p-2 text-center">Parecer & Documento</th>
                                 <th class="p-2 text-center">Ações</th>
                             </tr>
                         </thead>
@@ -384,7 +406,6 @@
                 </div>
             </div>
         </section>
-
         <!-- ABA 6: MATRIZ PCMSO SEQUENCIAL (NR-07) -->
         <section id="tab-pcmso-matriz" class="tab-content hidden space-y-4">
             

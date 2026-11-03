@@ -410,9 +410,8 @@ let pcmsoMatrizData = [
 ];
 
 let atestadosHomologacaoData = [
-    { id: 1, cliente: "PREFEITURA MUNICIPAL", trab: "CARLOS FERREIRA - 111.222.333-44", setor: "MANUTENÇÃO", data: "28/10/2026", dias: 3, cid: "M54.5", medico: "DR. ALBERTO GOMES", status: "HOMOLOGADO", arquivoNome: "AtestadoExemplo.pdf", arquivoUrl: null }
+    { id: 1, cliente: "PREFEITURA MUNICIPAL", trab: "CARLOS FERREIRA - 111.222.333-44", setor: "MANUTENÇÃO", data: "28/10/2026", dias: 3, cid: "M54.5", medico: "DR. ALBERTO GOMES", status: "PENDENTE DE HOMOLOGAÇÃO", arquivoNome: "AtestadoExemplo.pdf", arquivoUrl: null, parecerTexto: "", medicoHomologador: "DR. ROBERTO ALVES", crmHomologador: "CRM SP 184920", arquivoHomologadoAssinadoUrl: null, arquivoHomologadoAssinadoNome: null, ativo: true }
 ];
-
 let monitorRequestsData = [
     { id: 1, fecha: "28/10/2026", cliente: "PREFEITURA MUNICIPAL", trab: "JOÃO DA SILVA - 123.456.789-00", obj: "ASO ADMISSONAL", qtd: 1, valor: "85,00", clinica: "CLÍNICA CENTRAL PAULÍNIA", respostaAgendamento: "AGUARDANDO RESPOSTA DA CLÍNICA", status: "PENDENTE" }
 ];
@@ -1743,47 +1742,115 @@ function removerPcmso(id) {
     }
 }
 
-function abrirModalHomologacao() { document.getElementById('modal-homologacao-form').classList.remove('hidden'); }
+// ==========================================
+// BANCO DE CIDs FREQUENTES PARA AUTOCOMPLETAR
+// ==========================================
+const BANCO_CID10_FREQUENTES = [
+    { cid: "M54.5", desc: "Dor lombar baixa (Lombalgia)" },
+    { cid: "M54.2", desc: "Cervicalgia" },
+    { cid: "M54.4", desc: "Lumbago com ciática" },
+    { cid: "M79.1", desc: "Mialgia (Dor muscular)" },
+    { cid: "M75.1", desc: "Síndrome do manguito rotador" },
+    { cid: "M65.8", desc: "Sinovite e tenossinovite" },
+    { cid: "M77.1", desc: "Epicondilite lateral" },
+    { cid: "G56.0", desc: "Síndrome do túnel do carpo" },
+    { cid: "J00", desc: "Nasofaringite aguda (Resfriado comum)" },
+    { cid: "J06.9", desc: "Infecção aguda das vias aéreas superiores" },
+    { cid: "J11", desc: "Influenza (Gripe)" },
+    { cid: "J03", desc: "Amigdalite aguda" },
+    { cid: "J01", desc: "Sinusite aguda" },
+    { cid: "U07.1", desc: "COVID-19 vírus identificado" },
+    { cid: "A09", desc: "Gastroenterite e colite infecciosas" },
+    { cid: "K29.7", desc: "Gastrite não especificada" },
+    { cid: "K52.9", desc: "Gastroenterite não infecciosa" },
+    { cid: "R10.4", desc: "Outras dores abdominais e as não especificadas" },
+    { cid: "F32.9", desc: "Episódio depressivo não especificado" },
+    { cid: "F33", desc: "Transtorno depressivo recorrente" },
+    { cid: "F41.0", desc: "Transtorno de pânico" },
+    { cid: "F41.1", desc: "Ansiedade generalizada" },
+    { cid: "F43.0", desc: "Reação aguda ao estresse" },
+    { cid: "F43.1", desc: "Transtorno de estresse pós-traumático (TEPT)" },
+    { cid: "F43.2", desc: "Transtornos de adaptação" },
+    { cid: "S93.4", desc: "Entorse e distensão do tornozelo" },
+    { cid: "S63.5", desc: "Entorse e distensão do punho" },
+    { cid: "S83.6", desc: "Entorse e distensão de outras partes do joelho" },
+    { cid: "H10.9", desc: "Conjuntivite não especificada" },
+    { cid: "G43.9", desc: "Enxaqueca não especificada" },
+    { cid: "G44.2", desc: "Cefaleia tensional" },
+    { cid: "N39.0", desc: "Infecção do trato urinário" },
+    { cid: "Z73.0", desc: "Esgotamento (Síndrome de Burnout)" }
+];
 
-function processarArquivoAtestado(evt) {
-    const file = evt.target.files[0];
-    if (file) {
-        tempFileAtestado = {
-            nome: file.name,
-            url: URL.createObjectURL(file)
-        };
+function popularDropdownCid10() {
+    const datalist = document.getElementById('lista-cid10-homologacao');
+    if (!datalist) return;
+    datalist.innerHTML = '';
+    BANCO_CID10_FREQUENTES.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = `${item.cid} - ${item.desc}`;
+        datalist.appendChild(opt);
+    });
+}
+document.addEventListener('DOMContentLoaded', popularDropdownCid10);
+
+function formatarCidSelecionado(input) {
+    if (!input || !input.value) return;
+    const partes = input.value.split('-');
+    if (partes.length > 0 && partes[0].trim()) {
+        input.value = partes[0].trim().toUpperCase();
     }
 }
 
-function salvarHomologacaoAtestado() {
-    const trab = document.getElementById('hom_trab').value.trim();
-    const dias = document.getElementById('hom_dias').value;
-    const cid = document.getElementById('hom_cid').value.trim();
+// UPLOAD EM MASSA DE ATESTADOS VIA EXCEL
+function processarCargaMassaAtestados(evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(firstSheet);
 
-    if (!trab || !cid) { alert("Preencha o Funcionário e o CID-10."); return; }
+        const dataAtual = new Date().toLocaleDateString('pt-BR');
+        let contador = 0;
 
-    atestadosHomologacaoData.push({
-        id: Date.now(),
-        cliente: "PREFEITURA MUNICIPAL",
-        trab,
-        setor: "OPERACIONAL",
-        data: new Date().toLocaleDateString('pt-BR'),
-        dias,
-        cid,
-        medico: document.getElementById('hom_medico').value || "DR. EXAMINADOR",
-        status: "HOMOLOGADO",
-        arquivoNome: tempFileAtestado ? tempFileAtestado.nome : "AtestadoAnexo.pdf",
-        arquivoUrl: tempFileAtestado ? tempFileAtestado.url : "#"
-    });
+        rows.forEach(r => {
+            const clienteNome = r.CLIENTE || r.RAZAO_SOCIAL || "PREFEITURA MUNICIPAL";
+            const nomeTrab = r.TRABALHADOR || r.EMPREGADO || r.NOME || "FUNCIONÁRIO EXCEL";
+            const cpfTrab = r.CPF ? ` - ${r.CPF}` : "";
+            const diasAfast = parseInt(r.DIAS || r.TEMPO_AFASTAMENTO || r.DIAS_AFASTAMENTO) || 1;
 
-    tempFileAtestado = null;
-    renderHomologacaoTabela();
-    fecharModal('modal-homologacao-form');
-    alert("Atestado anexado, registrado e homologado com sucesso!");
+            atestadosHomologacaoData.push({
+                id: Date.now() + Math.random(),
+                cliente: clienteNome,
+                trab: `${nomeTrab}${cpfTrab}`,
+                setor: r.SETOR || r.LOTACAO || "OPERACIONAL",
+                data: r.DATA || r.DATA_ATESTADO || dataAtual,
+                dias: diasAfast,
+                cid: r.CID || r.CID10 || "A DEFINIR",
+                medico: r.MEDICO_EMISSOR || r.MEDICO || "NÃO INFORMADO",
+                status: "PENDENTE DE HOMOLOGAÇÃO",
+                parecerTexto: "",
+                medicoHomologador: "DR. ROBERTO ALVES",
+                crmHomologador: "CRM SP 184920",
+                arquivoNome: "AtestadoImportado.pdf",
+                arquivoUrl: "#",
+                arquivoHomologadoAssinadoUrl: null,
+                arquivoHomologadoAssinadoNome: null,
+                ativo: true
+            });
+            contador++;
+        });
+
+        renderHomologacaoTabela();
+        alert(`${contador} registros de afastamento importados com sucesso!\n\nStatus definido como 'PENDENTE DE HOMOLOGAÇÃO'. O Médico Homologador já pode avaliar e definir o CID/Parecer.`);
+    };
+    reader.readAsArrayBuffer(file);
 }
 
+// ANEXO DO ORIGINAL ESCANEADO
 let tempFileAtestadoTop = null;
-
 function processarArquivoAtestadoTop(evt) {
     const file = evt.target.files[0];
     if (file) {
@@ -1794,8 +1861,10 @@ function processarArquivoAtestadoTop(evt) {
 function adicionarHomologacaoDireta() {
     const trab = document.getElementById('hom_top_trab').value.trim();
     const setor = document.getElementById('hom_top_setor').value.trim() || 'OPERACIONAL';
-    const dias = document.getElementById('hom_top_dias').value;
-    const cid = document.getElementById('hom_top_cid').value.trim();
+    const dias = parseInt(document.getElementById('hom_top_dias').value) || 1;
+    const cidInput = document.getElementById('hom_top_cid');
+    formatarCidSelecionado(cidInput);
+    const cid = cidInput.value.trim();
     const medico = document.getElementById('hom_top_medico').value.trim() || 'MÉDICO EMISSOR';
     const activeCliente = document.getElementById('active-cliente-select') ? document.getElementById('active-cliente-select').value : 'PREFEITURA MUNICIPAL';
     const clienteNome = activeCliente === 'ALL' ? 'PREFEITURA MUNICIPAL' : activeCliente;
@@ -1811,23 +1880,96 @@ function adicionarHomologacaoDireta() {
         dias,
         cid,
         medico,
-        status: "HOMOLOGADO",
+        status: "PENDENTE DE HOMOLOGAÇÃO",
+        parecerTexto: "",
+        medicoHomologador: "DR. ROBERTO ALVES",
+        crmHomologador: "CRM SP 184920",
         arquivoNome: tempFileAtestadoTop ? tempFileAtestadoTop.nome : "Atestado.pdf",
-        arquivoUrl: tempFileAtestadoTop ? tempFileAtestadoTop.url : "#"
+        arquivoUrl: tempFileAtestadoTop ? tempFileAtestadoTop.url : "#",
+        arquivoHomologadoAssinadoUrl: null,
+        arquivoHomologadoAssinadoNome: null,
+        ativo: true
     });
 
     tempFileAtestadoTop = null;
     renderHomologacaoTabela();
     document.getElementById('hom_top_trab').value = '';
     document.getElementById('hom_top_cid').value = '';
+    alert("Empregado relacionado com sucesso! Registro aguardando decisão do Médico Homologador.");
+}
+
+function toggleInativarHomologacao(id) {
+    const item = atestadosHomologacaoData.find(x => x.id === id);
+    if (!item) return;
+    item.ativo = !item.ativo;
+    renderHomologacaoTabela();
 }
 
 function apagarHomologacao(id) {
-    if (currentRole !== 'GESTOR') { alert("Somente o GESTOR pode apagar atestados homologados!"); return; }
-    if (confirm("Tem certeza que deseja apagar este atestado?")) {
+    if (currentRole !== 'GESTOR') { alert("Somente o GESTOR pode apagar registros!"); return; }
+    if (confirm("Tem certeza que deseja apagar permanentemente este registro de afastamento?")) {
         atestadosHomologacaoData = atestadosHomologacaoData.filter(x => x.id !== id);
         renderHomologacaoTabela();
     }
+}
+
+// ANEXAR PARECER JÁ ASSINADO EM PDF
+function anexarHomologacaoAssinada(id, evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+
+    const item = atestadosHomologacaoData.find(x => x.id === id);
+    if (item) {
+        item.arquivoHomologadoAssinadoNome = file.name;
+        item.arquivoHomologadoAssinadoUrl = URL.createObjectURL(file);
+        alert(`Parecer Homologado Assinado ("${file.name}") anexado com sucesso para ${item.trab}!`);
+        renderHomologacaoTabela();
+    }
+}
+
+// EDIÇÃO E DECISÃO DO MÉDICO HOMOLOGADOR NO DOCUMENTO
+function atualizarTextoParecerHomologacaoUI() {
+    const sel = document.getElementById('edit_hom_decisao_select');
+    const txtArea = document.getElementById('edit_hom_parecer_justificativa');
+    const diasBox = document.getElementById('edit_hom_dias_container');
+    if (!sel || !txtArea) return;
+
+    if (sel.value === 'HOMOLOGADO') {
+        txtArea.value = "Após análise criteriosa do atestado médico emitido e das atividades exercidas, ratifico a necessidade integral do afastamento laboral pelo período solicitado, conforme diretrizes do PCMSO e da Legislação Trabalhista.";
+        if (diasBox) diasBox.classList.add('hidden');
+    } else if (sel.value === 'NÃO HOMOLOGADO') {
+        txtArea.value = "Após avaliação pericial do atestado apresentado, o afastamento NÃO É HOMOLOGADO pelas seguintes razões médicas/técnicas: [Descrever motivos, ex: ausência de incapacidade laborativa para as atribuições ou inconformidade regulamentar].";
+        if (diasBox) diasBox.classList.add('hidden');
+    } else if (sel.value === 'HOMOLOGADO PARCIALMENTE') {
+        txtArea.value = "Após avaliação técnica do quadro clínico e função exercida, concedo HOMOLOGAÇÃO PARCIAL do afastamento, adequando o prazo necessário de recuperação conforme descrito.";
+        if (diasBox) diasBox.classList.remove('hidden');
+    }
+}
+
+function salvarDecisaoMedicoHomologador(id) {
+    const item = atestadosHomologacaoData.find(x => x.id === id);
+    if (!item) return;
+
+    const selDecisao = document.getElementById('edit_hom_decisao_select').value;
+    const nomeMed = document.getElementById('edit_hom_med_nome').value.trim() || "DR. ROBERTO ALVES";
+    const crmMed = document.getElementById('edit_hom_med_crm').value.trim() || "CRM SP 184920";
+    const parecerTxt = document.getElementById('edit_hom_parecer_justificativa').value.trim();
+    const cidEdit = document.getElementById('edit_hom_cid').value.trim();
+
+    item.status = selDecisao;
+    item.medicoHomologador = nomeMed;
+    item.crmHomologador = crmMed;
+    item.parecerTexto = parecerTxt;
+    if (cidEdit) item.cid = cidEdit;
+
+    if (selDecisao === 'HOMOLOGADO PARCIALMENTE') {
+        const novosDias = parseInt(document.getElementById('edit_hom_dias_parciais').value);
+        if (novosDias > 0) item.dias = novosDias;
+    }
+
+    alert(`Decisão médica registrada como: "${item.status}"!\nDocumento atualizado com sucesso.`);
+    renderHomologacaoTabela();
+    visualizarLaudoHomologacao(id);
 }
 
 function visualizarLaudoHomologacao(id) {
@@ -1835,50 +1977,124 @@ function visualizarLaudoHomologacao(id) {
     if (!item) return;
 
     const paper = document.getElementById('aso-paper-visualizar');
-    if (paper) {
-        paper.innerHTML = `
-            <div class="border-b-2 border-black pb-2 flex justify-between items-center">
-                <div>
-                    <strong class="text-sm block font-black">Boreal Engenharia e Medicina</strong>
-                    <span class="text-[10px]">CRM Nº 1011385 | Tel. 19 99156-7153</span>
-                </div>
-                <div class="text-right">
-                    <strong class="text-base font-black uppercase">PARECER DE HOMOLOGAÇÃO DE ATESTADO MÉDICO</strong>
-                </div>
-            </div>
+    if (!paper) return;
 
-            <div class="border border-black p-2 bg-slate-50 font-bold uppercase text-[10px]">
-                <span>EMPRESA CLIENTE:</span> ${item.cliente}
-            </div>
+    const isPendente = item.status === 'PENDENTE DE HOMOLOGAÇÃO';
+    const isHomologado = item.status === 'HOMOLOGADO';
+    const isNaoHomologado = item.status === 'NÃO HOMOLOGADO';
+    const isParcial = item.status === 'HOMOLOGADO PARCIALMENTE';
 
-            <div class="border border-black p-2 space-y-1 text-[10px]">
-                <strong class="block border-b border-black font-extrabold uppercase">DADOS DO EMPREGADO E ATESTADO EXTERNO</strong>
-                <div><strong>TRABALHADOR:</strong> ${item.trab}</div>
-                <div><strong>SETOR / LOTAÇÃO:</strong> ${item.setor}</div>
-                <div><strong>MÉDICO EMISSOR DO ATESTADO:</strong> ${item.medico}</div>
-                <div><strong>DIAS DE AFASTAMENTO:</strong> ${item.dias} DIA(S) | <strong>DIAGNÓSTICO (CID-10):</strong> ${item.cid}</div>
-                <div><strong>DATA DO ATESTADO:</strong> ${item.data}</div>
-            </div>
-
-            <div class="border border-black p-2 bg-purple-50 text-[10px]">
-                <strong class="font-black text-sm uppercase text-purple-950">PARECER DO MÉDICO HOMOLOGADOR: ATESTADO VALIDADO E HOMOLOGADO</strong>
-                <p class="mt-1 font-semibold">"Após análise do atestado médico apresentado, ratifico a necessidade do afastamento do trabalho pelo período solicitado conforme as diretrizes do PCMSO e Legislação Trabalhista."</p>
-            </div>
-
-            <div class="border border-black p-2 text-center space-y-2 text-[10px]">
-                <div class="grid grid-cols-2 gap-4 border-t border-black pt-4 mt-6">
-                    <div>
-                        <strong class="block border-t border-black pt-1">Assinatura / Ciente do Empregado</strong>
-                        <span>Data: ${item.data}</span>
-                    </div>
-                    <div>
-                        <strong class="block border-t border-black pt-1">DR. ROBERTO ALVES — CRM SP 184920</strong>
-                        <span>Médico Ocupacional Homologador (Assinado Digitalmente)</span>
-                    </div>
-                </div>
-            </div>
-        `;
+    let textoParecerPadrao = item.parecerTexto;
+    if (!textoParecerPadrao) {
+        if (isNaoHomologado) {
+            textoParecerPadrao = "Após avaliação pericial do atestado apresentado, o afastamento NÃO É HOMOLOGADO pelas seguintes razões médicas/técnicas: ausência de incapacidade laborativa para as atribuições.";
+        } else if (isParcial) {
+            textoParecerPadrao = "Após avaliação técnica do quadro clínico e função exercida, concedo HOMOLOGAÇÃO PARCIAL do afastamento, adequando o prazo necessário de recuperação.";
+        } else {
+            textoParecerPadrao = "Após análise criteriosa do atestado médico emitido e das atividades exercidas, ratifico a necessidade integral do afastamento laboral pelo período solicitado, conforme diretrizes do PCMSO e da Legislação Trabalhista.";
+        }
     }
+
+    paper.innerHTML = `
+        <!-- PAINEL SUPERIOR EXCLUSIVO DO MÉDICO HOMOLOGADOR (NÃO SAI NA IMPRESSÃO) -->
+        <div class="no-print bg-purple-50 border-2 border-purple-500 p-3 rounded-lg shadow-md mb-4 space-y-3">
+            <div class="flex justify-between items-center border-b border-purple-200 pb-2">
+                <strong class="text-xs text-purple-950 font-black uppercase flex items-center gap-1">
+                    🩺 Painel de Decisão do Médico Homologador:
+                </strong>
+                <div class="flex gap-2">
+                    <button onclick="imprimirAsoA4()" class="bg-blue-700 hover:bg-blue-800 text-white font-extrabold px-3 py-1 rounded text-xs shadow">
+                        🖨️ Imprimir Parecer (PDF)
+                    </button>
+                    <button onclick="fecharModalVisualizacaoAso()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3 py-1 rounded text-xs">
+                        ✕ Fechar
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 bg-white p-2 rounded border border-purple-200 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-0.5">Decisão da Homologação:</label>
+                    <select id="edit_hom_decisao_select" onchange="atualizarTextoParecerHomologacaoUI()" class="w-full border p-1 rounded font-black bg-purple-100 text-purple-950">
+                        <option value="HOMOLOGADO" ${isHomologado ? 'selected' : ''}>✅ HOMOLOGADO</option>
+                        <option value="NÃO HOMOLOGADO" ${isNaoHomologado ? 'selected' : ''}>🚫 NÃO HOMOLOGADO</option>
+                        <option value="HOMOLOGADO PARCIALMENTE" ${isParcial ? 'selected' : ''}>⚠️ HOMOLOGADO PARCIALMENTE</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-0.5">Nome do Médico Homologador:</label>
+                    <input type="text" id="edit_hom_med_nome" value="${item.medicoHomologador || 'DR. ROBERTO ALVES'}" class="w-full border p-1 rounded font-bold bg-slate-50">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-0.5">CRM / UF do Homologador:</label>
+                    <input type="text" id="edit_hom_med_crm" value="${item.crmHomologador || 'CRM SP 184920'}" class="w-full border p-1 rounded font-bold bg-slate-50">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-0.5">CID-10 (Edição / Ajuste pelo Homologador):</label>
+                    <input type="text" id="edit_hom_cid" value="${item.cid}" class="w-full border p-1 rounded font-bold bg-slate-50">
+                </div>
+                <div id="edit_hom_dias_container" class="${isParcial ? '' : 'hidden'}">
+                    <label class="block font-bold text-amber-900 mb-0.5">Novo Prazo (Dias Homologados):</label>
+                    <input type="number" id="edit_hom_dias_parciais" value="${item.dias}" class="w-full border p-1 rounded font-black text-center bg-amber-50">
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block font-bold text-slate-700 mb-0.5">Parecer Técnico / Justificativa Médica:</label>
+                    <textarea id="edit_hom_parecer_justificativa" rows="3" class="w-full border p-1.5 rounded font-semibold text-xs bg-slate-50">${textoParecerPadrao}</textarea>
+                </div>
+                <div class="md:col-span-3 flex justify-end">
+                    <button onclick="salvarDecisaoMedicoHomologador(${item.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-4 py-1.5 rounded text-xs shadow">
+                        💾 Gravar Decisão & Emitir Parecer Oficial
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CORPO OFICIAL DO PARECER DE HOMOLOGAÇÃO (FOLHA IMPRESSA) -->
+        <div class="border-b-2 border-black pb-2 flex justify-between items-center">
+            <div>
+                <strong class="text-sm block font-black">Boreal Engenharia e Medicina</strong>
+                <span class="text-[10px]">CRM Nº 1011385 | Tel. 19 99156-7153</span>
+            </div>
+            <div class="text-right">
+                <strong class="text-base font-black uppercase">PARECER DE HOMOLOGAÇÃO DE ATESTADO MÉDICO</strong>
+            </div>
+        </div>
+
+        <div class="border border-black p-2 bg-slate-50 font-bold uppercase text-[10px] flex justify-between">
+            <span>EMPRESA CLIENTE: ${item.cliente}</span>
+            <span>DATA DA AVALIAÇÃO: ${new Date().toLocaleDateString('pt-BR')}</span>
+        </div>
+
+        <div class="border border-black p-2 space-y-1 text-[10px]">
+            <strong class="block border-b border-black font-extrabold uppercase">DADOS DO EMPREGADO E DO ATESTADO EXTERNO</strong>
+            <div><strong>TRABALHADOR:</strong> ${item.trab}</div>
+            <div><strong>SETOR / LOTAÇÃO:</strong> ${item.setor}</div>
+            <div><strong>MÉDICO EMISSOR DO ATESTADO:</strong> ${item.medico}</div>
+            <div><strong>TEMPO DE AFASTAMENTO CONCEDIDO:</strong> ${item.dias} DIA(S) | <strong>DIAGNÓSTICO (CID-10):</strong> ${item.cid}</div>
+            <div><strong>DATA DO ATESTADO EXTERNO:</strong> ${item.data}</div>
+        </div>
+
+        <div class="border border-black p-3 text-[11px] ${isNaoHomologado ? 'bg-red-50 text-red-950' : (isParcial ? 'bg-amber-50 text-amber-950' : 'bg-purple-50 text-purple-950')}">
+            <strong class="font-black text-xs uppercase block mb-1">
+                PARECER DO MÉDICO HOMOLOGADOR: ${item.status}
+            </strong>
+            <p class="font-semibold leading-relaxed">${textoParecerPadrao}</p>
+        </div>
+
+        <div class="border border-black p-2 text-center space-y-2 text-[10px]">
+            <div class="grid grid-cols-2 gap-4 border-t border-black pt-4 mt-6">
+                <div>
+                    <strong class="block border-t border-black pt-1">Assinatura / Ciente do Empregado</strong>
+                    <span>Data: ${item.data}</span>
+                </div>
+                <div>
+                    <strong class="block border-t border-black pt-1">${item.medicoHomologador || 'DR. ROBERTO ALVES'} — ${item.crmHomologador || 'CRM SP 184920'}</strong>
+                    <span>Médico Ocupacional Homologador (Assinado Digitalmente)</span>
+                </div>
+            </div>
+        </div>
+    `;
+
     document.getElementById('modal-visualizar-aso-anexado').classList.remove('hidden');
 }
 
@@ -1886,34 +2102,68 @@ function renderHomologacaoTabela() {
     const tbody = document.getElementById('atestados-homologacao-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
-    atestadosHomologacaoData.forEach(a => {
-        const tr = document.createElement('tr');
-        tr.className = "border-b hover:bg-slate-50";
-        tr.innerHTML = `
-            <td class="p-2 font-bold">${a.cliente}</td>
-            <td class="p-2">${a.trab}</td>
-            <td class="p-2 font-bold">${a.setor}</td>
-            <td class="p-2">${a.data}</td>
-            <td class="p-2 text-center font-bold">${a.dias} dias</td>
-            <td class="p-2 text-center font-bold text-purple-900">${a.cid}</td>
-            <td class="p-2">${a.medico}</td>
-            <td class="p-2 text-center font-bold text-emerald-700">
-                <a href="${a.arquivoUrl || '#'}" download="${a.arquivoNome || 'atestado.pdf'}" target="_blank" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 px-2 py-1 rounded inline-flex items-center gap-1 text-[10px] mb-1">
-                    📄 Original Escaneado
-                </a>
-                <button onclick="visualizarLaudoHomologacao(${a.id})" class="bg-purple-800 hover:bg-purple-900 text-white px-2 py-1 rounded text-[10px] font-bold block mx-auto shadow">
-                    📜 Gerar Documento Assinado
-                </button>
-            </td>
-            <td class="p-2 text-center"><span class="bg-purple-100 text-purple-900 px-2 py-0.5 rounded font-bold">${a.status}</span></td>
-            <td class="p-2 text-center">
-                ${currentRole === 'GESTOR' ? `<button onclick="apagarHomologacao(${a.id})" class="text-red-600 font-bold hover:underline">🗑️ Apagar</button>` : `<span class="text-slate-400 italic">-</span>`}
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-function enviarMensagemChat() {
+
+    const activeCliente = document.getElementById('active-cliente-select') ? document.getElementById('active-cliente-select').value : 'ALL';
+
+    atestadosHomologacaoData
+        .filter(a => activeCliente === 'ALL' || a.cliente === activeCliente)
+        .forEach(a => {
+            const tr = document.createElement('tr');
+            tr.className = `border-b hover:bg-slate-50 ${!a.ativo ? 'bg-slate-100 text-slate-400 opacity-60' : ''}`;
+
+            let corStatus = 'bg-slate-100 text-slate-700 border border-slate-300';
+            if (a.status === 'HOMOLOGADO') corStatus = 'bg-emerald-100 text-emerald-900 border border-emerald-300';
+            else if (a.status === 'NÃO HOMOLOGADO') corStatus = 'bg-red-100 text-red-900 border border-red-300';
+            else if (a.status === 'HOMOLOGADO PARCIALMENTE') corStatus = 'bg-amber-100 text-amber-900 border border-amber-300';
+            else if (a.status === 'PENDENTE DE HOMOLOGAÇÃO') corStatus = 'bg-blue-50 text-blue-800 border border-blue-300';
+
+            tr.innerHTML = `
+                <td class="p-2 font-bold">${a.cliente}</td>
+                <td class="p-2">${a.trab}</td>
+                <td class="p-2 font-bold">${a.setor}</td>
+                <td class="p-2">${a.data}</td>
+                <td class="p-2 text-center font-bold">${a.dias} dias</td>
+                <td class="p-2 text-center font-black text-purple-900">${a.cid}</td>
+                <td class="p-2">${a.medico}</td>
+                <td class="p-2 text-center">
+                    <a href="${a.arquivoUrl || '#'}" download="${a.arquivoNome || 'atestado.pdf'}" target="_blank" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 px-2 py-1 rounded inline-flex items-center gap-1 text-[10px]">
+                        📄 Ver Atestado
+                    </a>
+                </td>
+                <td class="p-2 text-center">
+                    <span class="${corStatus} px-2 py-0.5 rounded font-black text-[10px] block">
+                        ${a.status}
+                    </span>
+                </td>
+                <td class="p-2 text-center space-y-1">
+                    <button onclick="visualizarLaudoHomologacao(${a.id})" class="bg-purple-800 hover:bg-purple-900 text-white px-2 py-1 rounded text-[10px] font-bold block mx-auto shadow">
+                        🩺 Avaliar / Emitir Parecer
+                    </button>
+                    ${a.arquivoHomologadoAssinadoUrl ? `
+                        <a href="${a.arquivoHomologadoAssinadoUrl}" download="${a.arquivoHomologadoAssinadoNome || 'Parecer_Assinado.pdf'}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded font-bold text-[10px] inline-flex items-center gap-1 shadow">
+                            ✅ Baixar Parecer Assinado
+                        </a>
+                    ` : `
+                        <label class="bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-1.5 py-0.5 rounded font-bold text-[10px] cursor-pointer inline-flex items-center gap-1">
+                            📎 Anexar Parecer Assinado (PDF)
+                            <input type="file" accept=".pdf,image/*" class="hidden" onchange="anexarHomologacaoAssinada(${a.id}, event)">
+                        </label>
+                    `}
+                </td>
+                <td class="p-2 text-center space-y-1">
+                    <button onclick="toggleInativarHomologacao(${a.id})" class="text-[10px] font-bold px-2 py-0.5 rounded block mx-auto ${a.ativo ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                        ${a.ativo ? '🚫 Inativar' : '✅ Reativar'}
+                    </button>
+                    ${currentRole === 'GESTOR' ? `
+                        <button onclick="apagarHomologacao(${a.id})" class="text-red-600 font-bold hover:underline text-[10px] block mx-auto">
+                            🗑️ Apagar
+                        </button>
+                    ` : ''}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+}function enviarMensagemChat() {
     const input = document.getElementById('chat-msg-input');
     const box = document.getElementById('chat-messages-box');
     const remetente = document.getElementById('chat_remetente_select').value;

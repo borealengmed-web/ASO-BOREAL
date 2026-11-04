@@ -348,7 +348,7 @@
                         <p class="text-xs text-slate-500">Cadastre o empregado e anexe o atestado para homologação médica abaixo.</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <label class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-1.5 rounded cursor-pointer flex items-center shadow">
+                        <label id="btn-upload-planilha-homologacao" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-1.5 rounded cursor-pointer flex items-center shadow">
                             <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1"></i> Upload Planilha Afastados (.XLSX)
                             <input type="file" accept=".xlsx, .xls" class="hidden" onchange="processarCargaMassaAtestados(event)">
                         </label>
@@ -359,28 +359,33 @@
                 </div>
 
                 <!-- PAINEL DE INCLUSÃO DIRETA NA TELA -->
-                <div class="bg-purple-50 border border-purple-200 p-3 rounded-lg space-y-2 text-xs">
+                <div id="painel-inclusao-homologacao" class="bg-purple-50 border border-purple-200 p-3 rounded-lg space-y-2 text-xs">
                     <span class="font-bold text-purple-950 block uppercase">➕ Relacionar Novo Empregado para Homologação:</span>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-2">
                         <div>
-                            <label class="font-bold text-slate-700 block mb-0.5">Trabalhador & CPF *</label>
-                            <input type="text" id="hom_top_trab" placeholder="EX: CARLOS SILVA - 111.222.333-44" class="w-full border p-1.5 rounded font-bold bg-white">
+                            <label class="font-bold text-slate-700 block mb-0.5">Trabalhador & CPF/Matr. *</label>
+                            <input type="text" id="hom_top_trab" placeholder="EX: CARLOS SILVA - 11122" class="w-full border p-1.5 rounded font-bold bg-white">
                         </div>
                         <div>
                             <label class="font-bold text-slate-700 block mb-0.5">Lotação / Setor</label>
                             <input type="text" id="hom_top_setor" placeholder="LOTAÇÃO / SETOR" class="w-full border p-1.5 rounded font-bold bg-white">
                         </div>
                         <div>
-                            <label class="font-bold text-purple-950 block mb-0.5">Tempo de Afastamento *</label>
-                            <input type="number" id="hom_top_dias" value="1" placeholder="DIAS AFAST." class="w-full border p-1.5 rounded text-center font-bold bg-white">
+                            <label class="font-bold text-slate-700 block mb-0.5">Função / Cargo</label>
+                            <input type="text" id="hom_top_cargo" placeholder="CARGO / FUNÇÃO" class="w-full border p-1.5 rounded font-bold bg-white">
                         </div>
                         <div>
-                            <label class="font-bold text-slate-700 block mb-0.5">Diagnóstico (CID-10 ou Doença) *</label>
-                            <input list="lista-cid10-homologacao" type="text" id="hom_top_cid" placeholder="DIGITE O CID OU O NOME..." class="w-full border p-1.5 rounded text-center font-bold bg-white" onchange="formatarCidSelecionado(this)">
+                            <label class="font-bold text-purple-950 block mb-0.5">Tempo de Afastamento *</label>
+                            <input type="number" id="hom_top_dias" value="1" placeholder="DIAS" class="w-full border p-1.5 rounded text-center font-bold bg-white">
+                        </div>
+                        <div>
+                            <label class="font-bold text-slate-700 block mb-0.5">Diagnóstico (CID-10) *</label>
+                            <input list="lista-cid10-homologacao" type="text" id="hom_top_cid" placeholder="CID OU DOENÇA..." class="w-full border p-1.5 rounded text-center font-bold bg-white" onchange="formatarCidSelecionado(this)">
                             <datalist id="lista-cid10-homologacao"></datalist>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                        <input type="text" id="hom_top_empresa" placeholder="EMPRESA CLIENTE" class="border p-1.5 rounded font-bold bg-white">
                         <input type="text" id="hom_top_medico" placeholder="MÉDICO EMISSOR DO ATESTADO" class="border p-1.5 rounded font-semibold bg-white">
                         <input type="file" id="hom_top_arquivo" class="border p-1 rounded bg-white font-semibold cursor-pointer" onchange="processarArquivoAtestadoTop(event)">
                         <button type="button" onclick="adicionarHomologacaoDireta()" class="bg-purple-800 hover:bg-purple-900 text-white font-bold p-1.5 rounded uppercase shadow">
@@ -396,6 +401,7 @@
                                 <th class="p-2">Empresa Cliente</th>
                                 <th class="p-2">Trabalhador & CPF</th>
                                 <th class="p-2">Lotação / Setor</th>
+                                <th class="p-2">Função / Cargo</th>
                                 <th class="p-2">Data Atestado</th>
                                 <th class="p-2 text-center">Tempo Afast.</th>
                                 <th class="p-2 text-center">CID-10</th>
@@ -437,15 +443,15 @@
                         <p class="text-xs text-slate-500">Gestão das exposições a riscos, exames exigidos e planos de ação em saúde.</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <label class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-1.5 rounded cursor-pointer flex items-center shadow">
+                        <label id="btn-upload-matriz-pcmso" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-1.5 rounded cursor-pointer flex items-center shadow">
                             <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1"></i> Upload Matriz PCMSO (.XLSX)
                             <input type="file" accept=".xlsx, .xls" class="hidden" onchange="processarCargaMassaPcmso(event)">
                         </label>
                         <button type="button" onclick="gerarRelatorioPdfMatrizPcmso()" class="bg-sky-800 hover:bg-sky-900 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow">
                             📄 Relatório Matriz (PDF / E-mail)
                         </button>
-                        <button type="button" onclick="exportarPcmsoWord()" class="bg-blue-800 hover:bg-blue-900 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow">
-                            📝 Baixar PCMSO em Word (.docx)
+                        <button type="button" onclick="exportarMatrizPcmsoWord()" class="bg-blue-800 hover:bg-blue-900 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow">
+                            📝 Baixar Matriz em Word (.docx)
                         </button>
                         <button type="button" onclick="window.print()" class="bg-sky-700 hover:bg-sky-800 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow">
                             📄 Imprimir PCMSO
@@ -453,6 +459,7 @@
                     </div>
                 </div>
 
+                <!-- FORMULÁRIO DE INCLUSÃO (Exclusivo Gestor/Engenharia) -->
                 <div id="pcmso-form-container" class="bg-slate-50 border p-3 rounded-lg space-y-2 text-xs">
                     <span class="font-bold text-slate-800 block uppercase">Incluir Novo Cargo / Setor no PCMSO:</span>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
@@ -495,34 +502,31 @@
                             <option value="Anual">Anual</option>
                             <option value="Bienal (24 meses)">Bienal (24 meses)</option>
                             <option value="Semestral">Semestral</option>
-                            <option value="Admissional">Admissional</option>
-                            <option value="Demissional">Demissional</option>
                             <option value="Admissional / Demissional">Admissional / Demissional</option>
                         </select>
                         <input type="text" id="pcmso_add_per_custom" placeholder="DIGITAR OUTRA PERIODICIDADE..." class="border p-1.5 rounded font-semibold bg-white">
                     </div>
                     <div>
-                        <input type="text" id="pcmso_add_plano_acao" placeholder="PLANO DE AÇÃO EM SAÚDE / PREVENÇÃO (EDITÁVEL PELO MÉDICO/GESTOR)..." class="w-full border p-1.5 rounded bg-amber-50 font-semibold text-slate-800">
+                        <input type="text" id="pcmso_add_plano_gestor" placeholder="PLANO DE AÇÃO EM SAÚDE / PREVENÇÃO (EDITÁVEL PELO MÉDICO/GESTOR)..." class="w-full border p-1.5 rounded bg-amber-50 font-semibold text-slate-800">
                     </div>
                     <div class="flex justify-end">
                         <button type="button" onclick="adicionarLinhaPCMSO()" class="bg-slate-900 text-white font-bold px-4 py-1.5 rounded uppercase">➕ Incluir Linha no PCMSO</button>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto border rounded-lg">
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="bg-slate-800 text-white font-bold uppercase">
                                 <th class="p-2">Empresa Cliente</th>
                                 <th class="p-2">Lotação</th>
                                 <th class="p-2">Processo Operacional</th>
-                                <th class="p-2">Cargo</th>
+                                <th class="p-2">Cargo / Função</th>
                                 <th class="p-2 text-center">Qtd</th>
                                 <th class="p-2">Agente (Fonte)</th>
                                 <th class="p-2">Risco (Agravo)</th>
                                 <th class="p-2">Descrição dos Exames</th>
                                 <th class="p-2 text-center">Periodicidade</th>
-                                <th class="p-2">Plano de Ação (Edição Médica)</th>
                                 <th class="p-2 text-center">Ações</th>
                             </tr>
                         </thead>

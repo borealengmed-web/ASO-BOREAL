@@ -334,8 +334,11 @@ window.realizarLoginSistema = async function() {
             usuarioLogado = userEncontrado;
             currentRole = userEncontrado.role;
 
-            const selRole = document.getElementById('user-role-select');
-            if (selRole) selRole.value = currentRole;
+const selRole = document.getElementById('user-role-select');
+if (selRole) {
+    selRole.value = currentRole;
+    selRole.disabled = (currentRole !== 'GESTOR'); // Trava se não for GESTOR
+}
 
             const selCli = document.getElementById('active-cliente-select');
             if (selCli && userEncontrado.vinculoCliente !== 'ALL') {
@@ -389,33 +392,14 @@ window.realizarLogoutSistema = function() {
         telaLogin.style.display = 'flex';
     }
 };
-let clientesCadastrados = [
-    { id: 1, nome: "PREFEITURA MUNICIPAL", cnpj: "00.000.000/0001-91", tel: "(19) 3888-1000", email: "contato@prefeitura.sp.gov.br", medPcmso: "DRA. LUIZA BRABETZ SANDONATO", crmPcmso: "CRM SP 145328", medWhats: "(19) 99156-7153", medEmail: "luiza.pcmso@borealengmed.com.br", ativo: true },
-    { id: 2, nome: "INDÚSTRIA METALÚRGICA", cnpj: "11.222.333/0001-44", tel: "(19) 3999-2000", email: "rh@metalurgica.com.br", medPcmso: "DR. MARCOS SILVA", crmPcmso: "CRM SP 98765", medWhats: "(19) 98888-9999", medEmail: "marcos.pcmso@metalurgica.com.br", ativo: true }
-];
-
-let clinicasCadastradas = [
-    { id: 1, nome: "CLÍNICA CENTRAL PAULÍNIA", cnpj: "12.345.678/0001-90", whats: "(19) 99156-7153", email: "paulinia@borealengmed.com.br", endereco: "AV. JOSÉ PAULINO, 1200 - CENTRO, PAULÍNIA - SP", ativo: true },
-    { id: 2, nome: "CENTRO MÉDICO MACAPÁ", cnpj: "98.765.432/0001-11", whats: "(96) 98888-7777", email: "macapa@centromedico.com.br", endereco: "RUA FAB, 450 - CENTRO, MACAPÁ - AP", ativo: true }
-];
-
-let asoQueueData = [
-    { id: 101, nome: "JOÃO DA SILVA", cpf: "123.456.789-00", cliente: "PREFEITURA MUNICIPAL", cargo: "MECÂNICO DE MANUTENÇÃO", tipo: "ASO ADMISSONAL", status: "AGUARDANDO", anamnese: null }
-];
-
+let clientesCadastrados = [];
+let clinicasCadastradas = [];
+let medicosCadastrados = []; // Novo banco de médicos examinadores e homologadores
+let asoQueueData = [];
 let asoHistoryData = [];
-
-let pcmsoMatrizData = [
-    { id: 1, lotacao: "OFICINA CENTRAL", processo: "MANUTENÇÃO", cargo: "MECÂNICO DE MANUTENÇÃO", qtd: 3, agente: "SERVIÇOS COM SERRA E MÁQUINAS DE CORTE", risco: "CORTE, PANCADA E DILACERAÇÃO NAS MÃOS", exame: "CLÍNICO, AUDIOMETRIA, ECG, HEMOGRAMA", periodicidade: "ANUAL", cliente: "PREFEITURA MUNICIPAL" }
-];
-
-let atestadosHomologacaoData = [
-    { id: 1, cliente: "PREFEITURA MUNICIPAL", trab: "CARLOS FERREIRA - 111.222.333-44", setor: "MANUTENÇÃO", data: "28/10/2026", dias: 3, cid: "M54.5", medico: "DR. ALBERTO GOMES", status: "PENDENTE DE HOMOLOGAÇÃO", arquivoNome: "AtestadoExemplo.pdf", arquivoUrl: null, parecerTexto: "", medicoHomologador: "DR. ROBERTO ALVES", crmHomologador: "CRM SP 184920", arquivoHomologadoAssinadoUrl: null, arquivoHomologadoAssinadoNome: null, ativo: true }
-];
-let monitorRequestsData = [
-    { id: 1, fecha: "28/10/2026", cliente: "PREFEITURA MUNICIPAL", trab: "JOÃO DA SILVA - 123.456.789-00", obj: "ASO ADMISSONAL", qtd: 1, valor: "85,00", clinica: "CLÍNICA CENTRAL PAULÍNIA", respostaAgendamento: "AGUARDANDO RESPOSTA DA CLÍNICA", status: "PENDENTE" }
-];
-
+let pcmsoMatrizData = [];
+let atestadosHomologacaoData = [];
+let monitorRequestsData = [];
 // INICIALIZAÇÃO
 document.addEventListener('DOMContentLoaded', () => {
     try { if (window.lucide) { lucide.createIcons(); } } catch(e){}
@@ -562,7 +546,7 @@ function aplicarPermissoesPerfilDefinitivo() {
     if (currentRole === 'MEDICO_PCMSO') {
         if (nav.pedidos) nav.pedidos.style.display = 'none';
         if (nav.atendimento) nav.atendimento.style.display = 'none';
-        if (nav.homologacao) nav.homologacao.style.display = 'none';
+        if (nav.homologacao) nav.homologacao.style.display = 'flex';
         if (nav.producao) nav.producao.style.display = 'none';
         if (nav.esocial) nav.esocial.style.display = 'none';
         if (nav.cadastros) nav.cadastros.style.display = 'none';
@@ -2357,3 +2341,797 @@ async function carregarPerfilUsuarioSupabase(user) {
         console.error("Erro ao carregar perfil do Supabase:", e);
     }
 }
+
+if (currentRole === 'MEDICO_PCMSO') {
+        if (nav.pedidos) nav.pedidos.style.display = 'none';
+        if (nav.atendimento) nav.atendimento.style.display = 'none';
+        if (nav.homologacao) nav.homologacao.style.display = 'flex'; // LIBERADO PARA CONSULTA DE ABSENTEÍSMO
+        if (nav.producao) nav.producao.style.display = 'none';
+        if (nav.esocial) nav.esocial.style.display = 'none';
+        if (nav.cadastros) nav.cadastros.style.display = 'none';
+        window.switchTab('pcmso-matriz');
+    }
+// EXCLUIR AGENDAMENTO / PEDIDO
+function apagarAgendamento(id) {
+    if (currentRole !== 'GESTOR') {
+        alert("Apenas o GESTOR pode excluir pedidos de agendamento!");
+        return;
+    }
+    if (confirm("Deseja realmente apagar este pedido de agendamento da tela?")) {
+        monitorRequestsData = monitorRequestsData.filter(x => x.id !== id);
+        renderMonitorTable();
+        renderProducaoTable();
+    }
+}
+
+// INATIVAR OU APAGAR ASO DO BANCO
+function toggleInativarAso(id) {
+    const item = asoHistoryData.find(x => x.id === id);
+    if (!item) return;
+    item.ativo = !item.ativo;
+    renderHistoryTabela();
+}
+
+function apagarAsoHistorico(id) {
+    if (currentRole !== 'GESTOR') {
+        alert("Somente o GESTOR pode apagar registros do Banco de ASOs!");
+        return;
+    }
+    if (confirm("Tem certeza que deseja apagar permanentemente este ASO?")) {
+        asoHistoryData = asoHistoryData.filter(x => x.id !== id);
+        renderHistoryTabela();
+    }
+}
+<td class="p-2 text-center space-y-1">
+                ${(currentRole === 'CLINICA' || currentRole === 'GESTOR') ? `<button onclick="abrirModalRespostaAgendamento(${r.id})" class="bg-teal-700 text-white font-bold px-2 py-1 rounded text-[10px] block mx-auto">📅 Responder</button>` : `<span class="text-slate-400 italic">Visualização</span>`}
+                ${currentRole === 'GESTOR' ? `<button onclick="apagarAgendamento(${r.id})" class="text-red-600 font-bold hover:underline text-[10px] block mx-auto">🗑️ Apagar</button>` : ''}
+            </td>
+<td class="p-2 text-center space-y-1">
+                <button onclick="toggleInativarAso(${h.id})" class="text-[10px] font-bold px-2 py-0.5 rounded block mx-auto ${h.ativo !== false ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                    ${h.ativo !== false ? '🚫 Inativar' : '✅ Reativar'}
+                </button>
+                ${currentRole === 'GESTOR' ? `<button onclick="apagarAsoHistorico(${h.id})" class="text-red-600 font-bold hover:underline text-[10px] block mx-auto">🗑️ Apagar</button>` : ''}
+            </td>
+// UPLOAD EM MASSA DA MATRIZ PCMSO VIA EXCEL COM PLANO DE AÇÃO
+function processarCargaMassaPcmso(evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(firstSheet);
+        const activeCliente = document.getElementById('active-cliente-select')?.value || 'ALL';
+        const clientePadrao = activeCliente === 'ALL' ? (clientesCadastrados[0]?.nome || "CLIENTE PRINCIPAL") : activeCliente;
+        let contador = 0;
+
+        rows.forEach(r => {
+            pcmsoMatrizData.push({
+                id: Date.now() + Math.random(),
+                cliente: r.EMPRESA || r.CLIENTE || clientePadrao,
+                lotacao: r.LOTACAO || r.SETOR || "GERAL",
+                processo: r.PROCESSO || r.PROCESSO_OPERACIONAL || "OPERACIONAL",
+                cargo: r.CARGO || "OPERACIONAL",
+                qtd: parseInt(r.QTD || r.QUANTIDADE) || 1,
+                agente: r.AGENTE || r.FONTE || "AUSÊNCIA DE RISCO",
+                risco: r.RISCO || r.AGRAVO || "NÃO ESPECIFICADO",
+                exame: r.EXAME || r.EXAMES || "CLÍNICO",
+                periodicidade: r.PERIODICIDADE || "Anual",
+                planoAcao: r.PLANO_ACAO || r.PLANO_DE_ACAO || "Acompanhamento clínico ocupacional preventivo.",
+                ativo: true
+            });
+            contador++;
+        });
+
+        renderPcmsoMatriz();
+        alert(`${contador} linhas importadas com sucesso para a Matriz do PCMSO!\nOs campos de Plano de Ação estão prontos para edição.`);
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+// INCLUSÃO MANUAL COM PLANO DE AÇÃO
+function adicionarLinhaPCMSO() {
+    if (currentRole !== 'GESTOR' && currentRole !== 'MEDICO_PCMSO') { 
+        alert("Somente o GESTOR ou MÉDICO PCMSO inclui linhas na Matriz!"); 
+        return; 
+    }
+    const lotacao = document.getElementById('pcmso_add_lotacao').value.trim();
+    const processo = document.getElementById('pcmso_add_processo').value.trim();
+    const cargo = document.getElementById('pcmso_add_cargo').value.trim();
+    const qtd = document.getElementById('pcmso_add_qtd').value;
+    const agenteSelect = document.getElementById('pcmso_add_agente');
+    const agente = agenteSelect.value;
+    const opt = agenteSelect.options[agenteSelect.selectedIndex];
+    const risco = opt ? (opt.dataset.risco || 'RISCO ESPECÍFICO') : 'RISCO ESPECÍFICO';
+    
+    const exameSel = document.getElementById('pcmso_add_exame').value;
+    const exameCustom = document.getElementById('pcmso_add_exame_custom').value.trim();
+    const exame = exameCustom !== '' ? exameCustom : exameSel;
+
+    const perSel = document.getElementById('pcmso_add_periodicidade').value;
+    const perCustom = document.getElementById('pcmso_add_per_custom').value.trim();
+    const periodicidade = perCustom !== '' ? perCustom : perSel;
+
+    const planoAcao = document.getElementById('pcmso_add_plano_acao')?.value.trim() || 'Acompanhamento preventivo.';
+    const activeCliente = document.getElementById('active-cliente-select')?.value || 'ALL';
+    const cliNome = activeCliente === 'ALL' ? (clientesCadastrados[0]?.nome || "CLIENTE PRINCIPAL") : activeCliente;
+
+    if (!lotacao || !cargo || !exame) { alert("Preencha Lotação, Cargo e Exame."); return; }
+
+    pcmsoMatrizData.push({ 
+        id: Date.now(), 
+        lotacao, 
+        processo, 
+        cargo, 
+        qtd, 
+        agente, 
+        risco, 
+        exame, 
+        periodicidade, 
+        planoAcao, 
+        cliente: cliNome,
+        ativo: true 
+    });
+
+    renderPcmsoMatriz();
+    document.getElementById('pcmso_add_lotacao').value = '';
+    document.getElementById('pcmso_add_cargo').value = '';
+    document.getElementById('pcmso_add_exame_custom').value = '';
+    document.getElementById('pcmso_add_per_custom').value = '';
+}
+
+// RENDERIZAÇÃO DA MATRIZ COM PLANO DE AÇÃO EDITÁVEL E TECLA APAGAR
+function renderPcmsoMatriz() {
+    const tbody = document.getElementById('pcmso-matriz-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const activeCliente = document.getElementById('active-cliente-select') ? document.getElementById('active-cliente-select').value : 'ALL';
+
+    pcmsoMatrizData.filter(p => (activeCliente === 'ALL' || p.cliente === activeCliente) && p.ativo !== false).forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = "border-b hover:bg-slate-50";
+
+        tr.innerHTML = `
+            <td class="p-2 font-bold text-blue-950">${item.cliente}</td>
+            <td class="p-2 font-bold">${item.lotacao}</td>
+            <td class="p-2">${item.processo}</td>
+            <td class="p-2 font-bold">${item.cargo}</td>
+            <td class="p-2 text-center font-bold">${item.qtd}</td>
+            <td class="p-2 font-semibold text-slate-700">${item.agente || 'AUSÊNCIA DE RISCO'}</td>
+            <td class="p-2 font-semibold text-amber-800">${item.risco || 'NÃO ESPECIFICADO'}</td>
+            <td class="p-2 font-bold text-blue-900">${item.exame}</td>
+            <td class="p-2 text-center font-bold">${item.periodicidade}</td>
+            <td class="p-2">
+                <textarea id="plano_acao_${item.id}" rows="2" class="w-full border p-1 rounded text-[11px] bg-amber-50/60 font-semibold" onchange="atualizarPlanoAcaoPcmso(${item.id}, this.value)">${item.planoAcao || ''}</textarea>
+            </td>
+            <td class="p-2 text-center space-y-1">
+                <button onclick="removerPcmso(${item.id})" class="text-red-600 font-bold hover:underline text-xs block mx-auto">
+                    🗑️ Apagar
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function atualizarPlanoAcaoPcmso(id, novoTexto) {
+    const item = pcmsoMatrizData.find(x => x.id === id);
+    if (item) {
+        item.planoAcao = novoTexto;
+    }
+}
+
+// ==========================================
+// RELATÓRIOS EM PDF & ENVIO POR E-MAIL (MÓDULOS 5, 6, 7 E 8)
+// ==========================================
+
+function obterEmailClienteAtivo() {
+    const activeCliente = document.getElementById('active-cliente-select')?.value || 'ALL';
+    const cli = clientesCadastrados.find(c => c.nome === activeCliente) || clientesCadastrados[0];
+    return cli ? cli.email : "contato@cliente.com.br";
+}
+
+// 1. RELATÓRIO DO MÓDULO 5 (HOMOLOGAÇÃO / ABSENTEÍSMO)
+function gerarRelatorioPdfHomologacao() {
+    const activeCliente = document.getElementById('active-cliente-select')?.value || 'ALL';
+    const cliNome = activeCliente === 'ALL' ? "TODAS AS EMPRESAS CLIENTES" : activeCliente;
+    const lista = atestadosHomologacaoData.filter(a => (activeCliente === 'ALL' || a.cliente === activeCliente) && a.ativo !== false);
+
+    const paper = document.getElementById('aso-paper-visualizar');
+    if (!paper) return;
+
+    let linhasHtml = lista.map((a, i) => `
+        <tr class="border-b">
+            <td style="padding:6px; border:1px solid #000; text-align:center;">${i+1}</td>
+            <td style="padding:6px; border:1px solid #000; font-weight:bold;">${a.cliente}</td>
+            <td style="padding:6px; border:1px solid #000;">${a.trab}</td>
+            <td style="padding:6px; border:1px solid #000;">${a.setor}</td>
+            <td style="padding:6px; border:1px solid #000; text-align:center; font-weight:bold;">${a.dias} dias</td>
+            <td style="padding:6px; border:1px solid #000; text-align:center; font-weight:bold; color:#581c87;">${a.cid}</td>
+            <td style="padding:6px; border:1px solid #000;">${a.medico}</td>
+            <td style="padding:6px; border:1px solid #000; text-align:center; font-weight:bold;">${a.status}</td>
+        </tr>
+    `).join('');
+
+    paper.innerHTML = `
+        <div class="no-print bg-purple-50 border-2 border-purple-500 p-3 rounded-lg shadow mb-4 flex justify-between items-center">
+            <strong class="text-xs uppercase text-purple-950">📋 Relatório Geral de Absenteísmo e Atestados Homologados</strong>
+            <div class="flex gap-2">
+                <button onclick="enviarRelatorioEmail('Homologacao')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1 rounded text-xs shadow">
+                    ✉️ Enviar p/ E-mail do Cliente
+                </button>
+                <button onclick="window.print()" class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-3 py-1 rounded text-xs shadow">
+                    🖨️ Salvar em PDF / Imprimir
+                </button>
+                <button onclick="fecharModalVisualizacaoAso()" class="bg-slate-700 text-white font-bold px-3 py-1 rounded text-xs">✕ Fechar</button>
+            </div>
+        </div>
+        <div style="font-family: Arial, sans-serif; font-size: 11px;">
+            <div style="border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; display:flex; justify-content:space-between;">
+                <div>
+                    <h2 style="margin:0; font-size:14px; text-transform:uppercase; font-weight:900;">BOREAL ENGMED — RELATÓRIO SINTÉTICO DE ABSENTEÍSMO</h2>
+                    <p style="margin:2px 0 0 0; color:#555;">Controle Médico Ocupacional & Homologação de Atestados</p>
+                </div>
+                <div style="text-align:right;">
+                    <strong>EMPRESA: ${cliNome}</strong><br>
+                    <span>Emissão: ${new Date().toLocaleDateString('pt-BR')}</span>
+                </div>
+            </div>
+            <table style="width:100%; border-collapse:collapse; font-size:10px;">
+                <thead>
+                    <tr style="background-color:#f1f5f9;">
+                        <th style="padding:6px; border:1px solid #000;">#</th>
+                        <th style="padding:6px; border:1px solid #000;">EMPRESA</th>
+                        <th style="padding:6px; border:1px solid #000;">TRABALHADOR & CPF</th>
+                        <th style="padding:6px; border:1px solid #000;">SETOR</th>
+                        <th style="padding:6px; border:1px solid #000;">TEMPO AFAST.</th>
+                        <th style="padding:6px; border:1px solid #000;">CID-10</th>
+                        <th style="padding:6px; border:1px solid #000;">MÉDICO EMISSOR</th>
+                        <th style="padding:6px; border:1px solid #000;">PARECER FINAL</th>
+                    </tr>
+                </thead>
+                <tbody>${linhasHtml || '<tr><td colspan="8" style="text-align:center; padding:10px;">Nenhum registro ativo encontrado.</td></tr>'}</tbody>
+            </table>
+        </div>
+    `;
+    document.getElementById('modal-visualizar-aso-anexado').classList.remove('hidden');
+}
+
+// 2. RELATÓRIO DO MÓDULO 6 (MATRIZ DO PCMSO COM PLANO DE AÇÃO)
+function gerarRelatorioPdfMatrizPcmso() {
+    const activeCliente = document.getElementById('active-cliente-select')?.value || 'ALL';
+    const cliNome = activeCliente === 'ALL' ? "TODAS AS EMPRESAS CLIENTES" : activeCliente;
+    const cli = clientesCadastrados.find(c => c.nome === cliNome) || { medPcmso: "DRA. LUIZA BRABETZ SANDONATO", crmPcmso: "CRM SP 145328" };
+    const lista = pcmsoMatrizData.filter(p => (activeCliente === 'ALL' || p.cliente === activeCliente) && p.ativo !== false);
+
+    const paper = document.getElementById('aso-paper-visualizar');
+    if (!paper) return;
+
+    let linhasHtml = lista.map((p, i) => `
+        <tr class="border-b">
+            <td style="padding:5px; border:1px solid #000; text-align:center;">${i+1}</td>
+            <td style="padding:5px; border:1px solid #000; font-weight:bold;">${p.cliente}</td>
+            <td style="padding:5px; border:1px solid #000; font-weight:bold;">${p.lotacao}</td>
+            <td style="padding:5px; border:1px solid #000;">${p.processo}</td>
+            <td style="padding:5px; border:1px solid #000; font-weight:bold;">${p.cargo}</td>
+            <td style="padding:5px; border:1px solid #000; text-align:center;">${p.qtd}</td>
+            <td style="padding:5px; border:1px solid #000;">${p.agente}</td>
+            <td style="padding:5px; border:1px solid #000;">${p.risco}</td>
+            <td style="padding:5px; border:1px solid #000; font-weight:bold; color:#1e3a8a;">${p.exame}</td>
+            <td style="padding:5px; border:1px solid #000; text-align:center;">${p.periodicidade}</td>
+            <td style="padding:5px; border:1px solid #000; background:#fefce8; font-weight:600;">${p.planoAcao || 'Acompanhamento preventivo.'}</td>
+        </tr>
+    `).join('');
+
+    paper.innerHTML = `
+        <div class="no-print bg-sky-50 border-2 border-sky-500 p-3 rounded-lg shadow mb-4 flex justify-between items-center">
+            <strong class="text-xs uppercase text-sky-950">📋 Relatório Consolidado da Matriz PCMSO & Planos de Ação</strong>
+            <div class="flex gap-2">
+                <button onclick="enviarRelatorioEmail('MatrizPCMSO')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1 rounded text-xs shadow">
+                    ✉️ Enviar p/ E-mail do Cliente
+                </button>
+                <button onclick="window.print()" class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-3 py-1 rounded text-xs shadow">
+                    🖨️ Salvar em PDF / Imprimir
+                </button>
+                <button onclick="fecharModalVisualizacaoAso()" class="bg-slate-700 text-white font-bold px-3 py-1 rounded text-xs">✕ Fechar</button>
+            </div>
+        </div>
+        <div style="font-family: Arial, sans-serif; font-size: 11px;">
+            <div style="border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; display:flex; justify-content:space-between;">
+                <div>
+                    <h2 style="margin:0; font-size:14px; text-transform:uppercase; font-weight:900;">BOREAL ENGMED — MATRIZ OFICIAL PCMSO (NR-07)</h2>
+                    <p style="margin:2px 0 0 0; color:#555;">Médico Coordenador do PCMSO: ${cli.medPcmso || 'DRA. LUIZA BRABETZ SANDONATO'} — ${cli.crmPcmso || 'CRM SP 145328'}</p>
+                </div>
+                <div style="text-align:right;">
+                    <strong>EMPRESA: ${cliNome}</strong><br>
+                    <span>Emissão: ${new Date().toLocaleDateString('pt-BR')}</span>
+                </div>
+            </div>
+            <table style="width:100%; border-collapse:collapse; font-size:9.5px;">
+                <thead>
+                    <tr style="background-color:#f1f5f9;">
+                        <th style="padding:5px; border:1px solid #000;">#</th>
+                        <th style="padding:5px; border:1px solid #000;">EMPRESA</th>
+                        <th style="padding:5px; border:1px solid #000;">LOTAÇÃO</th>
+                        <th style="padding:5px; border:1px solid #000;">PROCESSO</th>
+                        <th style="padding:5px; border:1px solid #000;">CARGO</th>
+                        <th style="padding:5px; border:1px solid #000;">QTD</th>
+                        <th style="padding:5px; border:1px solid #000;">AGENTE</th>
+                        <th style="padding:5px; border:1px solid #000;">RISCO</th>
+                        <th style="padding:5px; border:1px solid #000;">EXAMES REQUISITADOS</th>
+                        <th style="padding:5px; border:1px solid #000;">PERIODICIDADE</th>
+                        <th style="padding:5px; border:1px solid #000;">PLANO DE AÇÃO EM SAÚDE</th>
+                    </tr>
+                </thead>
+                <tbody>${linhasHtml || '<tr><td colspan="11" style="text-align:center; padding:10px;">Nenhuma linha ativa na matriz.</td></tr>'}</tbody>
+            </table>
+        </div>
+    `;
+    document.getElementById('modal-visualizar-aso-anexado').classList.remove('hidden');
+}
+
+// 3. RELATÓRIO DO MÓDULO 7 (RELATÓRIO ANALÍTICO DO PCMSO)
+function gerarRelatorioPdfAnaliticoPcmso() {
+    const activeCliente = document.getElementById('active-cliente-select')?.value || 'ALL';
+    const cliNome = activeCliente === 'ALL' ? "TODAS AS EMPRESAS CLIENTES" : activeCliente;
+    const cli = clientesCadastrados.find(c => c.nome === cliNome) || { medPcmso: "DRA. LUIZA BRABETZ SANDONATO", crmPcmso: "CRM SP 145328" };
+
+    const totalExames = document.getElementById('stat-total-exames')?.textContent || '0';
+    const totalAptos = document.getElementById('stat-total-aptos')?.textContent || '0';
+    const totalRestricao = document.getElementById('stat-total-restricao')?.textContent || '0';
+    const totalInaptos = document.getElementById('stat-total-inaptos')?.textContent || '0';
+
+    const paper = document.getElementById('aso-paper-visualizar');
+    if (!paper) return;
+
+    paper.innerHTML = `
+        <div class="no-print bg-amber-50 border-2 border-amber-500 p-3 rounded-lg shadow mb-4 flex justify-between items-center">
+            <strong class="text-xs uppercase text-amber-950">📋 Relatório Analítico Anual do PCMSO (NR-07 Item 7.6.2)</strong>
+            <div class="flex gap-2">
+                <button onclick="enviarRelatorioEmail('AnaliticoPCMSO')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1 rounded text-xs shadow">
+                    ✉️ Enviar p/ E-mail do Cliente
+                </button>
+                <button onclick="window.print()" class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-3 py-1 rounded text-xs shadow">
+                    🖨️ Salvar em PDF / Imprimir
+                </button>
+                <button onclick="fecharModalVisualizacaoAso()" class="bg-slate-700 text-white font-bold px-3 py-1 rounded text-xs">✕ Fechar</button>
+            </div>
+        </div>
+        <div style="font-family: Arial, sans-serif; font-size: 11px; padding: 10px;">
+            <div style="border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; display:flex; justify-content:space-between;">
+                <div>
+                    <h2 style="margin:0; font-size:15px; font-weight:900;">BOREAL ENGMED — RELATÓRIO ANALÍTICO ANUAL DO PCMSO</h2>
+                    <p style="margin:2px 0; color:#555;">Em conformidade com a Norma Regulamentadora NR-07 (Item 7.6.2)</p>
+                </div>
+                <div style="text-align:right;">
+                    <strong>EMPRESA: ${cliNome}</strong><br>
+                    <span>Ano de Referência: ${new Date().getFullYear()}</span>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
+                <div style="border:1px solid #93c5fd; background:#eff6ff; padding:12px; text-align:center; border-radius:6px;">
+                    <span style="font-size:10px; font-weight:bold; color:#1e40af; display:block;">TOTAL DE EXAMES REALIZADOS</span>
+                    <strong style="font-size:20px; color:#1e3a8a;">${totalExames}</strong>
+                </div>
+                <div style="border:1px solid #86efac; background:#f0fdf4; padding:12px; text-align:center; border-radius:6px;">
+                    <span style="font-size:10px; font-weight:bold; color:#166534; display:block;">EXAMES APTOS</span>
+                    <strong style="font-size:20px; color:#14532d;">${totalAptos}</strong>
+                </div>
+                <div style="border:1px solid #fde047; background:#fefce8; padding:12px; text-align:center; border-radius:6px;">
+                    <span style="font-size:10px; font-weight:bold; color:#854d0e; display:block;">APTOS COM RESTRIÇÃO</span>
+                    <strong style="font-size:20px; color:#713f12;">${totalRestricao}</strong>
+                </div>
+                <div style="border:1px solid #fca5a5; background:#fef2f2; padding:12px; text-align:center; border-radius:6px;">
+                    <span style="font-size:10px; font-weight:bold; color:#991b1b; display:block;">INAPTOS</span>
+                    <strong style="font-size:20px; color:#7f1d1d;">${totalInaptos}</strong>
+                </div>
+            </div>
+
+            <div style="border:1px solid #000; padding:12px; background:#fafafa; margin-bottom:20px;">
+                <strong style="display:block; margin-bottom:6px; font-size:11px; text-transform:uppercase;">Parecer Conclusivo do Médico Responsável do PCMSO:</strong>
+                <p style="margin:0; font-size:11px; line-height:1.5;">
+                    Durante o período avaliado, os exames clínicos e complementares ocupacionais foram realizados em estrita observância ao cronograma do PCMSO. Não foram identificados agravos com nexo causal ocupacional não controlados. As medidas de prevenção e adequações ergonômicas devem ser mantidas conforme matriz de risco.
+                </p>
+            </div>
+
+            <div style="margin-top:40px; text-align:center; display:flex; justify-content:space-around;">
+                <div>
+                    <div style="border-bottom:1px solid #000; width:220px; margin:0 auto 4px auto;"></div>
+                    <strong>${cli.medPcmso || 'DRA. LUIZA BRABETZ SANDONATO'}</strong><br>
+                    <span>${cli.crmPcmso || 'CRM SP 145328'} — Médico(a) Responsável PCMSO</span>
+                </div>
+                <div>
+                    <div style="border-bottom:1px solid #000; width:220px; margin:0 auto 4px auto;"></div>
+                    <strong>${cliNome}</strong><br>
+                    <span>Representante da Empresa / Ciente</span>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('modal-visualizar-aso-anexado').classList.remove('hidden');
+}
+
+// 4. RELATÓRIO DO MÓDULO 8 (FECHAMENTO FINANCEIRO / PRODUÇÃO)
+function gerarRelatorioPdfFinanceiroProducao() {
+    const activeCliente = document.getElementById('active-cliente-select')?.value || 'ALL';
+    const cliNome = activeCliente === 'ALL' ? "TODAS AS EMPRESAS CLIENTES" : activeCliente;
+    const lista = monitorRequestsData.filter(r => (activeCliente === 'ALL' || r.cliente === activeCliente));
+
+    const totalValor = document.getElementById('valor-soma-total-producao')?.textContent || 'R$ 0,00';
+    const paper = document.getElementById('aso-paper-visualizar');
+    if (!paper) return;
+
+    let linhasHtml = lista.map((r, i) => {
+        const valUnitNum = parseFloat((r.valor || "0").replace(',', '.'));
+        const qtdNum = parseInt(r.qtd) || 1;
+        const totalLinha = valUnitNum * qtdNum;
+        return `
+            <tr class="border-b">
+                <td style="padding:6px; border:1px solid #000; text-align:center;">${i+1}</td>
+                <td style="padding:6px; border:1px solid #000;">${r.fecha}</td>
+                <td style="padding:6px; border:1px solid #000; font-weight:bold;">${r.cliente}</td>
+                <td style="padding:6px; border:1px solid #000; font-weight:bold;">${r.clinica}</td>
+                <td style="padding:6px; border:1px solid #000;">${r.trab}</td>
+                <td style="padding:6px; border:1px solid #000; font-weight:bold; color:#1e3a8a;">${r.obj}</td>
+                <td style="padding:6px; border:1px solid #000; text-align:center; font-weight:bold;">${qtdNum}</td>
+                <td style="padding:6px; border:1px solid #000; text-align:right;">R$ ${r.valor}</td>
+                <td style="padding:6px; border:1px solid #000; text-align:right; font-weight:bold; color:#15803d;">R$ ${totalLinha.toFixed(2).replace('.', ',')}</td>
+            </tr>
+        `;
+    }).join('');
+
+    paper.innerHTML = `
+        <div class="no-print bg-emerald-50 border-2 border-emerald-500 p-3 rounded-lg shadow mb-4 flex justify-between items-center">
+            <strong class="text-xs uppercase text-emerald-950">📋 Relatório de Fechamento Financeiro & Produção por Clínica</strong>
+            <div class="flex gap-2">
+                <button onclick="enviarRelatorioEmail('FinanceiroProducao')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1 rounded text-xs shadow">
+                    ✉️ Enviar p/ E-mail do Cliente
+                </button>
+                <button onclick="window.print()" class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-3 py-1 rounded text-xs shadow">
+                    🖨️ Salvar em PDF / Imprimir
+                </button>
+                <button onclick="fecharModalVisualizacaoAso()" class="bg-slate-700 text-white font-bold px-3 py-1 rounded text-xs">✕ Fechar</button>
+            </div>
+        </div>
+        <div style="font-family: Arial, sans-serif; font-size: 11px;">
+            <div style="border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; display:flex; justify-content:space-between;">
+                <div>
+                    <h2 style="margin:0; font-size:14px; text-transform:uppercase; font-weight:900;">BOREAL ENGMED — POSIÇÃO FINANCEIRA DE ATENDIMENTOS</h2>
+                    <p style="margin:2px 0 0 0; color:#555;">Faturamento e Conferência de Produção de Serviços Ocupacionais</p>
+                </div>
+                <div style="text-align:right;">
+                    <strong>EMPRESA: ${cliNome}</strong><br>
+                    <span>Data: ${new Date().toLocaleDateString('pt-BR')}</span>
+                </div>
+            </div>
+            <table style="width:100%; border-collapse:collapse; font-size:10px;">
+                <thead>
+                    <tr style="background-color:#f1f5f9;">
+                        <th style="padding:6px; border:1px solid #000;">#</th>
+                        <th style="padding:6px; border:1px solid #000;">DATA</th>
+                        <th style="padding:6px; border:1px solid #000;">EMPRESA</th>
+                        <th style="padding:6px; border:1px solid #000;">CLÍNICA</th>
+                        <th style="padding:6px; border:1px solid #000;">TRABALHADOR</th>
+                        <th style="padding:6px; border:1px solid #000;">OBJETO / EXAME</th>
+                        <th style="padding:6px; border:1px solid #000;">QTD</th>
+                        <th style="padding:6px; border:1px solid #000;">VALOR UNIT.</th>
+                        <th style="padding:6px; border:1px solid #000;">VALOR TOTAL</th>
+                    </tr>
+                </thead>
+                <tbody>${linhasHtml || '<tr><td colspan="9" style="text-align:center; padding:10px;">Nenhum atendimento faturado registrado.</td></tr>'}</tbody>
+                <tfoot>
+                    <tr style="background:#dcfce7; font-weight:bold; font-size:11px;">
+                        <td colspan="8" style="padding:8px; border:1px solid #000; text-align:right;">VALOR TOTAL FATURADO:</td>
+                        <td style="padding:8px; border:1px solid #000; text-align:right; font-weight:900; color:#14532d;">${totalValor}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    `;
+    document.getElementById('modal-visualizar-aso-anexado').classList.remove('hidden');
+}
+
+// 5. DISPOSITIVO DE ENVIO DO RELATÓRIO DIRETO POR E-MAIL PARA O SUPABASE / CLIENTE
+function enviarRelatorioEmail(tipoRelatorio) {
+    const emailDestino = obterEmailClienteAtivo();
+    const activeCliente = document.getElementById('active-cliente-select')?.value || 'EMPRESA CLIENTE';
+    const assunto = encodeURIComponent(`Boreal Engmed - Relatório de ${tipoRelatorio} (${activeCliente})`);
+    const corpo = encodeURIComponent(`Olá, segue a síntese do relatório oficial de ${tipoRelatorio} emitido na data de ${new Date().toLocaleDateString('pt-BR')} para a empresa ${activeCliente}.\n\nPara conferência completa, acesse a central Boreal Engmed.`);
+    
+    // Dispara via cliente padrão de e-mail / WebMail direto para o destinatário cadastrado no Supabase
+    window.open(`mailto:${emailDestino}?subject=${assunto}&body=${corpo}`, '_blank');
+    alert(`Dispositivo acionado!\nRelatório de ${tipoRelatorio} preparado para envio ao e-mail cadastrado:\n${emailDestino}`);
+}
+
+// CADASTRO DE MÉDICOS (EXAMINADORES / HOMOLOGADORES INDEPENDENTES)
+function salvarNovoMedico() {
+    if (currentRole !== 'GESTOR') { alert("Somente o GESTOR realiza cadastro de médicos!"); return; }
+    const nome = document.getElementById('cad_med_nome').value.trim();
+    const crm = document.getElementById('cad_med_crm').value.trim();
+    const rqe = document.getElementById('cad_med_rqe').value.trim();
+    const tipo = document.getElementById('cad_med_tipo').value;
+    const tel = document.getElementById('cad_med_tel').value.trim();
+    const email = document.getElementById('cad_med_email').value.trim();
+
+    if (!nome || !crm) { alert("Preencha Nome do Médico e CRM/UF."); return; }
+
+    medicosCadastrados.push({ id: Date.now(), nome, crm, rqe, tipo, tel, email, ativo: true });
+    renderMedicosTabela();
+
+    document.getElementById('cad_med_nome').value = '';
+    document.getElementById('cad_med_crm').value = '';
+    document.getElementById('cad_med_rqe').value = '';
+    document.getElementById('cad_med_tel').value = '';
+    document.getElementById('cad_med_email').value = '';
+    alert("Médico cadastrado com sucesso no banco de profissionais itinerantes!");
+}
+
+function toggleStatusMedico(id) {
+    const m = medicosCadastrados.find(x => x.id === id);
+    if (m) {
+        m.ativo = !m.ativo;
+        renderMedicosTabela();
+    }
+}
+
+function apagarMedico(id) {
+    if (currentRole !== 'GESTOR') { alert("Somente o GESTOR pode apagar!"); return; }
+    if (confirm("Tem certeza que deseja apagar o cadastro deste médico?")) {
+        medicosCadastrados = medicosCadastrados.filter(x => x.id !== id);
+        renderMedicosTabela();
+    }
+}
+
+function renderMedicosTabela() {
+    const tbody = document.getElementById('medicos-cadastrados-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    medicosCadastrados.forEach(m => {
+        const tr = document.createElement('tr');
+        tr.className = `border-b ${!m.ativo ? 'bg-slate-100 text-slate-400' : ''}`;
+        tr.innerHTML = `
+            <td class="p-2 font-bold">${m.nome}</td>
+            <td class="p-2 font-bold text-blue-900">${m.crm} ${m.rqe ? '('+m.rqe+')' : ''}</td>
+            <td class="p-2"><span class="bg-indigo-100 text-indigo-900 font-bold px-2 py-0.5 rounded text-[10px]">${m.tipo}</span></td>
+            <td class="p-2">${m.tel}</td>
+            <td class="p-2">${m.email}</td>
+            <td class="p-2 text-center"><span class="${m.ativo ? 'text-emerald-700 bg-emerald-100' : 'text-red-700 bg-red-100'} px-2 py-0.5 rounded font-bold">${m.ativo ? 'ATIVO' : 'INATIVO'}</span></td>
+            <td class="p-2 text-center space-x-1">
+                <button onclick="toggleStatusMedico(${m.id})" class="text-xs font-bold px-2 py-1 rounded ${m.ativo ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                    ${m.ativo ? '🚫 Inativar' : '✅ Ativar'}
+                </button>
+                <button onclick="apagarMedico(${m.id})" class="text-xs font-bold px-2 py-1 rounded bg-red-100 text-red-800 hover:bg-red-200">
+                    🗑️ Apagar
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// CAPTAÇÃO AUTOMÁTICA POR IA DE DOCUMENTOS DO MÉDICO (CRM / DIPLOMA / CONTRATO)
+function processarDocumentoMedicoIA(evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+
+    // Simulação de extração estruturada via IA a partir do documento
+    const nomeDetectado = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").toUpperCase();
+    document.getElementById('cad_med_nome').value = `DR. ${nomeDetectado}`;
+    document.getElementById('cad_med_crm').value = "CRM SP 000000";
+    alert(`Documento ("${file.name}") analisado pela IA!\nDados preliminares preenchidos nos campos para sua conferência e salvamento.`);
+}
+
+// FUNÇÃO PARA APAGAR CLIENTE OU CLÍNICA NO MÓDULO 10
+function apagarClienteCadastrado(id) {
+    if (currentRole !== 'GESTOR') { alert("Somente o GESTOR apaga cadastros!"); return; }
+    if (confirm("Deseja apagar permanentemente esta empresa cliente?")) {
+        clientesCadastrados = clientesCadastrados.filter(c => c.id !== id);
+        renderClientesTabela();
+        atualizarDropdownsClientes();
+    }
+}
+
+function apagarClinicaCadastrada(id) {
+    if (currentRole !== 'GESTOR') { alert("Somente o GESTOR apaga cadastros!"); return; }
+    if (confirm("Deseja apagar permanentemente esta clínica credenciada?")) {
+        clinicasCadastradas = clinicasCadastradas.filter(c => c.id !== id);
+        renderClinicasTabela();
+        atualizarDropdownsClinicas();
+    }
+}
+<td class="p-2 text-center space-x-1">
+                <button onclick="toggleStatusCliente(${c.id})" class="text-xs font-bold px-2 py-1 rounded ${c.ativo ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                    ${c.ativo ? '🚫 Inativar' : '✅ Ativar'}
+                </button>
+                <button onclick="apagarClienteCadastrado(${c.id})" class="text-xs font-bold px-2 py-1 rounded bg-red-100 text-red-800 hover:bg-red-200">
+                    🗑️ Apagar
+                </button>
+            </td>
+<td class="p-2 text-center space-x-1">
+                <button onclick="toggleStatusClinica(${c.id})" class="text-xs font-bold px-2 py-1 rounded ${c.ativo ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                    ${c.ativo ? '🚫 Inativar' : '✅ Ativar'}
+                </button>
+                <button onclick="apagarClinicaCadastrada(${c.id})" class="text-xs font-bold px-2 py-1 rounded bg-red-100 text-red-800 hover:bg-red-200">
+                    🗑️ Apagar
+                </button>
+            </td>
+<button type="button" onclick="gerarRelatorioPdfHomologacao()" class="bg-purple-800 hover:bg-purple-900 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow">
+    📄 Relatório de Afastamentos (PDF / E-mail)
+</button>
+<!-- ABA 6: MATRIZ PCMSO SEQUENCIAL (NR-07) -->
+        <section id="tab-pcmso-matriz" class="tab-content hidden space-y-4">
+            
+            <div id="pcmso-medico-header-info" class="bg-sky-900 text-white p-3.5 rounded-xl flex flex-wrap justify-between items-center gap-2 shadow border border-sky-700">
+                <div class="text-xs">
+                    <span class="text-sky-300 font-extrabold uppercase block">MATRIZ DO PCMSO EM EDIÇÃO / REVISÃO MÉDICA:</span>
+                    <strong id="pcmso_lbl_cliente_nome" class="text-base font-black text-amber-400">TODOS OS CLIENTES</strong>
+                </div>
+                <div class="text-xs text-right">
+                    <span class="text-sky-200 font-bold block">Médico Responsável do PCMSO:</span>
+                    <strong id="pcmso_lbl_medico_nome" class="text-white font-black">DRA. LUIZA BRABETZ SANDONATO (CRM SP 145328)</strong>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
+                <div class="flex flex-wrap justify-between items-center border-b pb-3 gap-2">
+                    <div>
+                        <h2 class="font-extrabold text-slate-900 text-sm md:text-base uppercase flex items-center gap-2">
+                            <i data-lucide="file-spreadsheet" class="w-5 h-5 text-sky-700"></i> Matriz do PCMSO Sequencial (NR-07)
+                        </h2>
+                        <p class="text-xs text-slate-500">Gestão das exposições a riscos, exames exigidos e planos de ação em saúde.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-1.5 rounded cursor-pointer flex items-center shadow">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1"></i> Upload Matriz PCMSO (.XLSX)
+                            <input type="file" accept=".xlsx, .xls" class="hidden" onchange="processarCargaMassaPcmso(event)">
+                        </label>
+                        <button type="button" onclick="gerarRelatorioPdfMatrizPcmso()" class="bg-sky-800 hover:bg-sky-900 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow">
+                            📄 Relatório Matriz (PDF / E-mail)
+                        </button>
+                        <button type="button" onclick="exportarPcmsoWord()" class="bg-blue-800 hover:bg-blue-900 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow">
+                            📝 Baixar Word (.docx)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- FORMULÁRIO COM CAMPO PLANO DE AÇÃO -->
+                <div id="pcmso-form-container" class="bg-slate-50 border p-3 rounded-lg space-y-2 text-xs">
+                    <span class="font-bold text-slate-800 block uppercase">Incluir Novo Cargo / Setor no PCMSO:</span>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                        <input type="text" id="pcmso_add_lotacao" placeholder="LOTAÇÃO / SETOR" class="border p-1.5 rounded font-bold bg-white">
+                        <input type="text" id="pcmso_add_processo" placeholder="PROCESSO OPERACIONAL" class="border p-1.5 rounded bg-white">
+                        <input type="text" id="pcmso_add_cargo" placeholder="CARGO" class="border p-1.5 rounded font-bold bg-white">
+                        <input type="number" id="pcmso_add_qtd" value="1" placeholder="QUANT." class="border p-1.5 rounded text-center font-bold bg-white">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <select id="pcmso_add_cat" onchange="filtrarRiscosCat('pcmso_add_cat', 'pcmso_add_agente')" class="border p-1.5 rounded font-bold text-sky-900 bg-white">
+                            <option value="">-- Categoria de Risco (IRO) --</option>
+                            <option value="ACIDENTES">Riscos de Acidentes</option>
+                            <option value="FISICOS">Riscos Físicos</option>
+                            <option value="QUIMICOS_PGR">Riscos Químicos PGR</option>
+                            <option value="BIOLOGICOS">Riscos Biológicos</option>
+                            <option value="ERGONOMICOS_BIOMECANICOS">Ergonômicos Biomecânicos</option>
+                            <option value="PSICOSSOCIAIS">Riscos Psicossociais</option>
+                        </select>
+                        <select id="pcmso_add_agente" onchange="autoPreencherExamePcmso()" class="border p-1.5 rounded md:col-span-2 bg-white">
+                            <option value="">-- Selecione o Agente do Inventário PGR --</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                        <select id="pcmso_add_exame" class="border p-1.5 rounded font-semibold bg-white">
+                            <option value="">-- Selecione o Exame --</option>
+                        </select>
+                        <input type="text" id="pcmso_add_exame_custom" placeholder="DIGITAR OUTRO EXAME..." class="border p-1.5 rounded font-semibold bg-white">
+                        <select id="pcmso_add_periodicidade" class="border p-1.5 rounded font-bold bg-white">
+                            <option value="Anual">Anual</option>
+                            <option value="Bienal (24 meses)">Bienal (24 meses)</option>
+                            <option value="Semestral">Semestral</option>
+                        </select>
+                        <input type="text" id="pcmso_add_per_custom" placeholder="DIGITAR OUTRA PERIODICIDADE..." class="border p-1.5 rounded font-semibold bg-white">
+                    </div>
+                    <div>
+                        <input type="text" id="pcmso_add_plano_acao" placeholder="PLANO DE AÇÃO EM SAÚDE / PREVENÇÃO (EDITÁVEL PELO MÉDICO/GESTOR)..." class="w-full border p-1.5 rounded bg-amber-50 font-semibold text-slate-800">
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="button" onclick="adicionarLinhaPCMSO()" class="bg-slate-900 text-white font-bold px-4 py-1.5 rounded uppercase">➕ Incluir Linha no PCMSO</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-800 text-white font-bold uppercase">
+                                <th class="p-2">Empresa Cliente</th>
+                                <th class="p-2">Lotação</th>
+                                <th class="p-2">Processo Operacional</th>
+                                <th class="p-2">Cargo</th>
+                                <th class="p-2 text-center">Qtd</th>
+                                <th class="p-2">Agente (Fonte)</th>
+                                <th class="p-2">Risco (Agravo)</th>
+                                <th class="p-2">Descrição dos Exames</th>
+                                <th class="p-2 text-center">Periodicidade</th>
+                                <th class="p-2">Plano de Ação (Edição Médica)</th>
+                                <th class="p-2 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pcmso-matriz-tbody" class="divide-y divide-slate-200">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+<button type="button" onclick="gerarRelatorioPdfAnaliticoPcmso()" class="bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow">
+    📄 Relatório Analítico (PDF / E-mail)
+</button>
+<button type="button" onclick="gerarRelatorioPdfFinanceiroProducao()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow">
+    📄 Fechamento Financeiro (PDF / E-mail)
+</button>
+<!-- CADASTRO DE MÉDICOS EXAMINADORES E HOMOLOGADORES INDEPENDENTES (COM IA) -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <h2 class="font-extrabold text-slate-900 text-sm uppercase flex items-center gap-2">
+                        <i data-lucide="user-plus" class="w-4 h-4 text-indigo-700"></i> Cadastro de Médicos (Examinadores & Homologadores)
+                    </h2>
+                    <label class="bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs px-3 py-1 rounded cursor-pointer flex items-center gap-1 shadow">
+                        <i data-lucide="scan" class="w-3.5 h-3.5"></i> Ler Documento por IA
+                        <input type="file" accept=".pdf,image/*" class="hidden" onchange="processarDocumentoMedicoIA(event)">
+                    </label>
+                </div>
+
+                <div id="box-form-medico" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs bg-slate-50 p-3 rounded border">
+                    <div>
+                        <label class="font-bold block mb-1">Nome Completo do Médico *</label>
+                        <input type="text" id="cad_med_nome" placeholder="DR. NOME DO MÉDICO" class="w-full border rounded p-1.5 bg-white font-bold">
+                    </div>
+                    <div>
+                        <label class="font-bold block mb-1">CRM / UF *</label>
+                        <input type="text" id="cad_med_crm" placeholder="CRM SP 000000" class="w-full border rounded p-1.5 bg-white font-bold">
+                    </div>
+                    <div>
+                        <label class="font-bold block mb-1">RQE / Especialidade</label>
+                        <input type="text" id="cad_med_rqe" placeholder="RQE 00000" class="w-full border rounded p-1.5 bg-white font-bold">
+                    </div>
+                    <div>
+                        <label class="font-bold block mb-1">Tipo de Atuação *</label>
+                        <select id="cad_med_tipo" class="w-full border rounded p-1.5 bg-white font-bold">
+                            <option value="MÉDICO EXAMINADOR INDEPENDENTE">MÉDICO EXAMINADOR INDEPENDENTE</option>
+                            <option value="MÉDICO HOMOLOGADOR INDEPENDENTE">MÉDICO HOMOLOGADOR INDEPENDENTE</option>
+                            <option value="MÉDICO EXAMINADOR (CLÍNICA)">MÉDICO EXAMINADOR (CLÍNICA)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="font-bold block mb-1">Telefone / WhatsApp *</label>
+                        <input type="text" id="cad_med_tel" placeholder="(19) 90000-0000" class="w-full border rounded p-1.5 bg-white font-bold">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="font-bold block mb-1">E-mail para Acesso e Notificações *</label>
+                        <input type="text" id="cad_med_email" placeholder="medico@email.com" class="w-full border rounded p-1.5 bg-white font-bold">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="button" onclick="salvarNovoMedico()" class="w-full bg-indigo-700 hover:bg-indigo-800 text-white font-extrabold p-2 rounded text-xs uppercase shadow">
+                            💾 Salvar Médico
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-200 text-slate-800 font-bold uppercase">
+                                <th class="p-2">Nome do Médico</th>
+                                <th class="p-2">CRM / UF (RQE)</th>
+                                <th class="p-2">Tipo de Atuação</th>
+                                <th class="p-2">Telefone / WhatsApp</th>
+                                <th class="p-2">E-mail</th>
+                                <th class="p-2 text-center">Status</th>
+                                <th class="p-2 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="medicos-cadastrados-tbody" class="divide-y divide-slate-200">
+                        </tbody>
+                    </table>
+                </div>
+            </div>

@@ -238,7 +238,7 @@
                                 <th class="p-2">Clínica Credenciada</th>
                                 <th class="p-2">Resposta Agendamento (Data/Hora/Endereço)</th>
                                 <th class="p-2 text-center">Status</th>
-                                <th class="p-2 text-center">Ações Clínica</th>
+                                <th class="p-2 text-center">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="monitor-requests-tbody" class="divide-y divide-slate-200">
@@ -309,6 +309,7 @@
                                 <th class="p-2.5">Médico Examinador</th>
                                 <th class="p-2.5 text-center">Ficha Anamnese Anexada</th>
                                 <th class="p-2.5 text-center">ASO Boreal Individual Anexado</th>
+                                <th class="p-2.5 text-center">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="aso-history-tbody" class="divide-y divide-slate-200">
@@ -334,7 +335,9 @@
             <pre id="esocial-preview-container" class="bg-slate-900 text-emerald-400 font-mono p-4 rounded-xl text-xs overflow-x-auto max-h-96">// Clique no botão acima para compilar o lote de XMLs...</pre>
         </section>
 
-       <!-- ABA 5: MÓDULO HOMOLOGAÇÃO DE ATESTADOS OCUPACIONAIS -->
+        <!-- ABA 5: MÓDULO HOMOLOGAÇÃO DE ATESTADOS OCUPACIONAIS -->
+
+        <!-- ABA 5: MÓDULO HOMOLOGAÇÃO DE ATESTADOS OCUPACIONAIS -->
         <section id="tab-homologacao" class="tab-content hidden space-y-4">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
                 <div class="flex flex-wrap justify-between items-center border-b pb-3 gap-2">
@@ -344,11 +347,14 @@
                         </h2>
                         <p class="text-xs text-slate-500">Cadastre o empregado e anexe o atestado para homologação médica abaixo.</p>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap gap-2">
                         <label class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-1.5 rounded cursor-pointer flex items-center shadow">
                             <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1"></i> Upload Planilha Afastados (.XLSX)
                             <input type="file" accept=".xlsx, .xls" class="hidden" onchange="processarCargaMassaAtestados(event)">
                         </label>
+                        <button type="button" onclick="gerarRelatorioPdfHomologacao()" class="bg-purple-800 hover:bg-purple-900 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow">
+                            📄 Relatório de Afastamentos (PDF / E-mail)
+                        </button>
                     </div>
                 </div>
 
@@ -406,6 +412,7 @@
                 </div>
             </div>
         </section>
+
         <!-- ABA 6: MATRIZ PCMSO SEQUENCIAL (NR-07) -->
         <section id="tab-pcmso-matriz" class="tab-content hidden space-y-4">
             
@@ -422,18 +429,25 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
-                <div class="flex justify-between items-center border-b pb-3">
+                <div class="flex flex-wrap justify-between items-center border-b pb-3 gap-2">
                     <div>
                         <h2 class="font-extrabold text-slate-900 text-sm md:text-base uppercase flex items-center gap-2">
                             <i data-lucide="file-spreadsheet" class="w-5 h-5 text-sky-700"></i> Matriz do PCMSO Sequencial (NR-07)
                         </h2>
-                        <p class="text-xs text-slate-500">Gestor edita a estrutura completa. Médico do PCMSO edita, inclui novos exames/periodicidades ou exclui linhas com as quais não concorde.</p>
+                        <p class="text-xs text-slate-500">Gestão das exposições a riscos, exames exigidos e planos de ação em saúde.</p>
                     </div>
-                    <div class="flex gap-2">
-                        <button type="button" onclick="exportarPcmsoWord()" class="bg-blue-800 hover:bg-blue-900 text-white font-bold text-xs px-3 py-2 rounded flex items-center gap-1 shadow">
+                    <div class="flex flex-wrap gap-2">
+                        <label class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-1.5 rounded cursor-pointer flex items-center shadow">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1"></i> Upload Matriz PCMSO (.XLSX)
+                            <input type="file" accept=".xlsx, .xls" class="hidden" onchange="processarCargaMassaPcmso(event)">
+                        </label>
+                        <button type="button" onclick="gerarRelatorioPdfMatrizPcmso()" class="bg-sky-800 hover:bg-sky-900 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow">
+                            📄 Relatório Matriz (PDF / E-mail)
+                        </button>
+                        <button type="button" onclick="exportarPcmsoWord()" class="bg-blue-800 hover:bg-blue-900 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow">
                             📝 Baixar PCMSO em Word (.docx)
                         </button>
-                        <button type="button" onclick="window.print()" class="bg-sky-700 hover:bg-sky-800 text-white font-bold text-xs px-3 py-2 rounded flex items-center gap-1 shadow">
+                        <button type="button" onclick="window.print()" class="bg-sky-700 hover:bg-sky-800 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow">
                             📄 Imprimir PCMSO
                         </button>
                     </div>
@@ -487,6 +501,9 @@
                         </select>
                         <input type="text" id="pcmso_add_per_custom" placeholder="DIGITAR OUTRA PERIODICIDADE..." class="border p-1.5 rounded font-semibold bg-white">
                     </div>
+                    <div>
+                        <input type="text" id="pcmso_add_plano_acao" placeholder="PLANO DE AÇÃO EM SAÚDE / PREVENÇÃO (EDITÁVEL PELO MÉDICO/GESTOR)..." class="w-full border p-1.5 rounded bg-amber-50 font-semibold text-slate-800">
+                    </div>
                     <div class="flex justify-end">
                         <button type="button" onclick="adicionarLinhaPCMSO()" class="bg-slate-900 text-white font-bold px-4 py-1.5 rounded uppercase">➕ Incluir Linha no PCMSO</button>
                     </div>
@@ -496,6 +513,7 @@
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="bg-slate-800 text-white font-bold uppercase">
+                                <th class="p-2">Empresa Cliente</th>
                                 <th class="p-2">Lotação</th>
                                 <th class="p-2">Processo Operacional</th>
                                 <th class="p-2">Cargo</th>
@@ -504,6 +522,7 @@
                                 <th class="p-2">Risco (Agravo)</th>
                                 <th class="p-2">Descrição dos Exames</th>
                                 <th class="p-2 text-center">Periodicidade</th>
+                                <th class="p-2">Plano de Ação (Edição Médica)</th>
                                 <th class="p-2 text-center">Ações</th>
                             </tr>
                         </thead>
@@ -516,18 +535,26 @@
 
         <!-- ABA 7: RELATÓRIO ANALÍTICO PCMSO -->
         <section id="tab-relatorio-pcmso" class="tab-content hidden space-y-4">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                <h2 class="font-extrabold text-slate-900 text-sm md:text-base uppercase flex items-center gap-2">
-                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-amber-600"></i> Relatório Analítico Anual do PCMSO (NR-07 Item 7.6.2)
-                </h2>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
+                <div class="flex flex-wrap justify-between items-center border-b pb-3 gap-2">
+                    <div>
+                        <h2 class="font-extrabold text-slate-900 text-sm md:text-base uppercase flex items-center gap-2">
+                            <i data-lucide="bar-chart-3" class="w-5 h-5 text-amber-600"></i> Relatório Analítico Anual do PCMSO (NR-07 Item 7.6.2)
+                        </h2>
+                        <p class="text-xs text-slate-500">Síntese dos resultados dos exames ocupacionais para acompanhamento epidemiológico.</p>
+                    </div>
+                    <button type="button" onclick="gerarRelatorioPdfAnaliticoPcmso()" class="bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow">
+                        📄 Relatório Analítico (PDF / E-mail)
+                    </button>
+                </div>
                 <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg text-center">
                         <span class="text-xs text-blue-800 font-bold block uppercase">Total Exames</span>
-                        <strong id="stat-total-exames" class="text-2xl font-black text-blue-950">1</strong>
+                        <strong id="stat-total-exames" class="text-2xl font-black text-blue-950">0</strong>
                     </div>
                     <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-lg text-center">
                         <span class="text-xs text-emerald-800 font-bold block uppercase">Aptos</span>
-                        <strong id="stat-total-aptos" class="text-2xl font-black text-emerald-950">1</strong>
+                        <strong id="stat-total-aptos" class="text-2xl font-black text-emerald-950">0</strong>
                     </div>
                     <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg text-center">
                         <span class="text-xs text-amber-800 font-bold block uppercase">Aptos c/ Restrição</span>
@@ -544,16 +571,21 @@
         <!-- ABA 8: MÓDULO FINANCEIRO -->
         <section id="tab-producao" class="tab-content hidden space-y-4">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
-                <div class="flex justify-between items-center border-b pb-3">
+                <div class="flex flex-wrap justify-between items-center border-b pb-3 gap-2">
                     <div>
                         <h2 class="font-extrabold text-slate-900 text-sm md:text-base uppercase flex items-center gap-2">
                             <i data-lucide="line-chart" class="w-5 h-5 text-emerald-700"></i> Posição Financeira / Relatório de Produção por Clínica Credenciada
                         </h2>
                         <p class="text-xs text-slate-500">Módulo financeiro exclusivo do Gestor e da Clínica Credenciada para conferência de faturamento com colunas separadas.</p>
                     </div>
-                    <button onclick="window.print()" class="bg-slate-900 text-white font-bold text-xs px-4 py-2 rounded flex items-center gap-1 shadow">
-                        <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Posição Financeira (PDF)
-                    </button>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="gerarRelatorioPdfFinanceiroProducao()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow">
+                            📄 Fechamento Financeiro (PDF / E-mail)
+                        </button>
+                        <button type="button" onclick="window.print()" class="bg-slate-900 text-white font-bold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow">
+                            <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Posição Financeira (PDF)
+                        </button>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -577,12 +609,11 @@
 
                 <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex justify-between items-center font-bold text-sm text-emerald-950 col-valor-sigilo">
                     <span>SOMA TOTAL DOS SERVIÇOS REALIZADOS:</span>
-                    <span id="valor-soma-total-producao" class="text-lg text-emerald-700">R$ 85,00</span>
+                    <span id="valor-soma-total-producao" class="text-lg text-emerald-700">R$ 0,00</span>
                 </div>
             </div>
         </section>
 
-        <!-- ABA 9: CHAT DIRETO PRIVADO MULTI-PERFIS -->
         <section id="tab-chat" class="tab-content hidden space-y-4">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
                 <h2 class="font-extrabold text-slate-900 text-sm uppercase flex items-center gap-2 border-b pb-2">
@@ -630,6 +661,8 @@
         </section>
 
         <!-- ABA 10: CADASTROS DE CLIENTES, MÉDICO RESPONSÁVEL DO PCMSO & CLÍNICAS -->
+
+        <!-- ABA 10: CADASTROS DE CLIENTES, MÉDICO RESPONSÁVEL DO PCMSO & CLÍNICAS -->
         <section id="tab-cadastros" class="tab-content hidden space-y-6">
             
             <!-- DADOS DO GESTOR BOREAL -->
@@ -646,9 +679,15 @@
 
             <!-- CADASTRO DE CLIENTES & MÉDICO RESPONSÁVEL DO PCMSO (COM CONTATOS HOME OFFICE) -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
-                <h2 class="font-extrabold text-slate-900 text-sm uppercase border-b pb-2 flex items-center gap-2">
-                    <i data-lucide="building" class="w-4 h-4 text-blue-700"></i> Cadastro de Clientes & Médico Responsável pelo PCMSO
-                </h2>
+                <div class="flex justify-between items-center border-b pb-2">
+                    <h2 class="font-extrabold text-slate-900 text-sm uppercase flex items-center gap-2">
+                        <i data-lucide="building" class="w-4 h-4 text-blue-700"></i> Cadastro de Clientes & Médico Responsável pelo PCMSO
+                    </h2>
+                    <label class="bg-blue-800 hover:bg-blue-900 text-white font-bold text-xs px-3 py-1 rounded cursor-pointer flex items-center gap-1 shadow">
+                        <i data-lucide="scan" class="w-3.5 h-3.5"></i> Ler Documento por IA
+                        <input type="file" accept=".pdf,image/*,.docx" class="hidden" onchange="processarDocumentoClienteIA(event)">
+                    </label>
+                </div>
                 
                 <div id="box-form-cliente" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs bg-slate-50 p-3 rounded border">
                     <div class="md:col-span-2">
@@ -675,23 +714,23 @@
                     <div class="md:col-span-4 bg-amber-50 border border-amber-300 p-3 rounded-lg grid grid-cols-1 md:grid-cols-3 gap-2">
                         <div>
                             <label class="font-bold text-amber-950 block mb-0.5">Nome do Médico Responsável do PCMSO *</label>
-                            <input type="text" id="cad_cli_med_pcmso" value="DRA. LUIZA BRABETZ SANDONATO" class="w-full border rounded p-1.5 bg-white font-bold text-blue-900">
+                            <input type="text" id="cad_cli_med_pcmso" placeholder="DRA. LUIZA BRABETZ SANDONATO" class="w-full border rounded p-1.5 bg-white font-bold text-blue-900">
                         </div>
                         <div>
                             <label class="font-bold text-amber-950 block mb-0.5">CRM / UF *</label>
-                            <input type="text" id="cad_cli_med_crm" value="CRM SP 145328" class="w-full border rounded p-1.5 bg-white font-bold">
+                            <input type="text" id="cad_cli_med_crm" placeholder="CRM SP 145328" class="w-full border rounded p-1.5 bg-white font-bold">
                         </div>
                         <div>
                             <label class="font-bold text-amber-950 block mb-0.5">RQE (Especialidade)</label>
-                            <input type="text" id="cad_cli_med_rqe" value="RQE 76959" class="w-full border rounded p-1.5 bg-white font-bold">
+                            <input type="text" id="cad_cli_med_rqe" placeholder="RQE 76959" class="w-full border rounded p-1.5 bg-white font-bold">
                         </div>
                         <div>
                             <label class="font-bold text-amber-950 block mb-0.5">WhatsApp Médico (Home Office) *</label>
-                            <input type="text" id="cad_cli_med_whats" value="(19) 99156-7153" class="w-full border rounded p-1.5 bg-white font-bold text-emerald-800">
+                            <input type="text" id="cad_cli_med_whats" placeholder="(19) 99156-7153" class="w-full border rounded p-1.5 bg-white font-bold text-emerald-800">
                         </div>
                         <div class="md:col-span-2">
                             <label class="font-bold text-amber-950 block mb-0.5">E-mail Médico (Notificação PCMSO) *</label>
-                            <input type="text" id="cad_cli_med_email" value="medico.pcmso@borealengmed.com.br" class="w-full border rounded p-1.5 bg-white font-bold text-blue-800">
+                            <input type="text" id="cad_cli_med_email" placeholder="medico.pcmso@borealengmed.com.br" class="w-full border rounded p-1.5 bg-white font-bold text-blue-800">
                         </div>
                     </div>
 
@@ -724,9 +763,15 @@
 
             <!-- CADASTRO DE CLÍNICAS CREDENCIADAS COM ENDEREÇO -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
-                <h2 class="font-extrabold text-slate-900 text-sm uppercase border-b pb-2 flex items-center gap-2">
-                    <i data-lucide="hospital" class="w-4 h-4 text-emerald-700"></i> Cadastro de Clínicas Credenciadas (com Endereço Atendimento)
-                </h2>
+                <div class="flex justify-between items-center border-b pb-2">
+                    <h2 class="font-extrabold text-slate-900 text-sm uppercase flex items-center gap-2">
+                        <i data-lucide="hospital" class="w-4 h-4 text-emerald-700"></i> Cadastro de Clínicas Credenciadas (com Endereço Atendimento)
+                    </h2>
+                    <label class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-1 rounded cursor-pointer flex items-center gap-1 shadow">
+                        <i data-lucide="scan" class="w-3.5 h-3.5"></i> Ler Documento por IA
+                        <input type="file" accept=".pdf,image/*,.docx" class="hidden" onchange="processarDocumentoClinicaIA(event)">
+                    </label>
+                </div>
 
                 <div id="box-form-clinica" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs bg-slate-50 p-3 rounded border">
                     <div>
@@ -774,9 +819,74 @@
                     </table>
                 </div>
             </div>
-        </section>
 
-    </main>
+            <!-- CADASTRO DE MÉDICOS EXAMINADORES E HOMOLOGADORES INDEPENDENTES (COM IA) -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <h2 class="font-extrabold text-slate-900 text-sm uppercase flex items-center gap-2">
+                        <i data-lucide="user-plus" class="w-4 h-4 text-indigo-700"></i> Cadastro de Médicos (Examinadores & Homologadores)
+                    </h2>
+                    <label class="bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs px-3 py-1 rounded cursor-pointer flex items-center gap-1 shadow">
+                        <i data-lucide="scan" class="w-3.5 h-3.5"></i> Ler Documento por IA
+                        <input type="file" accept=".pdf,image/*,.docx" class="hidden" onchange="processarDocumentoMedicoIA(event)">
+                    </label>
+                </div>
+
+                <div id="box-form-medico" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs bg-slate-50 p-3 rounded border">
+                    <div>
+                        <label class="font-bold block mb-1">Nome Completo do Médico *</label>
+                        <input type="text" id="cad_med_nome" placeholder="DR. NOME DO MÉDICO" class="w-full border rounded p-1.5 bg-white font-bold">
+                    </div>
+                    <div>
+                        <label class="font-bold block mb-1">CRM / UF *</label>
+                        <input type="text" id="cad_med_crm" placeholder="CRM SP 000000" class="w-full border rounded p-1.5 bg-white font-bold">
+                    </div>
+                    <div>
+                        <label class="font-bold block mb-1">RQE / Especialidade</label>
+                        <input type="text" id="cad_med_rqe" placeholder="RQE 00000" class="w-full border rounded p-1.5 bg-white font-bold">
+                    </div>
+                    <div>
+                        <label class="font-bold block mb-1">Tipo de Atuação *</label>
+                        <select id="cad_med_tipo" class="w-full border rounded p-1.5 bg-white font-bold">
+                            <option value="MÉDICO EXAMINADOR INDEPENDENTE">MÉDICO EXAMINADOR INDEPENDENTE</option>
+                            <option value="MÉDICO HOMOLOGADOR INDEPENDENTE">MÉDICO HOMOLOGADOR INDEPENDENTE</option>
+                            <option value="MÉDICO EXAMINADOR (CLÍNICA)">MÉDICO EXAMINADOR (CLÍNICA)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="font-bold block mb-1">Telefone / WhatsApp *</label>
+                        <input type="text" id="cad_med_tel" placeholder="(19) 90000-0000" class="w-full border rounded p-1.5 bg-white font-bold">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="font-bold block mb-1">E-mail para Acesso e Notificações *</label>
+                        <input type="text" id="cad_med_email" placeholder="medico@email.com" class="w-full border rounded p-1.5 bg-white font-bold">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="button" onclick="salvarNovoMedico()" class="w-full bg-indigo-700 hover:bg-indigo-800 text-white font-extrabold p-2 rounded text-xs uppercase shadow">
+                            💾 Salvar Médico
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-200 text-slate-800 font-bold uppercase">
+                                <th class="p-2">Nome do Médico</th>
+                                <th class="p-2">CRM / UF (RQE)</th>
+                                <th class="p-2">Tipo de Atuação</th>
+                                <th class="p-2">Telefone / WhatsApp</th>
+                                <th class="p-2">E-mail</th>
+                                <th class="p-2 text-center">Status</th>
+                                <th class="p-2 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="medicos-cadastrados-tbody" class="divide-y divide-slate-200">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
     <!-- MODAL DE RESPOSTA DE AGENDAMENTO -->
     <div id="modal-resposta-agendamento" class="fixed inset-0 modal-bg z-50 hidden flex items-center justify-center p-4">

@@ -498,7 +498,9 @@ function aplicarPermissoesPerfilDefinitivo() {
     const selRole = document.getElementById('user-role-select');
     if (selRole) {
         selRole.value = currentRole;
-        selRole.disabled = (currentRole !== 'GESTOR');
+        // O seletor NUNCA trava para quem fez login como GESTOR
+        const perfilOriginal = (usuarioLogado && usuarioLogado.role) ? usuarioLogado.role : 'GESTOR';
+        selRole.disabled = (perfilOriginal !== 'GESTOR');
     }
 
     const lblQtdVal = document.getElementById('lbl_ped_qtd_valor');
@@ -510,25 +512,25 @@ function aplicarPermissoesPerfilDefinitivo() {
         if (lblQtdVal) lblQtdVal.textContent = "Qtd / Valor Unit. (R$)";
     }
 
-    // Formulário superior de inclusão de cargos no PCMSO: Exclusivo do GESTOR
+    // Formulário superior da Matriz PCMSO: Exclusivo GESTOR
     const pcmsoForm = document.getElementById('pcmso-form-container');
     if (pcmsoForm) {
         pcmsoForm.style.display = (currentRole === 'GESTOR') ? 'block' : 'none';
     }
 
-    // Botão de upload de planilha da Matriz PCMSO: Exclusivo do GESTOR
+    // Botão de upload da Matriz PCMSO: Exclusivo GESTOR
     const btnUploadPcmso = document.getElementById('btn-upload-matriz-pcmso');
     if (btnUploadPcmso) {
         btnUploadPcmso.style.display = (currentRole === 'GESTOR') ? 'inline-flex' : 'none';
     }
 
-    // Painel de inclusão manual de homologação: Exclusivo de GESTOR e MEDICO_HOMOLOGADOR
+    // Painel de inclusão manual de Homologação: Exclusivo GESTOR e MEDICO_HOMOLOGADOR
     const painelHomologacao = document.getElementById('painel-inclusao-homologacao');
     if (painelHomologacao) {
         painelHomologacao.style.display = (currentRole === 'GESTOR' || currentRole === 'MEDICO_HOMOLOGADOR') ? 'block' : 'none';
     }
 
-    // Botão de upload de afastamentos na Homologação: Liberado para CLIENTE e GESTOR
+    // Botão de upload de planilha de Homologação: Liberado para CLIENTE e GESTOR
     const btnUploadHomologacao = document.getElementById('btn-upload-planilha-homologacao');
     if (btnUploadHomologacao) {
         btnUploadHomologacao.style.display = (currentRole === 'CLIENTE' || currentRole === 'GESTOR' || currentRole === 'MEDICO_HOMOLOGADOR') ? 'inline-flex' : 'none';
@@ -628,7 +630,6 @@ function aplicarPermissoesPerfilDefinitivo() {
     renderHomologacaoTabela();
     atualizarHeaderPcmsoMedico();
 }
-
 function alterarSenhaMaster() {
     const pwd = prompt("Digite a nova Senha Master:");
     if (pwd) { alert("Senha Master redefinida com sucesso!"); }
@@ -1096,23 +1097,62 @@ function abrirAnamneseModal(id) {
 
 function salvarAnamnese() {
     const item = asoQueueData.find(x => x.id === selectedAsoId);
-    if (item) {
-        item.anamnese = {
-            unidade: document.getElementById('anam_unidade').value,
-            setor: document.getElementById('anam_setor').value,
-            acidOutro: document.getElementById('anam_acid_outro').value,
-            acidOutroDesc: document.getElementById('anam_acid_outro_desc').value,
-            limitacao: document.getElementById('anam_limitacao').value,
-            limitacaoDesc: document.getElementById('anam_limitacao_desc').value,
-            obs: document.getElementById('anam_obs').value,
-            dataConclusao: new Date().toLocaleDateString('pt-BR')
-        };
-        alert("Ficha de Anamnese completa salva com sucesso!");
-        fecharModal('modal-anamnese');
-        renderFilaAso();
-    }
-}
+    if (!item) return;
 
+    // Coleta todas as caixas de seleção e campos preenchidos
+    item.anamnese = {
+        unidade: document.getElementById('anam_unidade')?.value || '',
+        setor: document.getElementById('anam_setor')?.value || '',
+        contato: document.getElementById('anam_contato')?.value || '',
+        sangue: document.getElementById('anam_sangue')?.value || 'O+',
+        acidOutro: document.getElementById('anam_acid_outro')?.value || 'NÃO',
+        acidOutroDesc: document.getElementById('anam_acid_outro_desc')?.value || '',
+        limitacao: document.getElementById('anam_limitacao')?.value || 'NÃO',
+        limitacaoDesc: document.getElementById('anam_limitacao_desc')?.value || '',
+        // Antecedentes Familiares
+        fam_tb: document.getElementById('fam_tb')?.checked || false,
+        fam_diab: document.getElementById('fam_diab')?.checked || false,
+        fam_cancer: document.getElementById('fam_cancer')?.checked || false,
+        fam_asma: document.getElementById('fam_asma')?.checked || false,
+        fam_surdez: document.getElementById('fam_surdez')?.checked || false,
+        fam_mental: document.getElementById('fam_mental')?.checked || false,
+        fam_coracao: document.getElementById('fam_coracao')?.checked || false,
+        fam_desc_geral: document.getElementById('fam_desc_geral')?.value || '',
+        // Antecedentes Pessoais
+        pess_has: document.getElementById('pess_has')?.checked || false,
+        pess_pne: document.getElementById('pess_pne')?.checked || false,
+        pess_dor_peito: document.getElementById('pess_dor_peito')?.checked || false,
+        pess_fratura: document.getElementById('pess_fratura')?.checked || false,
+        pess_renal: document.getElementById('pess_renal')?.checked || false,
+        pess_onco: document.getElementById('pess_onco')?.checked || false,
+        pess_diab: document.getElementById('pess_diab')?.checked || false,
+        pess_resfriado: document.getElementById('pess_resfriado')?.checked || false,
+        pess_figado: document.getElementById('pess_figado')?.checked || false,
+        pess_convulsao: document.getElementById('pess_convulsao')?.checked || false,
+        pess_estomago: document.getElementById('pess_estomago')?.checked || false,
+        pess_med_controlado: document.getElementById('pess_med_controlado')?.checked || false,
+        pess_respiratorio: document.getElementById('pess_respiratorio')?.checked || false,
+        pess_alergia_med: document.getElementById('pess_alergia_med')?.checked || false,
+        pess_oculares: document.getElementById('pess_oculares')?.checked || false,
+        pess_fobia: document.getElementById('pess_fobia')?.checked || false,
+        pess_audicao: document.getElementById('pess_audicao')?.checked || false,
+        pess_natacao: document.getElementById('pess_natacao')?.checked || false,
+        // Hábitos e Condições Complementares
+        comp_estresse: document.getElementById('comp_estresse')?.checked || false,
+        comp_alimentacao: document.getElementById('comp_alimentacao')?.checked || false,
+        comp_esporte: document.getElementById('comp_esporte')?.checked || false,
+        comp_insonia: document.getElementById('comp_insonia')?.checked || false,
+        comp_anticoncep: document.getElementById('comp_anticoncep')?.checked || false,
+        comp_ciclo: document.getElementById('comp_ciclo')?.checked || false,
+        comp_gestante: document.getElementById('comp_gestante')?.checked || false,
+        obs: document.getElementById('anam_obs')?.value || 'Sem alterações registradas.',
+        dataConclusao: new Date().toLocaleDateString('pt-BR')
+    };
+
+    alert("Ficha de Anamnese Ocupacional completa salva com sucesso!");
+    fecharModal('modal-anamnese');
+    renderFilaAso();
+}
 function abrirAsoModalBoreal(id) {
     selectedAsoId = id;
     const item = asoQueueData.find(x => x.id === id);
@@ -1459,60 +1499,118 @@ function visualizarAnamneseAnexada(id) {
     if (!item) return;
 
     const paper = document.getElementById('aso-paper-visualizar');
-    const anam = item.anamneseDados || {};
+    const a = item.anamneseDados || {};
 
     if (paper) {
         paper.innerHTML = `
-            <div class="border-b-2 border-black pb-2 flex justify-between items-center">
-                <div>
-                    <strong class="text-sm block font-black">Boreal Engenharia e Medicina</strong>
-                    <span class="text-[10px]">CRM Nº 1011385 | Tel. 19 99156-7153</span>
-                </div>
-                <div class="text-right">
-                    <strong class="text-base font-black uppercase">FICHA DE ANAMNESE OCUPACIONAL</strong>
-                </div>
-            </div>
-
-            <div class="border border-black p-2 bg-slate-50 text-[10px]">
-                <strong class="block border-b border-black font-extrabold uppercase mb-1">DADOS DO TRABALHADOR</strong>
-                <div class="grid grid-cols-2 gap-2">
-                    <div><strong>Nome:</strong> <span class="font-bold text-blue-900">${item.nome}</span></div>
-                    <div><strong>CPF:</strong> ${item.cpf}</div>
-                    <div><strong>Data de Nascimento:</strong> ${item.nasc || 'Não informada'}</div>
-                    <div><strong>Empresa:</strong> ${item.cliente}</div>
-                    <div><strong>Cargo / Função:</strong> ${item.cargo} / ${item.funcao || item.cargo}</div>
-                    <div><strong>Lotação / Setor:</strong> ${anam.setor || item.lotacao || 'OPERACIONAL'}</div>
+            <div class="no-print bg-indigo-50 border-2 border-indigo-500 p-3 rounded-lg shadow mb-4 flex justify-between items-center">
+                <strong class="text-xs uppercase text-indigo-950">📋 Visualização Oficial da Ficha de Anamnese Ocupacional</strong>
+                <div class="flex gap-2">
+                    <button onclick="window.print()" class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-3 py-1 rounded text-xs shadow">
+                        🖨️ Imprimir Anamnese (PDF)
+                    </button>
+                    <button onclick="fecharModalVisualizacaoAso()" class="bg-slate-700 text-white font-bold px-3 py-1 rounded text-xs">✕ Fechar</button>
                 </div>
             </div>
-
-            <div class="border border-black p-2 space-y-2 text-[10px]">
-                <strong class="block border-b border-black font-extrabold uppercase">QUESTIONÁRIO CLÍNICO & OCUPACIONAL</strong>
-                <div><strong>Unidade / Local:</strong> ${anam.unidade || '-'}</div>
-                <div><strong>Acidente de Trabalho Anterior / Outros:</strong> ${anam.acidOutro || 'Não'} ${anam.acidOutroDesc ? ' - Detalhes: ' + anam.acidOutroDesc : ''}</div>
-                <div><strong>Limitação Física ou Restrição:</strong> ${anam.limitacao || 'Não'} ${anam.limitacaoDesc ? ' - Detalhes: ' + anam.limitacaoDesc : ''}</div>
-                <div><strong>Observações Clínicas Adicionais:</strong> ${anam.obs || 'Sem alterações registradas'}</div>
-                <div><strong>Data de Conclusão da Anamnese:</strong> ${anam.dataConclusao || item.fecha}</div>
-            </div>
-
-            <div class="border border-black p-2 text-center space-y-2 text-[10px]">
-                <div class="grid grid-cols-2 gap-4 border-t border-black pt-3 mt-4">
+            <div style="font-family: Arial, sans-serif; font-size: 11px; line-height: 1.4;">
+                <div style="border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 8px; display:flex; justify-content:space-between;">
                     <div>
-                        <strong class="block border-t border-black pt-1">Assinatura do Trabalhador</strong>
-                        <span>Data: ${item.fecha}</span>
+                        <strong style="font-size:13px; text-transform:uppercase;">Boreal Engenharia e Medicina</strong><br>
+                        <span style="font-size:9px; color:#555;">CRM Nº 1011385 | Tel. (19) 99156-7153</span>
+                    </div>
+                    <div style="text-align:right;">
+                        <strong style="font-size:13px; text-transform:uppercase;">FICHA DE ANAMNESE OCUPACIONAL</strong><br>
+                        <span style="font-size:10px;">Emissão: ${item.fecha || a.dataConclusao}</span>
+                    </div>
+                </div>
+
+                <div style="border: 1px solid #000; padding: 6px; margin-bottom: 6px; background:#f8fafc;">
+                    <strong style="display:block; border-bottom:1px solid #000; font-size:10px; text-transform:uppercase; margin-bottom:4px;">Identificação do Trabalhador</strong>
+                    <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap: 4px; font-size:10px;">
+                        <div><b>Nome:</b> ${item.nome}</div>
+                        <div><b>CPF:</b> ${item.cpf}</div>
+                        <div><b>Nascimento:</b> ${item.nasc || 'Não informado'}</div>
+                        <div><b>Empresa:</b> ${item.cliente}</div>
+                        <div><b>Lotação/Setor:</b> ${a.setor || item.lotacao || 'OPERACIONAL'}</div>
+                        <div><b>Cargo:</b> ${item.cargo}</div>
+                    </div>
+                </div>
+
+                <div style="border: 1px solid #000; padding: 6px; margin-bottom: 6px;">
+                    <strong style="display:block; border-bottom:1px solid #000; font-size:10px; text-transform:uppercase; margin-bottom:4px;">1. Antecedentes Ocupacionais</strong>
+                    <div style="font-size:10px;">
+                        <div>• <b>Acidente de Trabalho Anterior:</b> ${a.acidOutro || 'NÃO'} ${a.acidOutroDesc ? `(Detalhes: ${a.acidOutroDesc})` : ''}</div>
+                        <div>• <b>Limitações para Atribuições:</b> ${a.limitacao || 'NÃO'} ${a.limitacaoDesc ? `(Detalhes: ${a.limitacaoDesc})` : ''}</div>
+                    </div>
+                </div>
+
+                <div style="border: 1px solid #000; padding: 6px; margin-bottom: 6px;">
+                    <strong style="display:block; border-bottom:1px solid #000; font-size:10px; text-transform:uppercase; margin-bottom:4px;">2. Antecedentes Familiares</strong>
+                    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 2px; font-size:9.5px;">
+                        <div>[${a.fam_tb ? 'X' : ' '}] Tuberculose</div>
+                        <div>[${a.fam_diab ? 'X' : ' '}] Diabetes</div>
+                        <div>[${a.fam_cancer ? 'X' : ' '}] Câncer</div>
+                        <div>[${a.fam_asma ? 'X' : ' '}] Asma</div>
+                        <div>[${a.fam_surdez ? 'X' : ' '}] Surdez</div>
+                        <div>[${a.fam_mental ? 'X' : ' '}] Doença Mental</div>
+                        <div>[${a.fam_coracao ? 'X' : ' '}] Cardiopatia</div>
+                    </div>
+                    ${a.fam_desc_geral ? `<div style="font-size:9.5px; margin-top:2px;"><b>Detalhes Familiares:</b> ${a.fam_desc_geral}</div>` : ''}
+                </div>
+
+                <div style="border: 1px solid #000; padding: 6px; margin-bottom: 6px;">
+                    <strong style="display:block; border-bottom:1px solid #000; font-size:10px; text-transform:uppercase; margin-bottom:4px;">3. Antecedentes Pessoais & Condições Clínicas</strong>
+                    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 2px; font-size:9.5px;">
+                        <div>[${a.pess_has ? 'X' : ' '}] Cardíaco / Hipertensão</div>
+                        <div>[${a.pess_pne ? 'X' : ' '}] Portador Nec. Especiais</div>
+                        <div>[${a.pess_dor_peito ? 'X' : ' '}] Dor no Peito / Palpitações</div>
+                        <div>[${a.pess_fratura ? 'X' : ' '}] Fratura c/ Sequela</div>
+                        <div>[${a.pess_renal ? 'X' : ' '}] Doenças Renais</div>
+                        <div>[${a.pess_onco ? 'X' : ' '}] Histórico Oncológico</div>
+                        <div>[${a.pess_diab ? 'X' : ' '}] Diabetes</div>
+                        <div>[${a.pess_figado ? 'X' : ' '}] Doenças do Fígado</div>
+                        <div>[${a.pess_convulsao ? 'X' : ' '}] Já teve Convulsão</div>
+                        <div>[${a.pess_estomago ? 'X' : ' '}] Gastrite / Úlcera</div>
+                        <div>[${a.pess_med_controlado ? 'X' : ' '}] Remédio Controlado</div>
+                        <div>[${a.pess_respiratorio ? 'X' : ' '}] Doenças Respiratórias</div>
+                        <div>[${a.pess_alergia_med ? 'X' : ' '}] Alergia a Medicamentos</div>
+                        <div>[${a.pess_oculares ? 'X' : ' '}] Doenças Oculares</div>
+                        <div>[${a.pess_fobia ? 'X' : ' '}] Fobias (Altura/Espaço)</div>
+                        <div>[${a.pess_audicao ? 'X' : ' '}] Restrições Auditivas</div>
+                    </div>
+                </div>
+
+                <div style="border: 1px solid #000; padding: 6px; margin-bottom: 6px;">
+                    <strong style="display:block; border-bottom:1px solid #000; font-size:10px; text-transform:uppercase; margin-bottom:4px;">4. Hábitos e Condições Complementares</strong>
+                    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 2px; font-size:9.5px;">
+                        <div>[${a.comp_estresse ? 'X' : ' '}] Estresse Frequente</div>
+                        <div>[${a.comp_alimentacao ? 'X' : ' '}] Dieta Balanceada</div>
+                        <div>[${a.comp_esporte ? 'X' : ' '}] Pratica Esportes</div>
+                        <div>[${a.comp_insonia ? 'X' : ' '}] Insônia</div>
+                        <div>[${a.comp_anticoncep ? 'X' : ' '}] Anticoncepcional</div>
+                        <div>[${a.comp_gestante ? 'X' : ' '}] Gestante/Lactante</div>
+                    </div>
+                </div>
+
+                <div style="border: 1px solid #000; padding: 6px; margin-bottom: 12px; font-size:10px;">
+                    <b>Observações Médicas:</b> ${a.obs || 'Sem alterações.'}
+                </div>
+
+                <div style="display:flex; justify-content:space-around; margin-top:20px; text-align:center;">
+                    <div>
+                        <div style="border-bottom:1px solid #000; width:200px; margin:0 auto 2px auto;"></div>
+                        <span style="font-size:9.5px;">Assinatura do Trabalhador</span>
                     </div>
                     <div>
-                        ${item.assinaturaMedico ? `<img src="${item.assinaturaMedico}" class="h-10 mx-auto block mb-1">` : ''}
-                        <strong class="block border-t border-black pt-1">${item.medico}</strong>
-                        <span class="text-[10px] block font-bold">${item.medCrm || 'CRM/UF'} | ${item.medRqe || 'RQE'}</span>
-                        <span class="text-[9px] text-slate-600 block">Médico(a) Examinador(a)</span>
+                        <div style="border-bottom:1px solid #000; width:200px; margin:0 auto 2px auto;"></div>
+                        <span style="font-size:9.5px;">${item.medico}<br>Médico Examinador</span>
                     </div>
                 </div>
             </div>
         `;
+        document.getElementById('modal-visualizar-aso-anexado').classList.remove('hidden');
     }
-    document.getElementById('modal-visualizar-aso-anexado').classList.remove('hidden');
 }
-
 function atualizarHeaderPcmsoMedico() {
     const activeCliente = document.getElementById('active-cliente-select') ? document.getElementById('active-cliente-select').value : 'PREFEITURA MUNICIPAL';
     const cliNome = activeCliente === 'ALL' ? 'PREFEITURA MUNICIPAL' : activeCliente;
@@ -2110,45 +2208,72 @@ function processarArquivoAtestadoTop(evt) {
 }
 
 function adicionarHomologacaoDireta() {
-    const trab = document.getElementById('hom_top_trab').value.trim();
-    const setor = document.getElementById('hom_top_setor').value.trim() || 'OPERACIONAL';
-    const dias = parseInt(document.getElementById('hom_top_dias').value) || 1;
-    const cidInput = document.getElementById('hom_top_cid');
-    formatarCidSelecionado(cidInput);
-    const cid = cidInput.value.trim();
-    const medico = document.getElementById('hom_top_medico').value.trim() || 'MÉDICO EMISSOR';
-    const activeCliente = document.getElementById('active-cliente-select') ? document.getElementById('active-cliente-select').value : 'PREFEITURA MUNICIPAL';
-    const clienteNome = activeCliente === 'ALL' ? 'PREFEITURA MUNICIPAL' : activeCliente;
+    try {
+        const trabInput = document.getElementById('hom_top_trab');
+        const trab = trabInput ? trabInput.value.trim() : '';
 
-    if (!trab || !cid) { alert("Preencha Trabalhador e CID-10."); return; }
+        const setorInput = document.getElementById('hom_top_setor');
+        const setor = setorInput ? setorInput.value.trim() : 'OPERACIONAL';
 
-    atestadosHomologacaoData.push({
-        id: Date.now(),
-        cliente: clienteNome,
-        trab,
-        setor,
-        data: new Date().toLocaleDateString('pt-BR'),
-        dias,
-        cid,
-        medico,
-        status: "PENDENTE DE HOMOLOGAÇÃO",
-        parecerTexto: "",
-        medicoHomologador: "DR. ROBERTO ALVES",
-        crmHomologador: "CRM SP 184920",
-        arquivoNome: tempFileAtestadoTop ? tempFileAtestadoTop.nome : "Atestado.pdf",
-        arquivoUrl: tempFileAtestadoTop ? tempFileAtestadoTop.url : "#",
-        arquivoHomologadoAssinadoUrl: null,
-        arquivoHomologadoAssinadoNome: null,
-        ativo: true
-    });
+        const cargoInput = document.getElementById('hom_top_cargo');
+        const cargo = cargoInput ? cargoInput.value.trim() : '-';
 
-    tempFileAtestadoTop = null;
-    renderHomologacaoTabela();
-    document.getElementById('hom_top_trab').value = '';
-    document.getElementById('hom_top_cid').value = '';
-    alert("Empregado relacionado com sucesso! Registro aguardando decisão do Médico Homologador.");
+        const diasInput = document.getElementById('hom_top_dias');
+        const dias = diasInput ? (parseInt(diasInput.value) || 1) : 1;
+
+        const cidInput = document.getElementById('hom_top_cid');
+        let cid = 'A DEFINIR';
+        if (cidInput && cidInput.value.trim() !== '') {
+            formatarCidSelecionado(cidInput);
+            cid = cidInput.value.trim();
+        }
+
+        const medInput = document.getElementById('hom_top_medico');
+        let medico = medInput && medInput.value.trim() !== '' ? medInput.value.trim() : 'MÉDICO EMISSOR';
+        if (!medico.toUpperCase().startsWith('DR')) medico = `DR. ${medico}`;
+
+        const empInput = document.getElementById('hom_top_empresa');
+        const activeCliente = document.getElementById('active-cliente-select')?.value || 'ALL';
+        const clienteNome = (empInput && empInput.value.trim() !== '') ? empInput.value.trim() : (activeCliente === 'ALL' ? 'PREFEITURA MUNICIPAL' : activeCliente);
+
+        if (!trab) {
+            alert("Por favor, preencha o Nome do Trabalhador.");
+            return;
+        }
+
+        atestadosHomologacaoData.push({
+            id: Date.now(),
+            cliente: clienteNome,
+            trab: trab,
+            setor: setor || 'OPERACIONAL',
+            cargo: cargo || '-',
+            data: new Date().toLocaleDateString('pt-BR'),
+            dias: dias,
+            cid: cid,
+            medico: medico,
+            status: "PENDENTE DE HOMOLOGAÇÃO",
+            parecerTexto: "",
+            medicoHomologador: "DR. ROBERTO ALVES",
+            crmHomologador: "CRM SP 184920",
+            arquivoNome: tempFileAtestadoTop ? tempFileAtestadoTop.nome : "Atestado.pdf",
+            arquivoUrl: tempFileAtestadoTop ? tempFileAtestadoTop.url : "#",
+            arquivoHomologadoAssinadoUrl: null,
+            arquivoHomologadoAssinadoNome: null,
+            ativo: true
+        });
+
+        tempFileAtestadoTop = null;
+        renderHomologacaoTabela();
+
+        if (trabInput) trabInput.value = '';
+        if (cargoInput) cargoInput.value = '';
+        if (cidInput) cidInput.value = '';
+        alert("Empregado relacionado com sucesso no módulo de Homologação!");
+    } catch (e) {
+        console.error("Erro ao adicionar homologação direta:", e);
+        alert("Ocorreu um erro ao registrar o empregado. Verifique os campos.");
+    }
 }
-
 function toggleInativarHomologacao(id) {
     const item = atestadosHomologacaoData.find(x => x.id === id);
     if (!item) return;
@@ -2744,40 +2869,6 @@ function adicionarLinhaPCMSO() {
 }
 
 // RENDERIZAÇÃO DA MATRIZ COM PLANO DE AÇÃO EDITÁVEL E TECLA APAGAR
-function renderPcmsoMatriz() {
-    const tbody = document.getElementById('pcmso-matriz-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    const activeCliente = document.getElementById('active-cliente-select') ? document.getElementById('active-cliente-select').value : 'ALL';
-
-    pcmsoMatrizData.filter(p => (activeCliente === 'ALL' || p.cliente === activeCliente) && p.ativo !== false).forEach(item => {
-        const tr = document.createElement('tr');
-        tr.className = "border-b hover:bg-slate-50";
-
-        tr.innerHTML = `
-            <td class="p-2 font-bold text-blue-950">${item.cliente}</td>
-            <td class="p-2 font-bold">${item.lotacao}</td>
-            <td class="p-2">${item.processo}</td>
-            <td class="p-2 font-bold">${item.cargo}</td>
-            <td class="p-2 text-center font-bold">${item.qtd}</td>
-            <td class="p-2 font-semibold text-slate-700">${item.agente || 'AUSÊNCIA DE RISCO'}</td>
-            <td class="p-2 font-semibold text-amber-800">${item.risco || 'NÃO ESPECIFICADO'}</td>
-            <td class="p-2 font-bold text-blue-900">${item.exame}</td>
-            <td class="p-2 text-center font-bold">${item.periodicidade}</td>
-            <td class="p-2">
-                <textarea id="plano_acao_${item.id}" rows="2" class="w-full border p-1 rounded text-[11px] bg-amber-50/60 font-semibold" onchange="atualizarPlanoAcaoPcmso(${item.id}, this.value)">${item.planoAcao || ''}</textarea>
-            </td>
-            <td class="p-2 text-center space-y-1">
-                <button onclick="removerPcmso(${item.id})" class="text-red-600 font-bold hover:underline text-xs block mx-auto">
-                    🗑️ Apagar
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
 function atualizarPlanoAcaoPcmso(id, novoTexto) {
     const item = pcmsoMatrizData.find(x => x.id === id);
     if (item) {
@@ -3064,7 +3155,7 @@ function gerarRelatorioPdfFinanceiroProducao() {
 
     paper.innerHTML = `
         <div class="no-print bg-emerald-50 border-2 border-emerald-500 p-3 rounded-lg shadow mb-4 flex justify-between items-center">
-            <strong class="text-xs uppercase text-emerald-950">📋 Relatório de Fechamento Financeiro & Produção por Clínica</strong>
+            <strong class="text-xs uppercase text-emerald-950">📋 Posição Financeira e Produção de Atendimentos Ocupacionais</strong>
             <div class="flex gap-2">
                 <button onclick="enviarRelatorioEmail('FinanceiroProducao')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1 rounded text-xs shadow">
                     ✉️ Enviar p/ E-mail do Cliente
@@ -3112,8 +3203,6 @@ function gerarRelatorioPdfFinanceiroProducao() {
     `;
     document.getElementById('modal-visualizar-aso-anexado').classList.remove('hidden');
 }
-
-// 5. DISPOSITIVO DE ENVIO DO RELATÓRIO DIRETO POR E-MAIL PARA O SUPABASE / CLIENTE
 function enviarRelatorioEmail(tipoRelatorio) {
     const emailDestino = obterEmailClienteAtivo();
     const activeCliente = document.getElementById('active-cliente-select')?.value || 'EMPRESA CLIENTE';

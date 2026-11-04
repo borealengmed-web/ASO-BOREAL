@@ -3311,3 +3311,395 @@ function apagarClinicaCadastrada(id) {
         atualizarDropdownsClinicas();
     }
 }
+
+// =========================================================================
+// MÓDULO INTEGRAL DE PERSISTÊNCIA EM NUVEM (SUPABASE) & RELATÓRIO ANALÍTICO
+// =========================================================================
+
+// 1. CARREGAMENTO DOS ATESTADOS DE HOMOLOGAÇÃO
+async function carregarHomologacaoDoBanco() {
+    if (!supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient
+            .from('atestados_homologacao')
+            .select('*')
+            .order('id', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+            atestadosHomologacaoData = data.map(d => ({
+                id: Number(d.id),
+                cliente: d.cliente || 'PREFEITURA MUNICIPAL',
+                trab: d.trab || '',
+                setor: d.setor || 'OPERACIONAL',
+                cargo: d.cargo || '-',
+                data: d.data || '',
+                dias: parseInt(d.dias) || 1,
+                cid: d.cid || 'A DEFINIR',
+                medico: d.medico || 'DR. NÃO INFORMADO',
+                status: d.status || 'PENDENTE DE HOMOLOGAÇÃO',
+                parecerTexto: d.parecer_texto || '',
+                medicoHomologador: d.medico_homologador || 'DR. ROBERTO ALVES',
+                crmHomologador: d.crm_homologador || 'CRM SP 184920',
+                arquivoNome: d.arquivo_nome || 'Atestado.pdf',
+                arquivoUrl: d.arquivo_url || '#',
+                arquivoHomologadoAssinadoUrl: d.arquivo_assinado_url || null,
+                arquivoHomologadoAssinadoNome: d.arquivo_assinado_nome || null,
+                ativo: d.ativo !== false
+            }));
+            if (typeof renderHomologacaoTabela === 'function') renderHomologacaoTabela();
+        }
+    } catch (e) {
+        console.warn("Aviso ao carregar atestados do Supabase:", e);
+    }
+}
+
+// 2. CARREGAMENTO DOS PEDIDOS DE AGENDAMENTO
+async function carregarPedidosDoBanco() {
+    if (!supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient
+            .from('pedidos_agendamento')
+            .select('*')
+            .order('id', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+            monitorRequestsData = data.map(d => ({
+                id: Number(d.id),
+                fecha: d.fecha || '',
+                cliente: d.cliente || '',
+                trab: d.trab || '',
+                obj: d.obj || '',
+                qtd: parseInt(d.qtd) || 1,
+                valor: d.valor || '0,00',
+                clinica: d.clinica || '',
+                respostaAgendamento: d.resposta_agendamento || '',
+                status: d.status || 'PENDENTE'
+            }));
+            if (typeof renderMonitorTable === 'function') renderMonitorTable();
+            if (typeof renderProducaoTable === 'function') renderProducaoTable();
+        }
+    } catch (e) {
+        console.warn("Aviso ao carregar pedidos do Supabase:", e);
+    }
+}
+
+// 3. CARREGAMENTO DA MATRIZ DO PCMSO
+async function carregarPcmsoDoBanco() {
+    if (!supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient
+            .from('pcmso_matriz')
+            .select('*')
+            .order('id', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+            pcmsoMatrizData = data.map(d => ({
+                id: Number(d.id),
+                cliente: d.cliente || '',
+                lotacao: d.lotacao || '',
+                processo: d.processo || '',
+                cargo: d.cargo || '',
+                qtd: parseInt(d.qtd) || 1,
+                agente: d.agente || '',
+                risco: d.risco || '',
+                exame: d.exame || '',
+                periodicidade: d.periodicidade || '',
+                planoGestor: d.plano_gestor || '',
+                planoMedico: d.plano_medico || '',
+                ativo: d.ativo !== false
+            }));
+            if (typeof renderPcmsoMatriz === 'function') renderPcmsoMatriz();
+        }
+    } catch (e) {
+        console.warn("Aviso ao carregar matriz PCMSO do Supabase:", e);
+    }
+}
+
+// 4. CÁLCULO DINÂMICO DO RELATÓRIO ANALÍTICO DO PCMSO (NR-07)
+function atualizarEstatisticasAnaliticoPcmso() {
+    const activeCliente = document.getElementById('active-cliente-select')?.value || 'ALL';
+    const lista = asoHistoryData.filter(a => activeCliente === 'ALL' || a.cliente === activeCliente);
+
+    let total = lista.length;
+    let aptos = 0;
+    let restricao = 0;
+    let inaptos = 0;
+
+    lista.forEach(a => {
+        const res = (a.resultado || '').toUpperCase();
+        if (res.includes('INAPTO')) {
+            inaptos++;
+        } else if (res.includes('RESTRIÇÃO') || res.includes('RESTRICAO')) {
+            restricao++;
+        } else if (res.includes('APTO')) {
+            aptos++;
+        }
+    });
+
+    const elTotal = document.getElementById('stat-total-exames');
+    const elAptos = document.getElementById('stat-total-aptos');
+    const elRest = document.getElementById('stat-total-restricao');
+    const elInaptos = document.getElementById('stat-total-inaptos');
+
+    if (elTotal) elTotal.textContent = total;
+    if (elAptos) elAptos.textContent = aptos;
+    if (elRest) elRest.textContent = restricao;
+    if (elInaptos) elInaptos.textContent = inaptos;
+}
+
+// 5. CARREGAMENTO CONJUNTO AO INICIAR OU APÓS LOGIN
+async function carregarTodosDadosSupabase() {
+    if (!supabaseClient) return;
+    try {
+        await Promise.all([
+            (typeof carregarAsosDoBanco === 'function' ? carregarAsosDoBanco() : Promise.resolve()),
+            carregarHomologacaoDoBanco(),
+            carregarPedidosDoBanco(),
+            carregarPcmsoDoBanco()
+        ]);
+        atualizarEstatisticasAnaliticoPcmso();
+    } catch (err) {
+        console.error("Erro na sincronização inicial do Supabase:", err);
+    }
+}
+
+// 6. GRAVAÇÃO AUTOMÁTICA EM NUVEM APÓS AÇÕES DO USUÁRIO
+// A) Grava atestados importados via Excel
+const _orig_processarCargaMassaAtestados = window.processarCargaMassaAtestados;
+window.processarCargaMassaAtestados = function(evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array', cellDates: true, dateNF: 'dd/mm/yyyy' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const matrix = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+
+            if (!matrix || matrix.length === 0) return alert("A planilha está vazia!");
+
+            function normStr(val) {
+                if (!val) return '';
+                return String(val).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().trim();
+            }
+
+            let headerIdx = -1;
+            for (let i = 0; i < Math.min(matrix.length, 10); i++) {
+                const rStr = matrix[i].map(c => normStr(c));
+                if (rStr.some(k => k.includes('TRABALHADOR') || k.includes('SERVIDOR') || k.includes('EMPREGADO') || k.includes('NOME'))) {
+                    headerIdx = i; break;
+                }
+            }
+            if (headerIdx === -1) headerIdx = 0;
+
+            const headerRow = matrix[headerIdx].map(c => normStr(c));
+            const col = {};
+            headerRow.forEach((h, idx) => {
+                if (h.includes('EMPRESA') || h.includes('CLIENTE') || h.includes('RAZAOSOCIAL')) col.empresa = idx;
+                else if (h.includes('CPF') || h.includes('MATRICULA')) col.cpf = idx;
+                else if ((h.includes('TRABALHADOR') || h.includes('SERVIDOR') || h.includes('EMPREGADO') || h.includes('NOME')) && !h.includes('MEDICO')) col.trab = idx;
+                else if (h.includes('CARGO') || h.includes('FUNCAO')) col.cargo = idx;
+                else if (h.includes('LOTACAO') || h.includes('SETOR') || h.includes('SECRETARIA')) col.setor = idx;
+                else if (h.includes('DATA') || h.includes('ATESTADO')) col.data = idx;
+                else if (h.includes('TEMPO') || h.includes('DIAS') || h.includes('AFAST')) col.dias = idx;
+                else if (h.includes('MEDICO') || h.includes('EMISSOR')) col.medico = idx;
+                else if (h.includes('CRM')) col.crm = idx;
+                else if (h.includes('CID') || h.includes('DIAGNOSTICO')) col.cid = idx;
+            });
+
+            const activeCli = document.getElementById('active-cliente-select')?.value || 'ALL';
+            const cliPadrao = activeCli === 'ALL' ? (clientesCadastrados[0]?.nome || "PREFEITURA MUNICIPAL") : activeCli;
+            const dataAtual = new Date().toLocaleDateString('pt-BR');
+            let novosRegistros = [];
+
+            for (let r = headerIdx + 1; r < matrix.length; r++) {
+                const row = matrix[r];
+                if (!row || !row.some(c => c !== '')) continue;
+                let nomeVal = col.trab !== undefined ? String(row[col.trab] || '').trim() : '';
+                if (!nomeVal || nomeVal.length < 2 || normStr(nomeVal).includes('AVALIACAO') || normStr(nomeVal).includes('CONFIDENCIAL')) continue;
+
+                let empresaFinal = (col.empresa !== undefined && String(row[col.empresa] || '').trim()) || cliPadrao;
+                let cpfVal = col.cpf !== undefined ? String(row[col.cpf] || '').replace(/\.0$/, '').trim() : '';
+                let cargoVal = col.cargo !== undefined ? String(row[col.cargo] || '').trim() : '-';
+                let setorVal = col.setor !== undefined ? String(row[col.setor] || '').trim() : 'OPERACIONAL';
+
+                let dataAfast = dataAtual;
+                if (col.data !== undefined && row[col.data]) {
+                    const dRaw = row[col.data];
+                    dataAfast = dRaw instanceof Date ? dRaw.toLocaleDateString('pt-BR') : String(dRaw).trim();
+                }
+
+                let diasNum = 1;
+                if (col.dias !== undefined && row[col.dias]) {
+                    const m = String(row[col.dias]).match(/\d+/);
+                    diasNum = m ? parseInt(m[0]) : 1;
+                }
+
+                let medVal = col.medico !== undefined ? String(row[col.medico] || '').trim() : '';
+                let crmVal = col.crm !== undefined ? String(row[col.crm] || '').replace(/\.0$/, '').trim() : '';
+                let medFinal = medVal ? (medVal.toUpperCase().startsWith('DR') ? medVal : `DR. ${medVal}`) : 'DR. NÃO INFORMADO';
+                if (crmVal && !medFinal.includes(crmVal)) medFinal += ` (CRM: ${crmVal})`;
+
+                let cidFinal = (col.cid !== undefined && String(row[col.cid] || '').trim()) || 'A DEFINIR';
+
+                const objItem = {
+                    id: Date.now() + Math.floor(Math.random() * 10000),
+                    cliente: empresaFinal,
+                    trab: cpfVal ? `${nomeVal} - ${cpfVal}` : nomeVal,
+                    setor: setorVal,
+                    cargo: cargoVal,
+                    data: dataAfast,
+                    dias: diasNum,
+                    cid: cidFinal,
+                    medico: medFinal,
+                    status: "PENDENTE DE HOMOLOGAÇÃO",
+                    parecerTexto: "",
+                    medicoHomologador: "DR. ROBERTO ALVES",
+                    crmHomologador: "CRM SP 184920",
+                    arquivoNome: "AtestadoImportado.pdf",
+                    arquivoUrl: "#",
+                    arquivoHomologadoAssinadoUrl: null,
+                    arquivoHomologadoAssinadoNome: null,
+                    ativo: true
+                };
+
+                atestadosHomologacaoData.push(objItem);
+                novosRegistros.push(objItem);
+            }
+
+            // Grava em lote na nuvem Supabase
+            if (supabaseClient && novosRegistros.length > 0) {
+                const loteDb = novosRegistros.map(a => ({
+                    id: Math.floor(Number(a.id)),
+                    cliente: a.cliente,
+                    trab: a.trab,
+                    setor: a.setor,
+                    cargo: a.cargo,
+                    data: a.data,
+                    dias: a.dias,
+                    cid: a.cid,
+                    medico: a.medico,
+                    status: a.status,
+                    parecer_texto: a.parecerTexto,
+                    medico_homologador: a.medicoHomologador,
+                    crm_homologador: a.crmHomologador,
+                    arquivo_nome: a.arquivoNome,
+                    arquivo_url: a.arquivoUrl,
+                    ativo: true
+                }));
+                await supabaseClient.from('atestados_homologacao').upsert(loteDb);
+            }
+
+            const selCli = document.getElementById('active-cliente-select');
+            if (selCli) selCli.value = 'ALL';
+            renderHomologacaoTabela();
+            alert(`Sucesso! ${novosRegistros.length} registros foram importados e salvos permanentemente no Supabase.`);
+        } catch (err) {
+            console.error("Erro na importação:", err);
+            alert("Erro ao ler e salvar a planilha no Supabase.");
+        }
+    };
+    reader.readAsArrayBuffer(file);
+};
+
+// B) Grava pedidos de agendamento disparados
+const _orig_dispatchOrder = window.dispatchOrder;
+window.dispatchOrder = async function() {
+    if (orderItemsList.length === 0) return alert("Adicione itens ao pedido!");
+    const clinicaNome = document.getElementById('ped_clinica_target')?.value || 'CLÍNICA CREDENCIADA';
+    const activeCli = document.getElementById('active-cliente-select')?.value || 'PREFEITURA MUNICIPAL';
+    const clienteNome = activeCli === 'ALL' ? 'PREFEITURA MUNICIPAL' : activeCli;
+    const endClinica = (clinicasCadastradas.find(c => c.nome === clinicaNome)?.endereco) || "ENDEREÇO DA CLÍNICA";
+
+    let novosPedidos = [];
+    orderItemsList.forEach(item => {
+        const pId = Date.now() + Math.floor(Math.random() * 10000);
+        const objPedido = {
+            id: pId,
+            fecha: new Date().toLocaleDateString('pt-BR'),
+            cliente: clienteNome,
+            trab: item.trab,
+            obj: item.obj,
+            qtd: parseInt(item.qtd) || 1,
+            valor: item.valor || '0,00',
+            clinica: clinicaNome,
+            respostaAgendamento: `Aguardando confirmação de data/hora na clínica (${endClinica})`,
+            status: "PENDENTE"
+        };
+        monitorRequestsData.push(objPedido);
+        novosPedidos.push(objPedido);
+
+        const partes = item.trab.split('-');
+        asoQueueData.push({
+            id: pId + 1,
+            nome: partes[0] ? partes[0].trim() : item.trab,
+            cpf: partes[1] ? partes[1].trim() : "000.000.000-00",
+            cliente: clienteNome,
+            cargo: "SOLICITADO VIA AGENDAMENTO",
+            tipo: item.obj,
+            status: "AGUARDANDO",
+            anamnese: null
+        });
+    });
+
+    if (supabaseClient && novosPedidos.length > 0) {
+        const lotePedidosDb = novosPedidos.map(p => ({
+            id: Math.floor(Number(p.id)),
+            fecha: p.fecha,
+            cliente: p.cliente,
+            trab: p.trab,
+            obj: p.obj,
+            qtd: p.qtd,
+            valor: p.valor,
+            clinica: p.clinica,
+            resposta_agendamento: p.respostaAgendamento,
+            status: p.status
+        }));
+        await supabaseClient.from('pedidos_agendamento').upsert(lotePedidosDb);
+    }
+
+    alert("Solicitação de agendamento salva no banco e enviada!");
+    orderItemsList = [];
+    renderOrderTable();
+    renderMonitorTable();
+    renderFilaAso();
+    renderProducaoTable();
+};
+
+// C) Grava alterações na Matriz do PCMSO
+const _orig_salvarAlteracaoPcmsoLinha = window.salvarAlteracaoPcmsoLinha;
+window.salvarAlteracaoPcmsoLinha = async function(id) {
+    if (typeof _orig_salvarAlteracaoPcmsoLinha === 'function') {
+        _orig_salvarAlteracaoPcmsoLinha(id);
+    }
+    const item = pcmsoMatrizData.find(x => x.id === id);
+    if (item && supabaseClient) {
+        await supabaseClient.from('pcmso_matriz').upsert([{
+            id: Math.floor(Number(item.id)),
+            cliente: item.cliente,
+            lotacao: item.lotacao,
+            processo: item.processo,
+            cargo: item.cargo,
+            qtd: item.qtd,
+            agente: item.agente,
+            risco: item.risco,
+            exame: item.exame,
+            periodicidade: item.periodicidade,
+            plano_gestor: item.planoGestor || '',
+            plano_medico: item.planoMedico || '',
+            ativo: item.ativo !== false
+        }]);
+    }
+};
+
+// D) Disparo automático ao iniciar e ao trocar o cliente ativo
+document.addEventListener('DOMContentLoaded', () => {
+    carregarTodosDadosSupabase();
+});
+const _selClienteGeral = document.getElementById('active-cliente-select');
+if (_selClienteGeral) {
+    _selClienteGeral.addEventListener('change', () => {
+        atualizarEstatisticasAnaliticoPcmso();
+    });
+}

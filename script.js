@@ -3312,6 +3312,9 @@ function apagarClinicaCadastrada(id) {
     }
 }
 
+
+// =========================================================================
+
 // =========================================================================
 // MÓDULO INTEGRAL DE PERSISTÊNCIA EM NUVEM (SUPABASE) & RELATÓRIO ANALÍTICO
 // =========================================================================
@@ -3463,7 +3466,7 @@ async function carregarTodosDadosSupabase() {
     }
 }
 
-// 6. GRAVAÇÃO AUTOMÁTICA EM NUVEM APÓS AÇÕES DO USUÁRIO
+// 6. PERSISTÊNCIA DAS AÇÕES NO BANCO
 // A) Grava atestados importados via Excel
 const _orig_processarCargaMassaAtestados = window.processarCargaMassaAtestados;
 window.processarCargaMassaAtestados = function(evt) {
@@ -3481,7 +3484,7 @@ window.processarCargaMassaAtestados = function(evt) {
 
             function normStr(val) {
                 if (!val) return '';
-                return String(val).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().trim();
+                return String(val).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().trim();
             }
 
             let headerIdx = -1;
@@ -3703,3 +3706,272 @@ if (_selClienteGeral) {
         atualizarEstatisticasAnaliticoPcmso();
     });
 }
+
+
+// MÓDULO INTELIGÊNCIA ARTIFICIAL: LEITURA E OCR DE DOCUMENTOS (GEMINI API)
+// =========================================================================
+
+function obterGeminiApiKey() {
+    let key = localStorage.getItem('gemini_api_key');
+    if (!key) {
+        key = prompt("🔑 CONFIGURAÇÃO DA IA BOREAL ENGMED:\n\nDigite sua chave de API do Google Gemini (começa com AIzaSy...):\n(Ela será salva com segurança no seu navegador para uso em todos os cadastros)");
+        if (key && key.trim()) {
+            key = key.trim();
+            localStorage.setItem('gemini_api_key', key);
+        } else {
+            return null;
+        }
+    }
+    return key;
+}
+
+window.alterarChaveGemini = function() {
+    const atual = localStorage.getItem('gemini_api_key') || '';
+    const nova = prompt("🔑 Alterar Chave de API do Google Gemini:", atual);
+    if (nova !== null) {
+        if (nova.trim()) {
+            localStorage.setItem('gemini_api_key', nova.trim());
+            alert("Chave Gemini atualizada com sucesso!");
+        } else {
+            localStorage.removeItem('gemini_api_key');
+            alert("Chave Gemini removida.");
+        }
+    }
+};
+
+function converterArquivoParaBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            resolve(base64);
+        };
+        reader.onerror = err => reject(err);
+        reader.readAsDataURL(file);
+    });
+}
+
+async function chamarGeminiVisionExtrairJSON(file, promptInstrucao) {
+    const apiKey = obterGeminiApiKey();
+    if (!apiKey) {
+        alert("Ação cancelada: Chave de API do Google Gemini não configurada.");
+        return null;
+    }
+
+    const base64Data = await converterArquivoParaBase64(file);
+    let mimeType = file.type || 'application/pdf';
+    if (!mimeType || mimeType === 'application/octet-stream') {
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (ext === 'pdf') mimeType = 'application/pdf';
+        else if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
+        else if (ext === 'png') mimeType = 'image/png';
+        else mimeType = 'application/pdf';
+    }
+
+    const payload = {
+        contents: [
+            {
+                parts: [
+                    {
+                        text: promptInstrucao + "\n\nIMPORTANTE: Retorne APENAS um objeto JSON válido, sem formatações Markdown como ```json ou ```."
+                    },
+                    {
+                        inline_data: {
+                            mime_type: mimeType,
+                            data: base64Data
+                        }
+                    }
+                ]
+            }
+        ],
+        generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 2048
+        }
+    };
+
+    // Tenta modelos flash recentes
+    const modelos = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+    let respostaTexto = null;
+
+    for (const mod of modelos) {
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${apiKey}`;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+                    respostaTexto = data.candidates[0].content.parts[0].text;
+                    break;
+                }
+            } else {
+                const errJson = await res.json().catch(() => ({}));
+                console.warn(`Erro no modelo ${mod}:`, errJson);
+            }
+        } catch (e) {
+            console.warn(`Falha na requisição para ${mod}:`, e);
+        }
+    }
+
+    if (!respostaTexto) {
+        throw new Error("Não foi possível obter resposta da API do Gemini. Verifique a validade da sua Chave de API e conexão com a internet.");
+    }
+
+    // Limpa possíveis delimitadores markdown ```json ... ```
+    let limpo = respostaTexto.trim();
+    if (limpo.startsWith('```json')) limpo = limpo.replace(/^```json/, '');
+    if (limpo.startsWith('```')) limpo = limpo.replace(/^```/, '');
+    if (limpo.endsWith('```')) limpo = limpo.replace(/```$/, '');
+    limpo = limpo.trim();
+
+    return JSON.parse(limpo);
+}
+
+// 1. LEITURA IA DO FORMULÁRIO DE CLIENTE & MÉDICO PCMSO
+window.processarDocumentoClienteIA = async function(evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+
+    const btnLabel = evt.target.closest('label');
+    const txtOriginal = btnLabel ? btnLabel.innerHTML : '';
+    if (btnLabel) btnLabel.innerHTML = '⏳ Lendo c/ IA...';
+
+    try {
+        const prompt = `Analise este documento (cartão CNPJ, contrato, ficha cadastral ou documento de saúde) e extraia os seguintes dados cadastrais para uma empresa cliente e o médico coordenador do PCMSO:
+{
+  "razao_social": "Razão Social ou Nome da Empresa",
+  "cnpj": "Número do CNPJ formatado 00.000.000/0001-00",
+  "telefone": "Telefone ou WhatsApp com DDD",
+  "endereco": "Endereço completo (Rua, Número, Bairro, Cidade - UF)",
+  "email": "E-mail de contato",
+  "medico_pcmso": "Nome do Médico Coordenador ou Responsável do PCMSO (com Dra./Dr.)",
+  "crm_pcmso": "CRM e UF do médico (ex: CRM SP 145328)",
+  "rqe_pcmso": "RQE do médico se constar",
+  "whats_medico": "WhatsApp ou telefone do médico se constar",
+  "email_medico": "E-mail do médico se constar"
+}
+Caso não encontre algum campo específico, preencha com string vazia "".`;
+
+        const dados = await chamarGeminiVisionExtrairJSON(file, prompt);
+
+        if (dados) {
+            if (dados.razao_social && document.getElementById('cad_cli_nome')) document.getElementById('cad_cli_nome').value = dados.razao_social.toUpperCase();
+            if (dados.cnpj && document.getElementById('cad_cli_cnpj')) document.getElementById('cad_cli_cnpj').value = dados.cnpj.toUpperCase();
+            if (dados.telefone && document.getElementById('cad_cli_tel')) document.getElementById('cad_cli_tel').value = dados.telefone.toUpperCase();
+            if (dados.endereco && document.getElementById('cad_cli_end')) document.getElementById('cad_cli_end').value = dados.endereco.toUpperCase();
+            if (dados.email && document.getElementById('cad_cli_email')) document.getElementById('cad_cli_email').value = dados.email.toLowerCase();
+            
+            if (dados.medico_pcmso && document.getElementById('cad_cli_med_pcmso')) document.getElementById('cad_cli_med_pcmso').value = dados.medico_pcmso.toUpperCase();
+            if (dados.crm_pcmso && document.getElementById('cad_cli_med_crm')) document.getElementById('cad_cli_med_crm').value = dados.crm_pcmso.toUpperCase();
+            if (dados.rqe_pcmso && document.getElementById('cad_cli_med_rqe')) document.getElementById('cad_cli_med_rqe').value = dados.rqe_pcmso.toUpperCase();
+            if (dados.whats_medico && document.getElementById('cad_cli_med_whats')) document.getElementById('cad_cli_med_whats').value = dados.whats_medico.toUpperCase();
+            if (dados.email_medico && document.getElementById('cad_cli_med_email')) document.getElementById('cad_cli_med_email').value = dados.email_medico.toLowerCase();
+
+            alert(`✅ Sucesso! O documento "${file.name}" foi lido pelo Google Gemini e os campos foram preenchidos.`);
+        }
+    } catch (err) {
+        console.error("Erro na leitura por IA do Cliente:", err);
+        alert("Falha na leitura por IA: " + err.message);
+    } finally {
+        if (btnLabel) btnLabel.innerHTML = txtOriginal;
+        evt.target.value = '';
+    }
+};
+
+// 2. LEITURA IA DO FORMULÁRIO DE CLÍNICA CREDENCIADA
+window.processarDocumentoClinicaIA = async function(evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+
+    const btnLabel = evt.target.closest('label');
+    const txtOriginal = btnLabel ? btnLabel.innerHTML : '';
+    if (btnLabel) btnLabel.innerHTML = '⏳ Lendo c/ IA...';
+
+    try {
+        const prompt = `Analise este documento (cartão CNPJ, alvará, contrato ou proposta comercial de clínica) e extraia os dados para cadastro de clínica credenciada:
+{
+  "nome_clinica": "Nome Fantasia ou Razão Social da Clínica",
+  "cnpj_cidade": "CNPJ e/ou Cidade sede da Clínica",
+  "telefone_whats": "Telefone ou WhatsApp de atendimento com DDD",
+  "email": "E-mail de contato da clínica",
+  "endereco_completo": "Endereço completo de atendimento ao trabalhador (Rua, Número, Bairro, Cidade - UF)"
+}
+Caso não encontre algum campo, preencha com string vazia "".`;
+
+        const dados = await chamarGeminiVisionExtrairJSON(file, prompt);
+
+        if (dados) {
+            if (dados.nome_clinica && document.getElementById('cad_clin_nome')) document.getElementById('cad_clin_nome').value = dados.nome_clinica.toUpperCase();
+            if (dados.cnpj_cidade && document.getElementById('cad_clin_cnpj')) document.getElementById('cad_clin_cnpj').value = dados.cnpj_cidade.toUpperCase();
+            if (dados.telefone_whats && document.getElementById('cad_clin_whats')) document.getElementById('cad_clin_whats').value = dados.telefone_whats.toUpperCase();
+            if (dados.email && document.getElementById('cad_clin_email')) document.getElementById('cad_clin_email').value = dados.email.toLowerCase();
+            if (dados.endereco_completo && document.getElementById('cad_clin_endereco')) document.getElementById('cad_clin_endereco').value = dados.endereco_completo.toUpperCase();
+
+            alert(`✅ Sucesso! O documento da clínica "${file.name}" foi processado pelo Gemini e os campos foram preenchidos.`);
+        }
+    } catch (err) {
+        console.error("Erro na leitura por IA da Clínica:", err);
+        alert("Falha na leitura por IA: " + err.message);
+    } finally {
+        if (btnLabel) btnLabel.innerHTML = txtOriginal;
+        evt.target.value = '';
+    }
+};
+
+// 3. LEITURA IA DO FORMULÁRIO DE MÉDICO (EXAMINADOR / HOMOLOGADOR)
+window.processarDocumentoMedicoIA = async function(evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+
+    const btnLabel = evt.target.closest('label');
+    const txtOriginal = btnLabel ? btnLabel.innerHTML : '';
+    if (btnLabel) btnLabel.innerHTML = '⏳ Lendo c/ IA...';
+
+    try {
+        const prompt = `Analise este documento médico (carteira do CRM, diploma, certidão ética, comprovante de RQE ou currículo) e extraia os seguintes dados:
+{
+  "nome_medico": "Nome completo do médico (precedido de Dr. ou Dra.)",
+  "crm_uf": "Número do CRM e Estado (ex: CRM SP 184920)",
+  "rqe": "Número do RQE ou Especialidade registrada",
+  "tipo_atuacao": "Classifique entre: 'MÉDICO HOMOLOGADOR INDEPENDENTE', 'MÉDICO EXAMINADOR INDEPENDENTE', ou 'MÉDICO EXAMINADOR (CLÍNICA)'",
+  "telefone": "Telefone ou WhatsApp do médico",
+  "email": "E-mail do médico"
+}
+Caso não encontre algum campo, preencha com string vazia "".`;
+
+        const dados = await chamarGeminiVisionExtrairJSON(file, prompt);
+
+        if (dados) {
+            if (dados.nome_medico && document.getElementById('cad_med_nome')) document.getElementById('cad_med_nome').value = dados.nome_medico.toUpperCase();
+            if (dados.crm_uf && document.getElementById('cad_med_crm')) document.getElementById('cad_med_crm').value = dados.crm_uf.toUpperCase();
+            if (dados.rqe && document.getElementById('cad_med_rqe')) document.getElementById('cad_med_rqe').value = dados.rqe.toUpperCase();
+            if (dados.telefone && document.getElementById('cad_med_tel')) document.getElementById('cad_med_tel').value = dados.telefone.toUpperCase();
+            if (dados.email && document.getElementById('cad_med_email')) document.getElementById('cad_med_email').value = dados.email.toLowerCase();
+
+            if (dados.tipo_atuacao && document.getElementById('cad_med_tipo')) {
+                const tipoSel = document.getElementById('cad_med_tipo');
+                const valNorm = dados.tipo_atuacao.toUpperCase();
+                if (valNorm.includes('HOMOLOGADOR')) {
+                    tipoSel.value = 'MÉDICO HOMOLOGADOR INDEPENDENTE';
+                } else if (valNorm.includes('CLÍNICA') || valNorm.includes('CLINICA')) {
+                    tipoSel.value = 'MÉDICO EXAMINADOR (CLÍNICA)';
+                } else {
+                    tipoSel.value = 'MÉDICO EXAMINADOR INDEPENDENTE';
+                }
+            }
+
+            alert(`✅ Sucesso! O documento do médico "${file.name}" foi lido pelo Gemini e os dados foram inseridos.`);
+        }
+    } catch (err) {
+        console.error("Erro na leitura por IA do Médico:", err);
+        alert("Falha na leitura por IA: " + err.message);
+    } finally {
+        if (btnLabel) btnLabel.innerHTML = txtOriginal;
+        evt.target.value = '';
+    }
+};

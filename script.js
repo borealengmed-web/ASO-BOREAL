@@ -3722,12 +3722,12 @@ function obterGeminiApiKey() {
             return null;
         }
     }
-    return key;
+    return key ? key.trim() : null;
 }
 
 window.alterarChaveGemini = function() {
     const atual = localStorage.getItem('gemini_api_key') || '';
-    const nova = prompt("🔑 Alterar Chave de API do Google Gemini:", atual);
+    const nova = prompt("🔑 Alterar Chave de API do Google Gemini:\n(Certifique-se de que não há espaços antes ou depois)", atual);
     if (nova !== null) {
         if (nova.trim()) {
             localStorage.setItem('gemini_api_key', nova.trim());
@@ -3752,7 +3752,7 @@ function converterArquivoParaBase64(file) {
 }
 
 async function chamarGeminiVisionExtrairJSON(file, promptInstrucao) {
-    const apiKey = obterGeminiApiKey();
+    let apiKey = (obterGeminiApiKey() || '').trim();
     if (!apiKey) {
         alert("Ação cancelada: Chave de API do Google Gemini não configurada.");
         return null;
@@ -3790,9 +3790,10 @@ async function chamarGeminiVisionExtrairJSON(file, promptInstrucao) {
         }
     };
 
-    // Tenta modelos flash recentes
-    const modelos = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+    // Modelos oficiais suportados pelo Google AI Studio
+    const modelos = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
     let respostaTexto = null;
+    let ultimoErroGoogle = "";
 
     for (const mod of modelos) {
         try {
@@ -3803,26 +3804,32 @@ async function chamarGeminiVisionExtrairJSON(file, promptInstrucao) {
                 body: JSON.stringify(payload)
             });
 
-            if (res.ok) {
-                const data = await res.json();
+            const data = await res.json().catch(() => null);
+
+            if (res.ok && data) {
                 if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
                     respostaTexto = data.candidates[0].content.parts[0].text;
                     break;
                 }
+            } else if (data && data.error) {
+                ultimoErroGoogle = `[Erro Google: ${data.error.status || res.status}] ${data.error.message || 'Erro desconhecido'}`;
+                console.warn(`Erro no modelo ${mod}:`, data.error);
+                if (data.error.message?.includes('API key not valid') || data.error.status === 'INVALID_ARGUMENT') {
+                    break;
+                }
             } else {
-                const errJson = await res.json().catch(() => ({}));
-                console.warn(`Erro no modelo ${mod}:`, errJson);
+                ultimoErroGoogle = `Status HTTP: ${res.status} (${res.statusText})`;
             }
         } catch (e) {
+            ultimoErroGoogle = e.message || String(e);
             console.warn(`Falha na requisição para ${mod}:`, e);
         }
     }
 
     if (!respostaTexto) {
-        throw new Error("Não foi possível obter resposta da API do Gemini. Verifique a validade da sua Chave de API e conexão com a internet.");
+        throw new Error(ultimoErroGoogle || "Não foi possível obter resposta da API do Gemini. Verifique a validade da sua Chave de API.");
     }
 
-    // Limpa possíveis delimitadores markdown ```json ... ```
     let limpo = respostaTexto.trim();
     if (limpo.startsWith('```json')) limpo = limpo.replace(/^```json/, '');
     if (limpo.startsWith('```')) limpo = limpo.replace(/^```/, '');
@@ -3831,6 +3838,7 @@ async function chamarGeminiVisionExtrairJSON(file, promptInstrucao) {
 
     return JSON.parse(limpo);
 }
+
 
 // 1. LEITURA IA DO FORMULÁRIO DE CLIENTE & MÉDICO PCMSO
 window.processarDocumentoClienteIA = async function(evt) {

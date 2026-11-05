@@ -775,9 +775,9 @@
                         <i data-lucide="hospital" class="w-4 h-4 text-emerald-700"></i> Cadastro de Clínicas Credenciadas (com Endereço Atendimento)
                     </h2>
                     <label class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-1 rounded cursor-pointer flex items-center gap-1 shadow">
-                        <i data-lucide="scan" class="w-3.5 h-3.5"></i> Ler Documento por IA
-                        <input type="file" accept=".pdf,image/*,.docx" class="hidden" onchange="processarDocumentoClinicaIA(event)">
-                    </label>
+    <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Upload Clínicas (.XLSX)
+    <input type="file" accept=".xlsx, .xls" class="hidden" onchange="processarCargaMassaClinicas(event)">
+</label>
                 </div>
 
                 <div id="box-form-clinica" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs bg-slate-50 p-3 rounded border">
@@ -833,10 +833,10 @@
                     <h2 class="font-extrabold text-slate-900 text-sm uppercase flex items-center gap-2">
                         <i data-lucide="user-plus" class="w-4 h-4 text-indigo-700"></i> Cadastro de Médicos (Examinadores & Homologadores)
                     </h2>
-                    <label class="bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs px-3 py-1 rounded cursor-pointer flex items-center gap-1 shadow">
-                        <i data-lucide="scan" class="w-3.5 h-3.5"></i> Ler Documento por IA
-                        <input type="file" accept=".pdf,image/*,.docx" class="hidden" onchange="processarDocumentoMedicoIA(event)">
-                    </label>
+                    <label class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-1 rounded cursor-pointer flex items-center gap-1 shadow">
+    <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Upload Médicos (.XLSX)
+    <input type="file" accept=".xlsx, .xls" class="hidden" onchange="processarCargaMassaMedicos(event)">
+</label>
                 </div>
 
                 <div id="box-form-medico" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs bg-slate-50 p-3 rounded border">
@@ -1166,7 +1166,7 @@
     <div id="modal-novo-aso-avulso" class="fixed inset-0 modal-bg z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl border p-5 space-y-3 text-xs">
             <div class="flex justify-between items-center border-b pb-2">
-                <h3 class="font-extrabold text-sm text-slate-900 uppercase">➕ Cadastrar Novo ASO Avulso</h3>
+               <h3 id="modal-visualizar-titulo" class="font-extrabold text-sm text-slate-900 uppercase">📄 VISUALIZAÇÃO DE DOCUMENTO</h3>
                 <button type="button" onclick="fecharModal('modal-novo-aso-avulso')" class="text-slate-500 font-bold">✕</button>
             </div>
             <div class="space-y-2">

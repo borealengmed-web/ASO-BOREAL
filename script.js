@@ -524,11 +524,11 @@ function aplicarPermissoesPerfilDefinitivo() {
         btnUploadPcmso.style.display = (currentRole === 'GESTOR') ? 'inline-flex' : 'none';
     }
 
-    // Painel de inclusão manual de Homologação: Exclusivo GESTOR e MEDICO_HOMOLOGADOR
-    const painelHomologacao = document.getElementById('painel-inclusao-homologacao');
-    if (painelHomologacao) {
-        painelHomologacao.style.display = (currentRole === 'GESTOR' || currentRole === 'MEDICO_HOMOLOGADOR') ? 'block' : 'none';
-    }
+   // Painel de inclusão manual de Homologação: Liberado para GESTOR, MEDICO_HOMOLOGADOR e CLIENTE
+const painelHomologacao = document.getElementById('painel-inclusao-homologacao');
+if (painelHomologacao) {
+    painelHomologacao.style.display = (currentRole === 'GESTOR' || currentRole === 'MEDICO_HOMOLOGADOR' || currentRole === 'CLIENTE') ? 'block' : 'none';
+}
 
     // Botão de upload de planilha de Homologação: Liberado para CLIENTE e GESTOR
     const btnUploadHomologacao = document.getElementById('btn-upload-planilha-homologacao');
@@ -2352,10 +2352,15 @@ function visualizarLaudoHomologacao(id) {
     const item = atestadosHomologacaoData.find(x => x.id === id);
     if (!item) return;
 
+    // Atualiza o título do modal dinamicamente, eliminando o texto de ASO
+    const tituloModal = document.getElementById('modal-visualizar-titulo');
+    if (tituloModal) {
+        tituloModal.textContent = "📄 PARECER DE HOMOLOGAÇÃO DE ATESTADO MÉDICO";
+    }
+
     const paper = document.getElementById('aso-paper-visualizar');
     if (!paper) return;
 
-    const isPendente = item.status === 'PENDENTE DE HOMOLOGAÇÃO';
     const isHomologado = item.status === 'HOMOLOGADO';
     const isNaoHomologado = item.status === 'NÃO HOMOLOGADO';
     const isParcial = item.status === 'HOMOLOGADO PARCIALMENTE';
@@ -2371,15 +2376,17 @@ function visualizarLaudoHomologacao(id) {
         }
     }
 
+    // Estrutura compacta calibrada para caber rigorosamente em 1 página A4
+    paper.className = "bg-white p-6 max-w-4xl mx-auto text-slate-900 border-2 border-black shadow-2xl text-[12px] leading-snug space-y-3 my-1";
     paper.innerHTML = `
-        <!-- PAINEL SUPERIOR EXCLUSIVO DO MÉDICO HOMOLOGADOR (NÃO SAI NA IMPRESSÃO) -->
-        <div class="no-print bg-purple-50 border-2 border-purple-500 p-3 rounded-lg shadow-md mb-4 space-y-3">
-            <div class="flex justify-between items-center border-b border-purple-200 pb-2">
+        <!-- PAINEL SUPERIOR DO MÉDICO (Ocultado automaticamente na impressão pelo CSS no-print) -->
+        <div class="no-print bg-purple-50 border-2 border-purple-500 p-3 rounded-lg shadow-md mb-3 space-y-2">
+            <div class="flex justify-between items-center border-b border-purple-200 pb-1.5">
                 <strong class="text-xs text-purple-950 font-black uppercase flex items-center gap-1">
                     🩺 Painel de Decisão do Médico Homologador:
                 </strong>
                 <div class="flex gap-2">
-                    <button onclick="imprimirAsoA4()" class="bg-blue-700 hover:bg-blue-800 text-white font-extrabold px-3 py-1 rounded text-xs shadow">
+                    <button onclick="window.print()" class="bg-blue-700 hover:bg-blue-800 text-white font-extrabold px-3 py-1 rounded text-xs shadow">
                         🖨️ Imprimir Parecer (PDF)
                     </button>
                     <button onclick="fecharModalVisualizacaoAso()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3 py-1 rounded text-xs">
@@ -2390,7 +2397,7 @@ function visualizarLaudoHomologacao(id) {
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-2 bg-white p-2 rounded border border-purple-200 text-xs">
                 <div>
-                    <label class="block font-bold text-slate-700 mb-0.5">Decisão da Homologação:</label>
+                    <label class="block font-bold text-slate-700 mb-0.5">Decisão:</label>
                     <select id="edit_hom_decisao_select" onchange="atualizarTextoParecerHomologacaoUI()" class="w-full border p-1 rounded font-black bg-purple-100 text-purple-950">
                         <option value="HOMOLOGADO" ${isHomologado ? 'selected' : ''}>✅ HOMOLOGADO</option>
                         <option value="NÃO HOMOLOGADO" ${isNaoHomologado ? 'selected' : ''}>🚫 NÃO HOMOLOGADO</option>
@@ -2398,24 +2405,24 @@ function visualizarLaudoHomologacao(id) {
                     </select>
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-0.5">Nome do Médico Homologador:</label>
+                    <label class="block font-bold text-slate-700 mb-0.5">Médico Homologador:</label>
                     <input type="text" id="edit_hom_med_nome" value="${item.medicoHomologador || 'DR. ROBERTO ALVES'}" class="w-full border p-1 rounded font-bold bg-slate-50">
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-0.5">CRM / UF do Homologador:</label>
+                    <label class="block font-bold text-slate-700 mb-0.5">CRM / UF:</label>
                     <input type="text" id="edit_hom_med_crm" value="${item.crmHomologador || 'CRM SP 184920'}" class="w-full border p-1 rounded font-bold bg-slate-50">
                 </div>
                 <div class="md:col-span-2">
-                    <label class="block font-bold text-slate-700 mb-0.5">CID-10 (Edição / Ajuste pelo Homologador):</label>
+                    <label class="block font-bold text-slate-700 mb-0.5">CID-10:</label>
                     <input type="text" id="edit_hom_cid" value="${item.cid}" class="w-full border p-1 rounded font-bold bg-slate-50">
                 </div>
                 <div id="edit_hom_dias_container" class="${isParcial ? '' : 'hidden'}">
-                    <label class="block font-bold text-amber-900 mb-0.5">Novo Prazo (Dias Homologados):</label>
+                    <label class="block font-bold text-amber-900 mb-0.5">Dias Homologados:</label>
                     <input type="number" id="edit_hom_dias_parciais" value="${item.dias}" class="w-full border p-1 rounded font-black text-center bg-amber-50">
                 </div>
                 <div class="md:col-span-3">
-                    <label class="block font-bold text-slate-700 mb-0.5">Parecer Técnico / Justificativa Médica:</label>
-                    <textarea id="edit_hom_parecer_justificativa" rows="3" class="w-full border p-1.5 rounded font-semibold text-xs bg-slate-50">${textoParecerPadrao}</textarea>
+                    <label class="block font-bold text-slate-700 mb-0.5">Justificativa / Parecer Técnico:</label>
+                    <textarea id="edit_hom_parecer_justificativa" rows="2" class="w-full border p-1 rounded font-semibold text-xs bg-slate-50">${textoParecerPadrao}</textarea>
                 </div>
                 <div class="md:col-span-3 flex justify-end">
                     <button onclick="salvarDecisaoMedicoHomologador(${item.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-4 py-1.5 rounded text-xs shadow">
@@ -2425,29 +2432,32 @@ function visualizarLaudoHomologacao(id) {
             </div>
         </div>
 
-        <!-- CORPO OFICIAL DO PARECER DE HOMOLOGAÇÃO (FOLHA IMPRESSA) -->
+        <!-- FOLHA OFICIAL DO LAUDO (EXATAMENTE 1 PÁGINA A4) -->
         <div class="border-b-2 border-black pb-2 flex justify-between items-center">
             <div>
-                <strong class="text-sm block font-black">Boreal Engenharia e Medicina</strong>
-                <span class="text-[10px]">CRM Nº 1011385 | Tel. 19 99156-7153</span>
+                <strong class="text-sm block font-black uppercase text-blue-950">Boreal Engenharia e Medicina</strong>
+                <span class="text-[10px] text-slate-600 font-semibold">CRM Nº 1011385 | Tel. (19) 99156-7153</span>
             </div>
             <div class="text-right">
-                <strong class="text-base font-black uppercase">PARECER DE HOMOLOGAÇÃO DE ATESTADO MÉDICO</strong>
+                <strong class="text-sm font-black uppercase tracking-tight">PARECER DE HOMOLOGAÇÃO DE ATESTADO MÉDICO</strong>
             </div>
         </div>
 
-        <div class="border border-black p-2 bg-slate-50 font-bold uppercase text-[10px] flex justify-between">
+        <div class="border border-black p-2 bg-slate-100 font-bold uppercase text-[10px] flex justify-between">
             <span>EMPRESA CLIENTE: ${item.cliente}</span>
             <span>DATA DA AVALIAÇÃO: ${new Date().toLocaleDateString('pt-BR')}</span>
         </div>
 
-        <div class="border border-black p-2 space-y-1 text-[10px]">
-            <strong class="block border-b border-black font-extrabold uppercase">DADOS DO EMPREGADO E DO ATESTADO EXTERNO</strong>
-            <div><strong>TRABALHADOR:</strong> ${item.trab}</div>
-            <div><strong>SETOR / LOTAÇÃO:</strong> ${item.setor}</div>
-            <div><strong>MÉDICO EMISSOR DO ATESTADO:</strong> ${item.medico}</div>
-            <div><strong>TEMPO DE AFASTAMENTO CONCEDIDO:</strong> ${item.dias} DIA(S) | <strong>DIAGNÓSTICO (CID-10):</strong> ${item.cid}</div>
-            <div><strong>DATA DO ATESTADO EXTERNO:</strong> ${item.data}</div>
+        <div class="border border-black p-2.5 space-y-1 text-[11px]">
+            <strong class="block border-b border-black font-extrabold uppercase text-[10px] pb-0.5">DADOS DO EMPREGADO E DO ATESTADO EXTERNO</strong>
+            <div class="grid grid-cols-2 gap-x-2 pt-0.5">
+                <div><strong>TRABALHADOR:</strong> ${item.trab}</div>
+                <div><strong>SETOR / LOTAÇÃO:</strong> ${item.setor || '-'}</div>
+                <div><strong>CARGO / FUNÇÃO:</strong> ${item.cargo || '-'}</div>
+                <div><strong>MÉDICO EMISSOR:</strong> ${item.medico}</div>
+                <div><strong>DATA DO ATESTADO:</strong> ${item.data}</div>
+                <div><strong>TEMPO SOLICITADO:</strong> ${item.dias} DIA(S) | <strong>CID-10:</strong> ${item.cid}</div>
+            </div>
         </div>
 
         <div class="border border-black p-3 text-[11px] ${isNaoHomologado ? 'bg-red-50 text-red-950' : (isParcial ? 'bg-amber-50 text-amber-950' : 'bg-purple-50 text-purple-950')}">
@@ -2457,24 +2467,25 @@ function visualizarLaudoHomologacao(id) {
             <p class="font-semibold leading-relaxed">${textoParecerPadrao}</p>
         </div>
 
-        <div class="border border-black p-2 text-center space-y-2 text-[10px]">
-            <div class="grid grid-cols-2 gap-4 border-t border-black pt-4 mt-6">
+        <div class="border border-black p-3 text-center space-y-3 text-[11px] bg-slate-50 mt-3">
+            <p class="text-[10px] italic text-slate-600">"Atesto para os devidos fins que o laudo acima representa a decisão pericial conclusiva desta data."</p>
+            <div class="grid grid-cols-2 gap-6 border-t border-black pt-3 items-end">
                 <div>
-                    <strong class="block border-t border-black pt-1">Assinatura / Ciente do Empregado</strong>
-                    <span>Data: ${item.data}</span>
+                    <div class="border-b border-black w-4/5 mx-auto mb-1"></div>
+                    <strong class="block text-[11px] uppercase">Assinatura / Ciente do Empregado</strong>
+                    <span class="text-[10px] text-slate-600 block mt-0.5">Data: ${item.data}</span>
                 </div>
                 <div>
-                    <strong class="block border-t border-black pt-1">${item.medicoHomologador || 'DR. ROBERTO ALVES'} — ${item.crmHomologador || 'CRM SP 184920'}</strong>
-                    <span>Médico Ocupacional Homologador (Assinado Digitalmente)</span>
+                    <div class="border-b border-black w-4/5 mx-auto mb-1"></div>
+                    <strong class="block text-[11px] uppercase">${item.medicoHomologador || 'DR. ROBERTO ALVES'} — ${item.crmHomologador || 'CRM SP 184920'}</strong>
+                    <span class="text-[10px] text-slate-600 block mt-0.5">Médico Ocupacional Homologador</span>
                 </div>
             </div>
         </div>
     `;
 
     document.getElementById('modal-visualizar-aso-anexado').classList.remove('hidden');
-}
-
-function renderHomologacaoTabela() {
+}function renderHomologacaoTabela() {
     const tbody = document.getElementById('atestados-homologacao-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
@@ -4080,3 +4091,906 @@ async function chamarGeminiVisionExtrairJSON(file, promptInstrucao) {
 
     return JSON.parse(limpo);
 }
+
+// Substituição da função renderHistoryTabela com coluna de Ações
+function renderHistoryTabela() {
+    const tbody = document.getElementById('aso-history-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const activeCliente = document.getElementById('active-cliente-select') ? document.getElementById('active-cliente-select').value : 'ALL';
+
+    asoHistoryData.filter(h => {
+        const matchCliente = (activeCliente === 'ALL' || h.cliente === activeCliente);
+        if (!matchCliente) return false;
+        if (currentRole === 'MEDICO_EXAMINADOR_IND') {
+            return h.origem !== 'CLINICA_CREDENCIADA';
+        }
+        return true;
+    }).forEach(h => {
+        const tr = document.createElement('tr');
+        tr.className = "border-b hover:bg-slate-50";
+
+        const isPendenteParecer = h.resultado === "AGUARDANDO PARECER DO MÉDICO";
+        const corStatus = isPendenteParecer ? 'text-amber-600 bg-amber-50 border border-amber-300' : 'text-emerald-700 bg-emerald-50 border border-emerald-300';
+
+        tr.innerHTML = `
+            <td class="p-2.5 text-xs">${h.fecha}</td>
+            <td class="p-2.5 font-bold text-xs">${h.nome}<br><span class="text-slate-500 font-normal">${h.cpf}</span></td>
+            <td class="p-2.5 font-bold text-xs">${h.cliente}</td>
+            <td class="p-2.5 text-center">
+                <span class="font-extrabold text-[11px] px-2 py-1 rounded block ${corStatus}">
+                    ${h.resultado}
+                </span>
+            </td>
+            <td class="p-2.5 font-bold text-xs">${h.medico}</td>
+            <td class="p-2.5 text-center">
+                <button onclick="visualizarAnamneseAnexada(${h.id})" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-900 border border-indigo-300 px-2 py-1 rounded font-bold text-[11px] flex items-center justify-center gap-1 mx-auto shadow-sm">
+                    📋 Anamnese (PDF)
+                </button>
+            </td>
+            <td class="p-2.5 text-center">
+                <button onclick="visualizarAsoAnexado(${h.id})" class="${isPendenteParecer ? 'bg-amber-700 hover:bg-amber-800' : 'bg-slate-900 hover:bg-slate-800'} text-white px-2.5 py-1 rounded font-bold text-[11px] flex items-center justify-center gap-1 mx-auto shadow mb-1">
+                    ${isPendenteParecer ? '🩺 Dar Parecer (Médico)' : '📄 Abrir ASO A4 / Imprimir'}
+                </button>
+                <div class="mt-1">
+                    ${h.arquivoAssinadoUrl ? `
+                        <a href="${h.arquivoAssinadoUrl}" download="${h.arquivoAssinadoNome || 'ASO_Assinado.pdf'}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded font-bold text-[10px] inline-flex items-center gap-1 shadow">
+                            ✅ Baixar ASO Assinado (ICP / Escaneado)
+                        </a>
+                    ` : `
+                        <label class="bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-1.5 py-0.5 rounded font-bold text-[10px] cursor-pointer inline-flex items-center gap-1">
+                            📎 Anexar ASO Assinado
+                            <input type="file" accept=".pdf,image/*" class="hidden" onchange="anexarAsoAssinadoIcp(${h.id}, event)">
+                        </label>
+                    `}
+                </div>
+            </td>
+            <td class="p-2.5 text-center space-y-1">
+                ${currentRole === 'GESTOR' ? `
+                    <button onclick="apagarAsoHistorico(${h.id})" class="text-xs font-bold px-2.5 py-1 rounded bg-red-100 text-red-800 hover:bg-red-200 shadow-sm flex items-center justify-center gap-1 mx-auto">
+                        🗑️ Apagar
+                    </button>
+                ` : `<span class="text-slate-400 italic text-[11px]">-</span>`}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Atualização da função de exclusão com remoção no Supabase
+async function apagarAsoHistorico(id) {
+    if (currentRole !== 'GESTOR') {
+        alert("Somente o GESTOR pode apagar registros do Banco de ASOs!");
+        return;
+    }
+    if (confirm("Tem certeza que deseja apagar permanentemente este ASO?")) {
+        asoHistoryData = asoHistoryData.filter(x => x.id !== id);
+        renderHistoryTabela();
+
+        if (supabaseClient) {
+            try {
+                await supabaseClient.from('asos').delete().eq('id', id);
+            } catch(e) {
+                console.warn("Aviso ao remover ASO do Supabase:", e);
+            }
+        }
+    }
+}
+
+// Substituição de salvarPropriaSenhaUsuario para validar na tabela perfis_usuarios e no Supabase Auth
+async function salvarPropriaSenhaUsuario() {
+    const email = document.getElementById('cad_auto_email').value.trim().toLowerCase();
+    const senha = document.getElementById('cad_auto_senha').value.trim();
+    const conf = document.getElementById('cad_auto_senha_conf').value.trim();
+
+    if (!email || !senha) {
+        alert("Preencha o e-mail e a nova senha.");
+        return;
+    }
+
+    if (senha !== conf) {
+        alert("As senhas digitadas não conferem!");
+        return;
+    }
+
+    if (senha.length < 3) {
+        alert("A senha precisa ter pelo menos 3 dígitos.");
+        return;
+    }
+
+    if (!supabaseClient) {
+        alert("Conexão com o banco de dados indisponível.");
+        return;
+    }
+
+    try {
+        // 1. Verifica se o e-mail existe na tabela perfis_usuarios (onde estão clientes e médicos)
+        let usuarioValido = null;
+        const { data: perfil } = await supabaseClient
+            .from('perfis_usuarios')
+            .select('*')
+            .ilike('email', email)
+            .maybeSingle();
+
+        if (perfil) {
+            usuarioValido = perfil;
+        } else {
+            // Fallback na tabela usuarios se existir
+            const { data: userTab } = await supabaseClient
+                .from('usuarios')
+                .select('*')
+                .ilike('email', email)
+                .maybeSingle();
+            if (userTab) usuarioValido = userTab;
+        }
+
+        if (!usuarioValido) {
+            alert("Acesso não autorizado!\n\nO e-mail informado não foi encontrado nos cadastros autorizados da Boreal Engmed.");
+            return;
+        }
+
+        // 2. Se o usuário estiver autenticado na sessão do navegador, atualiza via Supabase Auth
+        try {
+            await supabaseClient.auth.updateUser({ password: senha });
+        } catch (eAuth) {
+            console.log("Tentativa de update de senha na sessão:", eAuth);
+        }
+
+        // 3. Atualiza também nas tabelas públicas para garantir consistência
+        await supabaseClient
+            .from('perfis_usuarios')
+            .update({ senha: senha })
+            .ilike('email', email);
+
+        await supabaseClient
+            .from('usuarios')
+            .update({ senha: senha })
+            .ilike('email', email);
+
+        alert(`Senha gravada com sucesso para ${usuarioValido.nome || email}!\n\nAgora você já pode entrar no sistema com a sua senha definitiva.`);
+        fecharModalPrimeiroAcesso();
+
+        const loginEmail = document.getElementById('login_usuario_email');
+        const loginSenha = document.getElementById('login_usuario_senha');
+        if (loginEmail) loginEmail.value = email;
+        if (loginSenha) loginSenha.value = senha;
+
+    } catch (e) {
+        console.error("Erro no cadastro de senha:", e);
+        alert("Falha de comunicação ao gravar a senha. Tente novamente.");
+    }
+}
+
+// Permite que CLIENTE e GESTOR anexem o atestado original se faltar
+<td class="p-2 text-center">
+    ${a.arquivoUrl && a.arquivoUrl !== '#' ? `
+        <a href="${a.arquivoUrl}" download="${a.arquivoNome || 'atestado.pdf'}" target="_blank" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 px-2 py-1 rounded inline-flex items-center gap-1 text-[10px] font-bold">
+            📄 Original
+        </a>
+    ` : `
+        <label class="bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 px-1.5 py-0.5 rounded font-bold text-[10px] cursor-pointer inline-flex items-center gap-1">
+            📎 Anexar Original
+            <input type="file" accept=".pdf,image/*" class="hidden" onchange="anexarAtestadoOriginalLinha(${a.id}, event)">
+        </label>
+    `}
+</td>
+
+// Função auxiliar para gravar o anexo do atestado na linha da tabela
+function anexarAtestadoOriginalLinha(id, evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+    const item = atestadosHomologacaoData.find(x => x.id === id);
+    if (item) {
+        item.arquivoNome = file.name;
+        item.arquivoUrl = URL.createObjectURL(file);
+        if (supabaseClient) {
+            supabaseClient.from('atestados_homologacao').update({
+                arquivo_nome: file.name,
+                arquivo_url: item.arquivoUrl
+            }).eq('id', id);
+        }
+        alert(`Atestado ("${file.name}") anexado com sucesso para ${item.trab}!`);
+        renderHomologacaoTabela();
+    }
+}
+
+// =========================================================================
+// MÓDULO CADASTROS: PERSISTÊNCIA COMPLETA (SUPABASE + LOCALSTORAGE) E BOTÕES DE APAGAR
+// =========================================================================
+
+// 1. Armazenamento local para manter os dados salvos mesmo ao deslogar
+function salvarCadastrosLocalStorage() {
+    try {
+        localStorage.setItem('boreal_cadastros_clientes', JSON.stringify(clientesCadastrados));
+        localStorage.setItem('boreal_cadastros_clinicas', JSON.stringify(clinicasCadastradas));
+        localStorage.setItem('boreal_cadastros_medicos', JSON.stringify(medicosCadastrados));
+    } catch(e) {
+        console.warn("Aviso ao salvar cache local de cadastros:", e);
+    }
+}
+
+function carregarCadastrosLocalStorage() {
+    try {
+        const rawCli = localStorage.getItem('boreal_cadastros_clientes');
+        if (rawCli) clientesCadastrados = JSON.parse(rawCli);
+
+        const rawClin = localStorage.getItem('boreal_cadastros_clinicas');
+        if (rawClin) clinicasCadastradas = JSON.parse(rawClin);
+
+        const rawMed = localStorage.getItem('boreal_cadastros_medicos');
+        if (rawMed) medicosCadastrados = JSON.parse(rawMed);
+    } catch(e) {
+        console.warn("Aviso ao carregar cache local de cadastros:", e);
+    }
+}
+
+// 2. Carregamento dos dados vindos do Supabase
+async function carregarCadastrosClientesDoBanco() {
+    if (!supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient
+            .from('cadastros_clientes')
+            .select('*')
+            .order('id', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+            clientesCadastrados = data.map(d => ({
+                id: Number(d.id),
+                nome: d.nome || '',
+                cnpj: d.cnpj || '',
+                tel: d.tel || '',
+                email: d.email || '',
+                end: d.endereco || d.end || '',
+                medPcmso: d.med_pcmso || d.medPcmso || '',
+                crmPcmso: d.crm_pcmso || d.crmPcmso || '',
+                medWhats: d.med_whats || d.medWhats || '',
+                medEmail: d.med_email || d.medEmail || '',
+                ativo: d.ativo !== false
+            }));
+            salvarCadastrosLocalStorage();
+            if (typeof renderClientesTabela === 'function') renderClientesTabela();
+            if (typeof atualizarDropdownsClientes === 'function') atualizarDropdownsClientes();
+        }
+    } catch (e) {
+        console.warn("Aviso ao carregar clientes do Supabase:", e);
+    }
+}
+
+async function carregarCadastrosClinicasDoBanco() {
+    if (!supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient
+            .from('cadastros_clinicas')
+            .select('*')
+            .order('id', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+            clinicasCadastradas = data.map(d => ({
+                id: Number(d.id),
+                nome: d.nome || '',
+                cnpj: d.cnpj || '',
+                whats: d.whats || d.tel || '',
+                email: d.email || '',
+                endereco: d.endereco || '',
+                ativo: d.ativo !== false
+            }));
+            salvarCadastrosLocalStorage();
+            if (typeof renderClinicasTabela === 'function') renderClinicasTabela();
+            if (typeof atualizarDropdownsClinicas === 'function') atualizarDropdownsClinicas();
+        }
+    } catch (e) {
+        console.warn("Aviso ao carregar clínicas do Supabase:", e);
+    }
+}
+
+async function carregarCadastrosMedicosDoBanco() {
+    if (!supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient
+            .from('cadastros_medicos')
+            .select('*')
+            .order('id', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+            medicosCadastrados = data.map(d => ({
+                id: Number(d.id),
+                nome: d.nome || '',
+                crm: d.crm || '',
+                rqe: d.rqe || '',
+                tipo: d.tipo || 'MÉDICO EXAMINADOR INDEPENDENTE',
+                tel: d.tel || '',
+                email: d.email || '',
+                ativo: d.ativo !== false
+            }));
+            salvarCadastrosLocalStorage();
+            if (typeof renderMedicosTabela === 'function') renderMedicosTabela();
+        }
+    } catch (e) {
+        console.warn("Aviso ao carregar médicos do Supabase:", e);
+    }
+}
+
+// 3. Funções de salvamento (Persistência em Nuvem e Cache Local)
+window.salvarNovoCliente = async function() {
+    if (currentRole !== 'GESTOR') { alert("Somente o GESTOR altera o cadastro de Clientes!"); return; }
+    const nome = document.getElementById('cad_cli_nome').value.trim();
+    const cnpj = document.getElementById('cad_cli_cnpj').value.trim();
+    const tel = document.getElementById('cad_cli_tel').value.trim();
+    const email = document.getElementById('cad_cli_email').value.trim();
+    const end = document.getElementById('cad_cli_end').value.trim();
+    const medPcmso = document.getElementById('cad_cli_med_pcmso').value.trim();
+    const crmPcmso = document.getElementById('cad_cli_med_crm').value.trim();
+    const medWhats = document.getElementById('cad_cli_med_whats').value.trim();
+    const medEmail = document.getElementById('cad_cli_med_email').value.trim();
+
+    if (!nome || !cnpj) { alert("Preencha Razão Social e CNPJ."); return; }
+
+    const novoId = Date.now();
+    const novoObj = { id: novoId, nome, cnpj, tel, email, end, medPcmso, crmPcmso, medWhats, medEmail, ativo: true };
+    clientesCadastrados.push(novoObj);
+    salvarCadastrosLocalStorage();
+    renderClientesTabela();
+    atualizarDropdownsClientes();
+
+    if (supabaseClient) {
+        try {
+            await supabaseClient.from('cadastros_clientes').upsert([{
+                id: novoId,
+                nome: nome,
+                cnpj: cnpj,
+                tel: tel,
+                email: email,
+                endereco: end,
+                med_pcmso: medPcmso,
+                crm_pcmso: crmPcmso,
+                med_whats: medWhats,
+                med_email: medEmail,
+                ativo: true
+            }]);
+        } catch (eDb) {
+            console.warn("Aviso ao salvar cliente no Supabase:", eDb);
+        }
+    }
+
+    document.getElementById('cad_cli_nome').value = '';
+    document.getElementById('cad_cli_cnpj').value = '';
+    alert("Cliente e Médico Responsável do PCMSO salvos com sucesso!");
+};
+
+window.salvarNovaClinica = async function() {
+    if (currentRole !== 'GESTOR') { alert("Somente o GESTOR altera o cadastro de Clínicas!"); return; }
+    const nome = document.getElementById('cad_clin_nome').value.trim();
+    const cnpj = document.getElementById('cad_clin_cnpj').value.trim();
+    const whats = document.getElementById('cad_clin_whats').value.trim();
+    const email = document.getElementById('cad_clin_email').value.trim();
+    const endereco = document.getElementById('cad_clin_endereco').value.trim();
+
+    if (!nome) { alert("Informe o nome da clínica."); return; }
+
+    const novoId = Date.now();
+    const novoObj = { id: novoId, nome, cnpj, whats, email, endereco, ativo: true };
+    clinicasCadastradas.push(novoObj);
+    salvarCadastrosLocalStorage();
+    atualizarDropdownsClinicas();
+    renderClinicasTabela();
+
+    if (supabaseClient) {
+        try {
+            await supabaseClient.from('cadastros_clinicas').upsert([{
+                id: novoId,
+                nome: nome,
+                cnpj: cnpj,
+                whats: whats,
+                email: email,
+                endereco: endereco,
+                ativo: true
+            }]);
+        } catch (eDb) {
+            console.warn("Aviso ao salvar clínica no Supabase:", eDb);
+        }
+    }
+
+    document.getElementById('cad_clin_nome').value = '';
+    document.getElementById('cad_clin_cnpj').value = '';
+    document.getElementById('cad_clin_endereco').value = '';
+    alert("Clínica cadastrada com sucesso!");
+};
+
+window.salvarNovoMedico = async function() {
+    if (currentRole !== 'GESTOR') { alert("Somente o GESTOR realiza cadastro de médicos!"); return; }
+    const nome = document.getElementById('cad_med_nome').value.trim();
+    const crm = document.getElementById('cad_med_crm').value.trim();
+    const rqe = document.getElementById('cad_med_rqe').value.trim();
+    const tipo = document.getElementById('cad_med_tipo').value;
+    const tel = document.getElementById('cad_med_tel').value.trim();
+    const email = document.getElementById('cad_med_email').value.trim();
+
+    if (!nome || !crm) { alert("Preencha Nome do Médico e CRM/UF."); return; }
+
+    const novoId = Date.now();
+    const novoObj = { id: novoId, nome, crm, rqe, tipo, tel, email, ativo: true };
+    medicosCadastrados.push(novoObj);
+    salvarCadastrosLocalStorage();
+    renderMedicosTabela();
+
+    if (supabaseClient) {
+        try {
+            await supabaseClient.from('cadastros_medicos').upsert([{
+                id: novoId,
+                nome: nome,
+                crm: crm,
+                rqe: rqe,
+                tipo: tipo,
+                tel: tel,
+                email: email,
+                ativo: true
+            }]);
+        } catch (eDb) {
+            console.warn("Aviso ao salvar médico no Supabase:", eDb);
+        }
+    }
+
+    document.getElementById('cad_med_nome').value = '';
+    document.getElementById('cad_med_crm').value = '';
+    document.getElementById('cad_med_rqe').value = '';
+    document.getElementById('cad_med_tel').value = '';
+    document.getElementById('cad_med_email').value = '';
+    alert("Médico cadastrado com sucesso!");
+};
+
+// 4. Renderização das Tabelas com Botões "🗑️ Apagar"
+window.renderClientesTabela = function() {
+    const tbody = document.getElementById('clientes-cadastrados-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    clientesCadastrados.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.className = `border-b ${!c.ativo ? 'bg-slate-100 text-slate-400' : ''}`;
+        tr.innerHTML = `
+            <td class="p-2 font-bold">${c.nome}</td>
+            <td class="p-2">${c.cnpj}</td>
+            <td class="p-2">${c.tel}</td>
+            <td class="p-2">${c.email || '-'}</td>
+            <td class="p-2 font-bold text-blue-900">${c.medPcmso || '-'} (${c.crmPcmso || ''})<br><span class="text-emerald-700 text-[10px]">📱 ${c.medWhats || ''}</span></td>
+            <td class="p-2 text-center">
+                <button onclick="notificarMedicoPcmso(${c.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-1 rounded text-[10px] shadow">
+                    📲 Avisar Médico
+                </button>
+            </td>
+            <td class="p-2 text-center"><span class="${c.ativo ? 'text-emerald-700 bg-emerald-100' : 'text-red-700 bg-red-100'} px-2 py-0.5 rounded font-bold">${c.ativo ? 'ATIVO' : 'INATIVO'}</span></td>
+            <td class="p-2 text-center space-x-1 whitespace-nowrap">
+                <button onclick="toggleStatusCliente(${c.id})" class="text-xs font-bold px-2 py-1 rounded ${c.ativo ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                    ${c.ativo ? '🚫 Inativar' : '✅ Ativar'}
+                </button>
+                <button onclick="apagarClienteCadastrado(${c.id})" class="text-xs font-bold px-2 py-1 rounded bg-red-100 text-red-800 hover:bg-red-200">
+                    🗑️ Apagar
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
+
+window.renderClinicasTabela = function() {
+    const tbody = document.getElementById('clinicas-cadastradas-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    clinicasCadastradas.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.className = `border-b ${!c.ativo ? 'bg-slate-100 text-slate-400' : ''}`;
+        tr.innerHTML = `
+            <td class="p-2 font-bold">${c.nome}</td>
+            <td class="p-2">${c.cnpj}</td>
+            <td class="p-2 font-semibold text-slate-600">${c.endereco || 'NÃO CADASTRADO'}</td>
+            <td class="p-2">${c.whats}</td>
+            <td class="p-2">${c.email || '-'}</td>
+            <td class="p-2 text-center"><span class="${c.ativo ? 'text-emerald-700 bg-emerald-100' : 'text-red-700 bg-red-100'} px-2 py-0.5 rounded font-bold">${c.ativo ? 'ATIVO' : 'INATIVO'}</span></td>
+            <td class="p-2 text-center space-x-1 whitespace-nowrap">
+                <button onclick="toggleStatusClinica(${c.id})" class="text-xs font-bold px-2 py-1 rounded ${c.ativo ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                    ${c.ativo ? '🚫 Inativar' : '✅ Ativar'}
+                </button>
+                <button onclick="apagarClinicaCadastrada(${c.id})" class="text-xs font-bold px-2 py-1 rounded bg-red-100 text-red-800 hover:bg-red-200">
+                    🗑️ Apagar
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
+
+window.renderMedicosTabela = function() {
+    const tbody = document.getElementById('medicos-cadastrados-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    medicosCadastrados.forEach(m => {
+        const tr = document.createElement('tr');
+        tr.className = `border-b ${!m.ativo ? 'bg-slate-100 text-slate-400' : ''}`;
+        tr.innerHTML = `
+            <td class="p-2 font-bold">${m.nome}</td>
+            <td class="p-2 font-bold text-blue-900">${m.crm} ${m.rqe ? '('+m.rqe+')' : ''}</td>
+            <td class="p-2"><span class="bg-indigo-100 text-indigo-900 font-bold px-2 py-0.5 rounded text-[10px]">${m.tipo}</span></td>
+            <td class="p-2">${m.tel}</td>
+            <td class="p-2">${m.email}</td>
+            <td class="p-2 text-center"><span class="${m.ativo ? 'text-emerald-700 bg-emerald-100' : 'text-red-700 bg-red-100'} px-2 py-0.5 rounded font-bold">${m.ativo ? 'ATIVO' : 'INATIVO'}</span></td>
+            <td class="p-2 text-center space-x-1 whitespace-nowrap">
+                <button onclick="toggleStatusMedico(${m.id})" class="text-xs font-bold px-2 py-1 rounded ${m.ativo ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                    ${m.ativo ? '🚫 Inativar' : '✅ Ativar'}
+                </button>
+                <button onclick="apagarMedico(${m.id})" class="text-xs font-bold px-2 py-1 rounded bg-red-100 text-red-800 hover:bg-red-200">
+                    🗑️ Apagar
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
+
+// 5. Funções de exclusão sincronizadas com Supabase e Cache
+window.apagarClienteCadastrado = async function(id) {
+    if (currentRole !== 'GESTOR') { alert("Somente o GESTOR apaga cadastros!"); return; }
+    if (confirm("Deseja apagar permanentemente esta empresa cliente?")) {
+        clientesCadastrados = clientesCadastrados.filter(c => c.id !== id);
+        salvarCadastrosLocalStorage();
+        renderClientesTabela();
+        atualizarDropdownsClientes();
+
+        if (supabaseClient) {
+            try {
+                await supabaseClient.from('cadastros_clientes').delete().eq('id', id);
+            } catch(e) {
+                console.warn("Aviso ao remover cliente do Supabase:", e);
+            }
+        }
+    }
+};
+
+window.apagarClinicaCadastrada = async function(id) {
+    if (currentRole !== 'GESTOR') { alert("Somente o GESTOR apaga cadastros!"); return; }
+    if (confirm("Deseja apagar permanentemente esta clínica credenciada?")) {
+        clinicasCadastradas = clinicasCadastradas.filter(c => c.id !== id);
+        salvarCadastrosLocalStorage();
+        renderClinicasTabela();
+        atualizarDropdownsClinicas();
+
+        if (supabaseClient) {
+            try {
+                await supabaseClient.from('cadastros_clinicas').delete().eq('id', id);
+            } catch(e) {
+                console.warn("Aviso ao remover clínica do Supabase:", e);
+            }
+        }
+    }
+};
+
+window.apagarMedico = async function(id) {
+    if (currentRole !== 'GESTOR') { alert("Somente o GESTOR pode apagar!"); return; }
+    if (confirm("Tem certeza que deseja apagar o cadastro deste médico?")) {
+        medicosCadastrados = medicosCadastrados.filter(x => x.id !== id);
+        salvarCadastrosLocalStorage();
+        renderMedicosTabela();
+
+        if (supabaseClient) {
+            try {
+                await supabaseClient.from('cadastros_medicos').delete().eq('id', id);
+            } catch(e) {
+                console.warn("Aviso ao remover médico do Supabase:", e);
+            }
+        }
+    }
+};
+
+// 6. Integração do carregamento conjunto no login e na inicialização
+const _orig_carregarTodosDadosSupabase = window.carregarTodosDadosSupabase;
+window.carregarTodosDadosSupabase = async function() {
+    if (typeof _orig_carregarTodosDadosSupabase === 'function') {
+        await _orig_carregarTodosDadosSupabase();
+    }
+    if (supabaseClient) {
+        await Promise.all([
+            carregarCadastrosClientesDoBanco(),
+            carregarCadastrosClinicasDoBanco(),
+            carregarCadastrosMedicosDoBanco()
+        ]);
+    }
+};
+
+// Executa a leitura inicial do cache local para exibir os dados imediatamente
+carregarCadastrosLocalStorage();
+if (typeof renderClientesTabela === 'function') renderClientesTabela();
+if (typeof renderClinicasTabela === 'function') renderClinicasTabela();
+if (typeof renderMedicosTabela === 'function') renderMedicosTabela();
+if (typeof atualizarDropdownsClientes === 'function') atualizarDropdownsClientes();
+if (typeof atualizarDropdownsClinicas === 'function') atualizarDropdownsClinicas();
+
+// =========================================================================
+// MÓDULO CADASTROS: UPLOAD INTELIGENTE EM MASSA VIA EXCEL (.XLSX / .XLS)
+// =========================================================================
+
+function normalizarTextoHeaderExcel(val) {
+    if (!val) return '';
+    return String(val)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .toUpperCase()
+        .trim();
+}
+
+// 1. CARGA EM MASSA DE CLIENTES & MÉDICO PCMSO
+window.processarCargaMassaClientes = function(evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const matrix = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+
+            if (!matrix || matrix.length < 2) return alert("A planilha de clientes está vazia ou sem dados!");
+
+            let headerIdx = -1;
+            for (let i = 0; i < Math.min(matrix.length, 10); i++) {
+                const rStr = matrix[i].map(c => normalizarTextoHeaderExcel(c));
+                if (rStr.some(k => k.includes('RAZAO') || k.includes('CLIENTE') || k.includes('NOME') || k.includes('CNPJ'))) {
+                    headerIdx = i;
+                    break;
+                }
+            }
+            if (headerIdx === -1) headerIdx = 0;
+
+            const headerRow = matrix[headerIdx].map(c => normalizarTextoHeaderExcel(c));
+            const col = {};
+            headerRow.forEach((h, idx) => {
+                if (h.includes('RAZAO') || h.includes('CLIENTE') || h.includes('EMPRESA') || (h.includes('NOME') && !h.includes('MEDICO'))) col.nome = idx;
+                else if (h.includes('CNPJ')) col.cnpj = idx;
+                else if (h.includes('TEL') || h.includes('WHATS') || h.includes('FONE')) col.tel = idx;
+                else if (h.includes('ENDERECO') || h.includes('LOGRADOURO')) col.end = idx;
+                else if (h.includes('EMAIL') && !h.includes('MEDICO')) col.email = idx;
+                else if (h.includes('MEDICO') || h.includes('PCMSO') || h.includes('COORDENADOR')) col.medPcmso = idx;
+                else if (h.includes('CRM')) col.crmPcmso = idx;
+                else if (h.includes('WHATSMEDICO') || h.includes('TELMEDICO')) col.medWhats = idx;
+                else if (h.includes('EMAILMEDICO')) col.medEmail = idx;
+            });
+
+            let novos = [];
+            for (let r = headerIdx + 1; r < matrix.length; r++) {
+                const row = matrix[r];
+                if (!row || !row.some(c => c !== '')) continue;
+
+                const nomeVal = col.nome !== undefined ? String(row[col.nome] || '').trim() : '';
+                if (!nomeVal || nomeVal.length < 2) continue;
+
+                const idItem = Date.now() + Math.floor(Math.random() * 10000) + r;
+                const novoCli = {
+                    id: idItem,
+                    nome: nomeVal.toUpperCase(),
+                    cnpj: col.cnpj !== undefined ? String(row[col.cnpj] || '').trim() : '00.000.000/0001-00',
+                    tel: col.tel !== undefined ? String(row[col.tel] || '').trim() : '',
+                    email: col.email !== undefined ? String(row[col.email] || '').trim().toLowerCase() : '',
+                    end: col.end !== undefined ? String(row[col.end] || '').trim().toUpperCase() : '',
+                    medPcmso: col.medPcmso !== undefined ? String(row[col.medPcmso] || '').trim().toUpperCase() : 'DRA. LUIZA BRABETZ SANDONATO',
+                    crmPcmso: col.crmPcmso !== undefined ? String(row[col.crmPcmso] || '').trim().toUpperCase() : 'CRM SP 145328',
+                    medWhats: col.medWhats !== undefined ? String(row[col.medWhats] || '').trim() : '',
+                    medEmail: col.medEmail !== undefined ? String(row[col.medEmail] || '').trim().toLowerCase() : '',
+                    ativo: true
+                };
+
+                clientesCadastrados.push(novoCli);
+                novos.push(novoCli);
+            }
+
+            salvarCadastrosLocalStorage();
+            renderClientesTabela();
+            atualizarDropdownsClientes();
+
+            if (supabaseClient && novos.length > 0) {
+                const loteSupabase = novos.map(c => ({
+                    id: c.id,
+                    nome: c.nome,
+                    cnpj: c.cnpj,
+                    tel: c.tel,
+                    email: c.email,
+                    endereco: c.end,
+                    med_pcmso: c.medPcmso,
+                    crm_pcmso: c.crmPcmso,
+                    med_whats: c.medWhats,
+                    med_email: c.medEmail,
+                    ativo: true
+                }));
+                await supabaseClient.from('cadastros_clientes').upsert(loteSupabase);
+            }
+
+            alert(`✅ Sucesso! ${novos.length} clientes e médicos PCMSO importados da planilha e salvos com sucesso.`);
+        } catch (err) {
+            console.error("Erro na importação de clientes:", err);
+            alert("Falha ao processar arquivo Excel de clientes.");
+        } finally {
+            evt.target.value = '';
+        }
+    };
+    reader.readAsArrayBuffer(file);
+};
+
+// 2. CARGA EM MASSA DE CLÍNICAS CREDENCIADAS
+window.processarCargaMassaClinicas = function(evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const matrix = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+
+            if (!matrix || matrix.length < 2) return alert("A planilha de clínicas está vazia!");
+
+            let headerIdx = -1;
+            for (let i = 0; i < Math.min(matrix.length, 10); i++) {
+                const rStr = matrix[i].map(c => normalizarTextoHeaderExcel(c));
+                if (rStr.some(k => k.includes('CLINICA') || k.includes('NOME') || k.includes('ENDERECO'))) {
+                    headerIdx = i;
+                    break;
+                }
+            }
+            if (headerIdx === -1) headerIdx = 0;
+
+            const headerRow = matrix[headerIdx].map(c => normalizarTextoHeaderExcel(c));
+            const col = {};
+            headerRow.forEach((h, idx) => {
+                if (h.includes('CLINICA') || h.includes('NOME') || h.includes('RAZAO')) col.nome = idx;
+                else if (h.includes('CNPJ') || h.includes('CIDADE')) col.cnpj = idx;
+                else if (h.includes('WHATS') || h.includes('TEL') || h.includes('FONE')) col.whats = idx;
+                else if (h.includes('EMAIL')) col.email = idx;
+                else if (h.includes('ENDERECO') || h.includes('LOCAL') || h.includes('ATENDIMENTO')) col.endereco = idx;
+            });
+
+            let novos = [];
+            for (let r = headerIdx + 1; r < matrix.length; r++) {
+                const row = matrix[r];
+                if (!row || !row.some(c => c !== '')) continue;
+
+                const nomeVal = col.nome !== undefined ? String(row[col.nome] || '').trim() : '';
+                if (!nomeVal || nomeVal.length < 2) continue;
+
+                const idItem = Date.now() + Math.floor(Math.random() * 10000) + r;
+                const novaClin = {
+                    id: idItem,
+                    nome: nomeVal.toUpperCase(),
+                    cnpj: col.cnpj !== undefined ? String(row[col.cnpj] || '').trim().toUpperCase() : 'CNPJ / CIDADE',
+                    whats: col.whats !== undefined ? String(row[col.whats] || '').trim() : '',
+                    email: col.email !== undefined ? String(row[col.email] || '').trim().toLowerCase() : '',
+                    endereco: col.endereco !== undefined ? String(row[col.endereco] || '').trim().toUpperCase() : 'ENDEREÇO DE ATENDIMENTO',
+                    ativo: true
+                };
+
+                clinicasCadastradas.push(novaClin);
+                novos.push(novaClin);
+            }
+
+            salvarCadastrosLocalStorage();
+            renderClinicasTabela();
+            atualizarDropdownsClinicas();
+
+            if (supabaseClient && novos.length > 0) {
+                const loteSupabase = novos.map(c => ({
+                    id: c.id,
+                    nome: c.nome,
+                    cnpj: c.cnpj,
+                    whats: c.whats,
+                    email: c.email,
+                    endereco: c.endereco,
+                    ativo: true
+                }));
+                await supabaseClient.from('cadastros_clinicas').upsert(loteSupabase);
+            }
+
+            alert(`✅ Sucesso! ${novos.length} clínicas credenciadas importadas e salvas com sucesso.`);
+        } catch (err) {
+            console.error("Erro na importação de clínicas:", err);
+            alert("Falha ao processar arquivo Excel de clínicas.");
+        } finally {
+            evt.target.value = '';
+        }
+    };
+    reader.readAsArrayBuffer(file);
+};
+
+// 3. CARGA EM MASSA DE MÉDICOS (EXAMINADORES E HOMOLOGADORES)
+window.processarCargaMassaMedicos = function(evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const matrix = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+
+            if (!matrix || matrix.length < 2) return alert("A planilha de médicos está vazia!");
+
+            let headerIdx = -1;
+            for (let i = 0; i < Math.min(matrix.length, 10); i++) {
+                const rStr = matrix[i].map(c => normalizarTextoHeaderExcel(c));
+                if (rStr.some(k => k.includes('MEDICO') || k.includes('NOME') || k.includes('CRM'))) {
+                    headerIdx = i;
+                    break;
+                }
+            }
+            if (headerIdx === -1) headerIdx = 0;
+
+            const headerRow = matrix[headerIdx].map(c => normalizarTextoHeaderExcel(c));
+            const col = {};
+            headerRow.forEach((h, idx) => {
+                if (h.includes('MEDICO') || h.includes('NOME') || h.includes('DOUTOR')) col.nome = idx;
+                else if (h.includes('CRM')) col.crm = idx;
+                else if (h.includes('RQE') || h.includes('ESPECIALIDADE')) col.rqe = idx;
+                else if (h.includes('TIPO') || h.includes('ATUACAO') || h.includes('FUNCAO')) col.tipo = idx;
+                else if (h.includes('TEL') || h.includes('WHATS') || h.includes('FONE')) col.tel = idx;
+                else if (h.includes('EMAIL')) col.email = idx;
+            });
+
+            let novos = [];
+            for (let r = headerIdx + 1; r < matrix.length; r++) {
+                const row = matrix[r];
+                if (!row || !row.some(c => c !== '')) continue;
+
+                let nomeVal = col.nome !== undefined ? String(row[col.nome] || '').trim() : '';
+                if (!nomeVal || nomeVal.length < 2) continue;
+                if (!nomeVal.toUpperCase().startsWith('DR')) nomeVal = `DR. ${nomeVal}`;
+
+                let tipoVal = col.tipo !== undefined ? String(row[col.tipo] || '').trim().toUpperCase() : '';
+                if (tipoVal.includes('HOMOLOG')) tipoVal = 'MÉDICO HOMOLOGADOR INDEPENDENTE';
+                else if (tipoVal.includes('CLINICA')) tipoVal = 'MÉDICO EXAMINADOR (CLÍNICA)';
+                else tipoVal = 'MÉDICO EXAMINADOR INDEPENDENTE';
+
+                const idItem = Date.now() + Math.floor(Math.random() * 10000) + r;
+                const novoMed = {
+                    id: idItem,
+                    nome: nomeVal.toUpperCase(),
+                    crm: col.crm !== undefined ? String(row[col.crm] || '').trim().toUpperCase() : 'CRM SP 000000',
+                    rqe: col.rqe !== undefined ? String(row[col.rqe] || '').trim().toUpperCase() : '',
+                    tipo: tipoVal,
+                    tel: col.tel !== undefined ? String(row[col.tel] || '').trim() : '',
+                    email: col.email !== undefined ? String(row[col.email] || '').trim().toLowerCase() : '',
+                    ativo: true
+                };
+
+                medicosCadastrados.push(novoMed);
+                novos.push(novoMed);
+            }
+
+            salvarCadastrosLocalStorage();
+            renderMedicosTabela();
+
+            if (supabaseClient && novos.length > 0) {
+                const loteSupabase = novos.map(m => ({
+                    id: m.id,
+                    nome: m.nome,
+                    crm: m.crm,
+                    rqe: m.rqe,
+                    tipo: m.tipo,
+                    tel: m.tel,
+                    email: m.email,
+                    ativo: true
+                }));
+                await supabaseClient.from('cadastros_medicos').upsert(loteSupabase);
+            }
+
+            alert(`✅ Sucesso! ${novos.length} médicos cadastrados e salvos com sucesso.`);
+        } catch (err) {
+            console.error("Erro na importação de médicos:", err);
+            alert("Falha ao processar arquivo Excel de médicos.");
+        } finally {
+            evt.target.value = '';
+        }
+    };
+    reader.readAsArrayBuffer(file);
+};

@@ -4262,19 +4262,23 @@ async function salvarPropriaSenhaUsuario() {
     }
 }
 
-// Permite que CLIENTE e GESTOR anexem o atestado original se faltar
-<td class="p-2 text-center">
-    ${a.arquivoUrl && a.arquivoUrl !== '#' ? `
-        <a href="${a.arquivoUrl}" download="${a.arquivoNome || 'atestado.pdf'}" target="_blank" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 px-2 py-1 rounded inline-flex items-center gap-1 text-[10px] font-bold">
-            📄 Original
-        </a>
-    ` : `
-        <label class="bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 px-1.5 py-0.5 rounded font-bold text-[10px] cursor-pointer inline-flex items-center gap-1">
-            📎 Anexar Original
-            <input type="file" accept=".pdf,image/*" class="hidden" onchange="anexarAtestadoOriginalLinha(${a.id}, event)">
-        </label>
-    `}
-</td>
+function anexarAtestadoOriginalLinha(id, evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+    const item = atestadosHomologacaoData.find(x => x.id === id);
+    if (item) {
+        item.arquivoNome = file.name;
+        item.arquivoUrl = URL.createObjectURL(file);
+        if (supabaseClient) {
+            supabaseClient.from('atestados_homologacao').update({
+                arquivo_nome: file.name,
+                arquivo_url: item.arquivoUrl
+            }).eq('id', id);
+        }
+        alert(`Atestado ("${file.name}") anexado com sucesso para ${item.trab}!`);
+        renderHomologacaoTabela();
+    }
+}
 
 // Função auxiliar para gravar o anexo do atestado na linha da tabela
 function anexarAtestadoOriginalLinha(id, evt) {

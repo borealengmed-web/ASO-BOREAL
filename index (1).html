@@ -684,16 +684,17 @@
                 </div>
             </div>
 
-            <!-- CADASTRO DE CLIENTES & MÉDICO RESPONSÁVEL DO PCMSO (COM CONTATOS HOME OFFICE) -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
-                <div class="flex justify-between items-center border-b pb-2">
-                    <h2 class="font-extrabold text-slate-900 text-sm uppercase flex items-center gap-2">
-                        <i data-lucide="building" class="w-4 h-4 text-blue-700"></i> Cadastro de Clientes & Médico Responsável pelo PCMSO
-                    </h2>
-                    <label class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-1 rounded cursor-pointer flex items-center gap-1 shadow">
-                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Upload Clientes (.XLSX)
-                        <input type="file" accept=".xlsx, .xls" class="hidden" onchange="processarCargaMassaClientes(event)">
-                    </label>
+      <!-- CADASTRO DE CLIENTES & MÉDICO RESPONSÁVEL DO PCMSO (COM CONTATOS HOME OFFICE) -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
+    <div class="flex justify-between items-center border-b pb-2">
+        <h2 class="font-extrabold text-slate-900 text-sm uppercase flex items-center gap-2">
+            <i data-lucide="building" class="w-4 h-4 text-blue-700"></i> Cadastro de Clientes & Médico Responsável pelo PCMSO
+        </h2>
+        <label class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-1 rounded cursor-pointer flex items-center gap-1 shadow">
+            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Upload Clientes (.XLSX)
+            <input type="file" accept=".xlsx, .xls" class="hidden" onchange="processarCargaMassaClientes(event)">
+        </label>
+    </div>
                 </div>
                 
                 <div id="box-form-cliente" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs bg-slate-50 p-3 rounded border">

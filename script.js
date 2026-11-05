@@ -4998,3 +4998,260 @@ window.processarCargaMassaMedicos = function(evt) {
     };
     reader.readAsArrayBuffer(file);
 };
+
+// =========================================================================
+// SINCRONIZAÇÃO COMPLETA DAS INCLUSÕES MANUAIS COM O SUPABASE (TODOS OS PERFIS)
+// =========================================================================
+
+// 1. INCLUSÃO MANUAL DE ATESTADO (CLIENTE E GESTOR SALVAM NO BANCO)
+window.adicionarHomologacaoDireta = async function() {
+    try {
+        const trabInput = document.getElementById('hom_top_trab');
+        const trab = trabInput ? trabInput.value.trim() : '';
+        const setorInput = document.getElementById('hom_top_setor');
+        const setor = setorInput ? setorInput.value.trim() : 'OPERACIONAL';
+        const cargoInput = document.getElementById('hom_top_cargo');
+        const cargo = cargoInput ? cargoInput.value.trim() : '-';
+        const diasInput = document.getElementById('hom_top_dias');
+        const dias = diasInput ? (parseInt(diasInput.value) || 1) : 1;
+        const cidInput = document.getElementById('hom_top_cid');
+        let cid = 'A DEFINIR';
+        if (cidInput && cidInput.value.trim() !== '') {
+            formatarCidSelecionado(cidInput);
+            cid = cidInput.value.trim();
+        }
+
+        const medInput = document.getElementById('hom_top_medico');
+        let medico = medInput && medInput.value.trim() !== '' ? medInput.value.trim() : 'MÉDICO EMISSOR';
+        if (!medico.toUpperCase().startsWith('DR')) medico = `DR. ${medico}`;
+
+        const empInput = document.getElementById('hom_top_empresa');
+        const activeCliente = document.getElementById('active-cliente-select')?.value || 'ALL';
+        const clienteNome = (empInput && empInput.value.trim() !== '') ? empInput.value.trim() : (activeCliente === 'ALL' ? 'PREFEITURA MUNICIPAL' : activeCliente);
+
+        if (!trab) {
+            alert("Por favor, preencha o Nome do Trabalhador.");
+            return;
+        }
+
+        const novoId = Date.now();
+        const dataAtual = new Date().toLocaleDateString('pt-BR');
+
+        const novoItem = {
+            id: novoId,
+            cliente: clienteNome,
+            trab: trab,
+            setor: setor,
+            cargo: cargo,
+            data: dataAtual,
+            dias: dias,
+            cid: cid,
+            medico: medico,
+            status: "PENDENTE DE HOMOLOGAÇÃO",
+            parecerTexto: "",
+            medicoHomologador: "DR. ROBERTO ALVES",
+            crmHomologador: "CRM SP 184920",
+            arquivoNome: tempFileAtestadoTop ? tempFileAtestadoTop.nome : "Atestado.pdf",
+            arquivoUrl: tempFileAtestadoTop ? tempFileAtestadoTop.url : "#",
+            arquivoHomologadoAssinadoUrl: null,
+            arquivoHomologadoAssinadoNome: null,
+            ativo: true
+        };
+
+        // Adiciona na tela local
+        atestadosHomologacaoData.unshift(novoItem);
+        tempFileAtestadoTop = null;
+        renderHomologacaoTabela();
+
+        // GRAVA NO SUPABASE PARA O GESTOR E O MÉDICO ENXERGAREM EM OUTROS COMPUTADORES
+        if (supabaseClient) {
+            try {
+                await supabaseClient.from('atestados_homologacao').upsert([{
+                    id: novoId,
+                    cliente: novoItem.cliente,
+                    trab: novoItem.trab,
+                    setor: novoItem.setor,
+                    cargo: novoItem.cargo,
+                    data: novoItem.data,
+                    dias: novoItem.dias,
+                    cid: novoItem.cid,
+                    medico: novoItem.medico,
+                    status: novoItem.status,
+                    parecer_texto: "",
+                    medico_homologador: novoItem.medicoHomologador,
+                    crm_homologador: novoItem.crmHomologador,
+                    arquivo_nome: novoItem.arquivoNome,
+                    arquivo_url: novoItem.arquivoUrl,
+                    ativo: true
+                }]);
+            } catch (errSupabase) {
+                console.warn("Aviso ao salvar atestado no Supabase:", errSupabase);
+            }
+        }
+
+        if (trabInput) trabInput.value = '';
+        if (cargoInput) cargoInput.value = '';
+        if (cidInput) cidInput.value = '';
+        alert("Empregado cadastrado com sucesso! As informações foram enviadas para o banco em nuvem e já estão disponíveis para o Gestor e Médico.");
+    } catch (e) {
+        console.error("Erro ao adicionar homologação direta:", e);
+        alert("Ocorreu um erro ao registrar o empregado.");
+    }
+};
+
+// 2. INCLUSÃO MANUAL NO PCMSO (SALVA NO SUPABASE PARA TODOS VEREM)
+window.adicionarLinhaPCMSO = async function() {
+    if (currentRole !== 'GESTOR' && currentRole !== 'MEDICO_PCMSO') {
+        alert("Somente o GESTOR ou MÉDICO PCMSO inclui novos cargos!");
+        return;
+    }
+    const lotacao = document.getElementById('pcmso_add_lotacao').value.trim();
+    const processo = document.getElementById('pcmso_add_processo').value.trim();
+    const cargo = document.getElementById('pcmso_add_cargo').value.trim();
+    const qtd = document.getElementById('pcmso_add_qtd').value;
+    const agenteSelect = document.getElementById('pcmso_add_agente');
+    const agente = agenteSelect.value;
+    const opt = agenteSelect.options[agenteSelect.selectedIndex];
+    const risco = opt ? (opt.dataset.risco || 'RISCO ESPECÍFICO') : 'RISCO ESPECÍFICO';
+
+    const exameSel = document.getElementById('pcmso_add_exame').value;
+    const exameCustom = document.getElementById('pcmso_add_exame_custom').value.trim();
+    const exame = exameCustom || exameSel;
+
+    const perSel = document.getElementById('pcmso_add_periodicidade').value;
+    const perCustom = document.getElementById('pcmso_add_per_custom').value.trim();
+    const periodicidade = perCustom || perSel;
+
+    const planoGestor = (document.getElementById('pcmso_add_plano_gestor') || document.getElementById('pcmso_add_plano_acao'))?.value.trim() || '';
+    const activeCliente = document.getElementById('active-cliente-select')?.value || 'ALL';
+    const cliNome = activeCliente === 'ALL' ? (clientesCadastrados[0]?.nome || "PREFEITURA MUNICIPAL") : activeCliente;
+
+    if (!lotacao || !cargo || !exame) { alert("Preencha Lotação, Cargo e Exame."); return; }
+
+    const novoId = Date.now();
+    const novoItem = {
+        id: novoId,
+        cliente: cliNome,
+        lotacao,
+        processo,
+        cargo,
+        qtd: parseInt(qtd) || 1,
+        agente,
+        risco,
+        exame,
+        periodicidade,
+        planoGestor: planoGestor,
+        planoMedico: "",
+        ativo: true
+    };
+
+    pcmsoMatrizData.push(novoItem);
+    renderPcmsoMatriz();
+
+    if (supabaseClient) {
+        try {
+            await supabaseClient.from('pcmso_matriz').upsert([{
+                id: novoId,
+                cliente: novoItem.cliente,
+                lotacao: novoItem.lotacao,
+                processo: novoItem.processo,
+                cargo: novoItem.cargo,
+                qtd: novoItem.qtd,
+                agente: novoItem.agente,
+                risco: novoItem.risco,
+                exame: novoItem.exame,
+                periodicidade: novoItem.periodicidade,
+                plano_gestor: novoItem.planoGestor,
+                plano_medico: "",
+                ativo: true
+            }]);
+        } catch (eDb) {
+            console.warn("Aviso ao salvar matriz no Supabase:", eDb);
+        }
+    }
+
+    document.getElementById('pcmso_add_lotacao').value = '';
+    document.getElementById('pcmso_add_cargo').value = '';
+    document.getElementById('pcmso_add_exame_custom').value = '';
+    if (document.getElementById('pcmso_add_plano_gestor')) document.getElementById('pcmso_add_plano_gestor').value = '';
+    alert("Linha do PCMSO incluída com sucesso e sincronizada com a nuvem!");
+};
+
+// 3. EMISSÃO DE ASO PELO MÉDICO (SALVA NO SUPABASE PARA O GESTOR E CLIENTE ENXERGAREM)
+const _orig_concluirEmissaoAsoBoreal = window.concluirEmissaoAsoBoreal;
+window.concluirEmissaoAsoBoreal = async function() {
+    const item = asoQueueData.find(x => x.id === selectedAsoId);
+    if (!item) return;
+
+    const localRealizacao = (document.getElementById('aso_edit_local') && document.getElementById('aso_edit_local').value.trim()) || "Cidade da Clínica";
+    const dataRealizacao = (document.getElementById('aso_edit_data') && document.getElementById('aso_edit_data').value.trim()) || new Date().toLocaleDateString('pt-BR');
+    const clienteNome = (document.getElementById('aso_edit_razao') && document.getElementById('aso_edit_razao').value) || item.cliente;
+    const cliObj = clientesCadastrados.find(c => c.nome === clienteNome) || clientesCadastrados[0];
+    const medPcmsoNome = cliObj ? cliObj.medPcmso : "DRA. LUIZA BRABETZ SANDONATO";
+    const medPcmsoCrm = cliObj ? cliObj.crmPcmso : "CRM SP 145328";
+
+    const novoId = Date.now();
+    const asoObj = {
+        id: novoId,
+        fecha: dataRealizacao,
+        local: localRealizacao,
+        nome: (document.getElementById('aso_edit_nome') && document.getElementById('aso_edit_nome').value) || item.nome,
+        cpf: (document.getElementById('aso_edit_cpf') && document.getElementById('aso_edit_cpf').value) || item.cpf,
+        nasc: (document.getElementById('aso_edit_nasc') && document.getElementById('aso_edit_nasc').value) || (item.nasc || 'Não informada'),
+        matricula: (document.getElementById('aso_edit_matricula') && document.getElementById('aso_edit_matricula').value) || (item.matricula || '-'),
+        cliente: clienteNome,
+        cargo: (document.getElementById('aso_edit_cargo') && document.getElementById('aso_edit_cargo').value) || item.cargo,
+        funcao: (document.getElementById('aso_edit_funcao') && document.getElementById('aso_edit_funcao').value) || item.cargo,
+        lotacao: (document.getElementById('aso_edit_lotacao') && document.getElementById('aso_edit_lotacao').value) || 'OFICINA CENTRAL',
+        cnpj: (document.getElementById('aso_edit_cnpj') && document.getElementById('aso_edit_cnpj').value) || (cliObj ? cliObj.cnpj : '00.000.000/0001-91'),
+        tipoExame: item.tipo || 'ASO ADMISSIONAL / PERIÓDICO',
+        origem: "CLINICA_CREDENCIADA",
+        resultado: "AGUARDANDO PARECER DO MÉDICO",
+        medico: "A DEFINIR PELO EXAMINADOR",
+        medicoPcmso: medPcmsoNome,
+        crmPcmso: medPcmsoCrm,
+        agentes: (document.getElementById('aso_doc_agentes_especificos') && document.getElementById('aso_doc_agentes_especificos').value) || 'RUÍDO CONTÍNUO DE MÁQUINAS; POSTURA SENTADA POR LONGOS PERÍODOS',
+        arquivoAssinadoUrl: null,
+        arquivoAssinadoNome: null,
+        anamneseDados: item.anamnese ? { ...item.anamnese, local: localRealizacao, data: dataRealizacao } : null
+    };
+
+    asoHistoryData.push(asoObj);
+    asoQueueData = asoQueueData.filter(x => x.id !== selectedAsoId);
+    renderFilaAso();
+    renderHistoryTabela();
+    fecharModal('modal-aso');
+
+    if (supabaseClient) {
+        try {
+            await supabaseClient.from('asos').upsert([{
+                id: asoObj.id,
+                fecha: asoObj.fecha,
+                local: asoObj.local,
+                nome: asoObj.nome,
+                cpf: asoObj.cpf,
+                nasc: asoObj.nasc,
+                matricula: asoObj.matricula,
+                cliente: asoObj.cliente,
+                cargo: asoObj.cargo,
+                funcao: asoObj.funcao,
+                lotacao: asoObj.lotacao,
+                cnpj: asoObj.cnpj,
+                tipo_exame: asoObj.tipoExame,
+                origem: asoObj.origem,
+                resultado: asoObj.resultado,
+                medico: asoObj.medico,
+                medico_pcmso: asoObj.medicoPcmso,
+                crm_pcmso: asoObj.crmPcmso,
+                agentes: asoObj.agentes,
+                arquivo_assinado_url: asoObj.arquivoAssinadoUrl,
+                arquivo_assinado_nome: asoObj.arquivoAssinadoNome,
+                anamnese_dados: asoObj.anamneseDados
+            }]);
+        } catch (eDb) {
+            console.warn("Aviso ao sincronizar ASO no Supabase:", eDb);
+        }
+    }
+
+    alert("ASO concluído e gravado na nuvem! Gestor e Cliente já podem consultar no Banco de ASOs.");
+};

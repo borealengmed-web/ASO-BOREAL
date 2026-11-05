@@ -3983,3 +3983,100 @@ Caso não encontre algum campo, preencha com string vazia "".`;
         evt.target.value = '';
     }
 };
+
+// =========================================================================
+// ATUALIZAÇÃO UNIVERSAL DE REQUISIÇÃO GEMINI (SUPORTE A CHAVES AQ... E AIza...)
+// =========================================================================
+async function chamarGeminiVisionExtrairJSON(file, promptInstrucao) {
+    let apiKey = (obterGeminiApiKey() || '').trim();
+    if (!apiKey) {
+        alert("Ação cancelada: Chave de API do Google Gemini não configurada.");
+        return null;
+    }
+
+    const base64Data = await converterArquivoParaBase64(file);
+    let mimeType = file.type || 'application/pdf';
+    if (!mimeType || mimeType === 'application/octet-stream') {
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (ext === 'pdf') mimeType = 'application/pdf';
+        else if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
+        else if (ext === 'png') mimeType = 'image/png';
+        else mimeType = 'application/pdf';
+    }
+
+    const payload = {
+        contents: [
+            {
+                parts: [
+                    {
+                        text: promptInstrucao + "\n\nIMPORTANTE: Retorne APENAS um objeto JSON válido, sem formatações Markdown como ```json ou ```."
+                    },
+                    {
+                        inline_data: {
+                            mime_type: mimeType,
+                            data: base64Data
+                        }
+                    }
+                ]
+            }
+        ],
+        generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 2048
+        }
+    };
+
+    // Modelos oficiais suportados
+    const modelos = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+    let respostaTexto = null;
+    let ultimoErroGoogle = "";
+
+    // Cabeçalhos universais compatíveis com credenciais AQ... e AIza...
+    const headers = {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+    };
+    if (apiKey.startsWith('AQ.')) {
+        headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
+    for (const mod of modelos) {
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${encodeURIComponent(apiKey)}`;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json().catch(() => null);
+
+            if (res.ok && data) {
+                if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+                    respostaTexto = data.candidates[0].content.parts[0].text;
+                    break;
+                }
+            } else if (data && data.error) {
+                ultimoErroGoogle = `[Erro Google ${data.error.code || res.status}]: ${data.error.message || 'Falha de autorização'}`;
+                console.warn(`Erro no modelo ${mod}:`, data.error);
+            } else {
+                ultimoErroGoogle = `HTTP ${res.status}: ${res.statusText}`;
+            }
+        } catch (e) {
+            ultimoErroGoogle = e.message || String(e);
+            console.warn(`Falha na requisição para ${mod}:`, e);
+        }
+    }
+
+    if (!respostaTexto) {
+        throw new Error(ultimoErroGoogle || "Não foi possível obter resposta da API do Gemini.");
+    }
+
+    let limpo = respostaTexto.trim();
+    if (limpo.startsWith('```json')) limpo = limpo.replace(/^```json/, '');
+    if (limpo.startsWith('```')) limpo = limpo.replace(/^```/, '');
+    if (limpo.endsWith('```')) limpo = limpo.replace(/```$/, '');
+    limpo = limpo.trim();
+
+    return JSON.parse(limpo);
+}

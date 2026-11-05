@@ -5255,3 +5255,117 @@ window.concluirEmissaoAsoBoreal = async function() {
 
     alert("ASO concluído e gravado na nuvem! Gestor e Cliente já podem consultar no Banco de ASOs.");
 };
+
+// =========================================================================
+// SALVAR INCLUSÃO MANUAL DE ATESTADOS NO SUPABASE (PARA O GESTOR E MÉDICO VEREM)
+// =========================================================================
+
+window.adicionarHomologacaoDireta = async function() {
+    try {
+        const trabInput = document.getElementById('hom_top_trab');
+        const trab = trabInput ? trabInput.value.trim() : '';
+
+        const setorInput = document.getElementById('hom_top_setor');
+        const setor = setorInput ? setorInput.value.trim() : 'OPERACIONAL';
+
+        const cargoInput = document.getElementById('hom_top_cargo');
+        const cargo = cargoInput ? cargoInput.value.trim() : '-';
+
+        const diasInput = document.getElementById('hom_top_dias');
+        const dias = diasInput ? (parseInt(diasInput.value) || 1) : 1;
+
+        const cidInput = document.getElementById('hom_top_cid');
+        let cid = 'A DEFINIR';
+        if (cidInput && cidInput.value.trim() !== '') {
+            formatarCidSelecionado(cidInput);
+            cid = cidInput.value.trim();
+        }
+
+        const medInput = document.getElementById('hom_top_medico');
+        let medico = medInput && medInput.value.trim() !== '' ? medInput.value.trim() : 'MÉDICO EMISSOR';
+        if (!medico.toUpperCase().startsWith('DR')) medico = `DR. ${medico}`;
+
+        // Identifica a empresa do cliente
+        const empInput = document.getElementById('hom_top_empresa');
+        let clienteNome = empInput && empInput.value.trim() !== '' ? empInput.value.trim() : '';
+        if (!clienteNome) {
+            clienteNome = (usuarioLogado && usuarioLogado.vinculoCliente && usuarioLogado.vinculoCliente !== 'ALL') 
+                ? usuarioLogado.vinculoCliente 
+                : 'PREFEITURA MUNICIPAL';
+        }
+
+        if (!trab) {
+            alert("Por favor, preencha o Nome do Trabalhador.");
+            return;
+        }
+
+        const novoId = Date.now();
+        const dataAtual = new Date().toLocaleDateString('pt-BR');
+
+        const novoRegistro = {
+            id: novoId,
+            cliente: clienteNome,
+            trab: trab,
+            setor: setor,
+            cargo: cargo,
+            data: dataAtual,
+            dias: dias,
+            cid: cid,
+            medico: medico,
+            status: "PENDENTE DE HOMOLOGAÇÃO",
+            parecerTexto: "",
+            medicoHomologador: "DR. ROBERTO ALVES",
+            crmHomologador: "CRM SP 184920",
+            arquivoNome: tempFileAtestadoTop ? tempFileAtestadoTop.nome : "Atestado.pdf",
+            arquivoUrl: tempFileAtestadoTop ? tempFileAtestadoTop.url : "#",
+            arquivoHomologadoAssinadoUrl: null,
+            arquivoHomologadoAssinadoNome: null,
+            ativo: true
+        };
+
+        // 1. Adiciona na lista visual do navegador
+        atestadosHomologacaoData.unshift(novoRegistro);
+        tempFileAtestadoTop = null;
+        renderHomologacaoTabela();
+
+        // 2. ENVIA IMEDIATAMENTE PARA O BANCO DE DADOS SUPABASE
+        if (supabaseClient) {
+            const { error: errDb } = await supabaseClient
+                .from('atestados_homologacao')
+                .upsert([{
+                    id: novoId,
+                    cliente: novoRegistro.cliente,
+                    trab: novoRegistro.trab,
+                    setor: novoRegistro.setor,
+                    cargo: novoRegistro.cargo,
+                    data: novoRegistro.data,
+                    dias: novoRegistro.dias,
+                    cid: novoRegistro.cid,
+                    medico: novoRegistro.medico,
+                    status: novoRegistro.status,
+                    parecer_texto: "",
+                    medico_homologador: novoRegistro.medicoHomologador,
+                    crm_homologador: novoRegistro.crmHomologador,
+                    arquivo_nome: novoRegistro.arquivoNome,
+                    arquivo_url: novoRegistro.arquivoUrl,
+                    ativo: true
+                }]);
+
+            if (errDb) {
+                console.error("Erro ao gravar atestado no Supabase:", errDb);
+                alert("Aviso: O atestado foi adicionado na tela, mas houve uma falha de envio ao Supabase:\n" + errDb.message);
+                return;
+            }
+        }
+
+        // Limpa os campos após gravar com sucesso
+        if (trabInput) trabInput.value = '';
+        if (cargoInput) cargoInput.value = '';
+        if (cidInput) cidInput.value = '';
+        alert("✅ Empregado cadastrado com sucesso!\nO atestado foi gravado na nuvem e já está visível para o Gestor e Médico.");
+
+    } catch (e) {
+        console.error("Erro ao adicionar homologação:", e);
+        alert("Ocorreu um erro ao salvar o registro.");
+    }
+};
